@@ -1,0 +1,8 @@
+CONCLUSIÓN MIMIC: R(t) SÍ muestra estructura.
+
+Pendiente Mediana: -1.000 (Ideal: -1.0)
+Convergentes (< -0.5): 100.0%
+Planos (-0.5 a 0.2): 0.0%
+Divergentes (> 0.2): 0.0%
+Tasa de Monotonía (Real): 0.894 (Null: 0.612)
+Suavidad (Real/Nulo): 0.203 (Estructurado: < 1.0)

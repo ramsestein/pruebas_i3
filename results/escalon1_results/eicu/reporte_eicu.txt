@@ -1,0 +1,8 @@
+CONCLUSIÓN EICU: R(t) SÍ muestra estructura.
+
+Pendiente Mediana: -0.990 (Ideal: -1.0)
+Convergentes (< -0.5): 84.8%
+Planos (-0.5 a 0.2): 10.2%
+Divergentes (> 0.2): 5.0%
+Tasa de Monotonía (Real): 0.679 (Null: 0.548)
+Suavidad (Real/Nulo): 0.239 (Estructurado: < 1.0)

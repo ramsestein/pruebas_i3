@@ -1,0 +1,44 @@
+# ── Entorno virtual ────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+
+# ── Secretos y configuración local ─────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Python ─────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# ── Datos clínicos (crudos y armonizados) ──────────────────────────────
+# Datos con acceso restringido (MIMIC, eICU, VitalDB, Clinic). No versionar.
+datasets/
+src/vitalfileAPI_test.py
+
+# ── Salidas y artefactos generados ─────────────────────────────────────
+
+*.npz
+*.parquet
+*.csv
+*.png
+*.pt
+!*.keep
+
+# ── IDE / SO ───────────────────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

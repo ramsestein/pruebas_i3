@@ -1,0 +1,6 @@
+pandas
+python-dotenv
+requests
+vitaldb
+pyarrow
+wfdb

@@ -1,0 +1,8 @@
+CONCLUSIÓN VITALDB: R(t) SÍ muestra estructura.
+
+Pendiente Mediana: -3.915 (Ideal: -1.0)
+Convergentes (< -0.5): 72.0%
+Planos (-0.5 a 0.2): 0.0%
+Divergentes (> 0.2): 28.0%
+Tasa de Monotonía (Real): 0.703 (Null: 0.564)
+Suavidad (Real/Nulo): 0.591 (Estructurado: < 1.0)

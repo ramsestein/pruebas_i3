@@ -1,0 +1,261 @@
+# =============================================================================
+# harmonize.yaml — Configuración maestra de la Etapa 0
+# =============================================================================
+# NUNCA hardcodear rutas ni nombres de señales en el código.
+# Todos los parámetros vienen de aquí.
+# =============================================================================
+
+version: "0.1.0"
+
+# ── Rutas ──────────────────────────────────────────────────────────────────────
+paths:
+  # MIMIC-III
+  mimic_cases_dir:    "datasets/mimic3wdb/mimic_full_cases_enriched"
+  mimic_index:        "datasets/mimic3wdb/mimic_full_cases_index.json"
+  mimic_clinical_dir: "datasets/mimic3wdb/clinical"   # ICUSTAYS, PROCEDUREEVENTS_MV, ADMISSIONS, PATIENTS
+  mimic_chartevents:  "datasets/mimic3wdb/mimic_chartevents_vent.parquet"
+
+  # VitalDB SICU
+  vitaldb_cases_dir:  "datasets/vitaldb_sicu/vitaldb_full_cases"
+  vitaldb_index:      "datasets/vitaldb_sicu/vitaldb_full_cases_index.json"
+
+  # Hospital Clínic
+  clinic_cases_dir:   "datasets/clinic_vitals/clinic_full_cases"
+  clinic_index:       "datasets/clinic_vitals/clinic_full_cases_index.json"
+
+  # eICU Collaborative
+  eicu_dir:           "datasets/eicu_collaborative"
+
+  # ZH Dataset
+  zh_dir:             "datasets/zh_dataset"
+
+  # Output
+  output_dir:         "datasets/harmonized"
+
+# ── Armonización ───────────────────────────────────────────────────────────────
+harmonize:
+  target_fs: 125              # Hz — frecuencia de resampleo objetivo
+  landmark_delta_min: 30      # Δ entre landmarks (minutos)
+  window_length_min: 5        # Longitud de la ventana de agregación (minutos)
+  window_mode: "trailing"     # "trailing" (termina en landmark) | "centered"
+  # Ventanas de fallo para clasificar un intento de extubación como éxito:
+  # Si NO hay reintubación dentro de failure_window_hours → éxito
+  failure_windows_hours:
+    - 48
+    - 72
+  min_vent_hours: 2           # Mínimo de horas de VM para incluir un caso
+
+# ── Filtros paso-banda (Butterworth, fase cero con sosfiltfilt) ────────────────
+filters:
+  ECG:
+    lowcut_hz: 0.5
+    highcut_hz: 40.0
+    order: 4
+  PPG:
+    lowcut_hz: 0.5
+    highcut_hz: 8.0
+    order: 4
+  ABP:
+    lowcut_hz: 0.5
+    highcut_hz: 20.0
+    order: 4
+
+# ── Índices de Calidad de Señal (SQI) ─────────────────────────────────────────
+sqi:
+  window_sec: 10              # Longitud de la sub-ventana de cálculo SQI (segundos)
+  step_sec: 5                 # Paso entre sub-ventanas (overlap 50%)
+  ECG:
+    kurtosis_min: 5.0         # bSQI — kurtosis mínima aceptable
+    kurtosis_max: 50.0        # bSQI — kurtosis máxima aceptable
+  PPG:
+    skewness_min: 0.5         # Skewness mínima (señal PPG debe ser asimétrica)
+    perfusion_min: 0.001      # Amplitud relativa mínima (AC/DC)
+    template_corr_min: 0.8    # Correlación con template medio
+  ABP:
+    sys_min_mmhg: 40          # Rango fisiológico sistólica
+    sys_max_mmhg: 300
+    dia_min_mmhg: 10          # Rango fisiológico diastólica
+    dia_max_mmhg: 180
+    pulse_pressure_min_mmhg: 5  # Presión de pulso mínima (Sys - Dia)
+
+# ── Mapeo de canales por cohorte (DECLARATIVO) ────────────────────────────────
+# null = canal no disponible o nombre aún por confirmar.
+# El código nunca asume un nombre; si es null, marca available=False.
+channel_maps:
+
+  clinic:
+    # Waveforms (alta frecuencia)
+    ECG:   "Intellivue/ECG_II"        # Confirmar: ¿ECG_I o ECG_II?
+    PPG:   "Intellivue/PLETH"
+    ABP:   "Intellivue/ART"           # Confirmar: ¿ART o ABP?
+    # Numéricos
+    HR:    "Intellivue/ECG_HR"        # Confirmar: ECG_HR en lugar de HR
+    SBP:   "Intellivue/ART_SYS"       # Confirmar: ART_SYS en lugar de ABP_SYS
+    DBP:   "Intellivue/ART_DIA"       # Confirmar: ART_DIA en lugar de ABP_DIA
+    MAP:   "Intellivue/ART_MEAN"      # Confirmar: ART_MEAN en lugar de ABP_MEAN
+    SpO2:  "Intellivue/PLETH_SAT_O2"
+    RR:    "Intellivue/VENT_RR"       # Confirmar: VENT_RR en lugar de RR
+    FiO2:  "Intellivue/FIO2"
+    PEEP:  "Intellivue/PEEP_CMH2O"
+    TV:    "Intellivue/TV_EXP"
+    MV:    "Intellivue/MV_EXP"
+    PIP:   "Intellivue/PIP_CMH2O"
+    # Outcome variables (disjuntas de features de entrada)
+    vasopressor_norepinephrine: null  # Rellenar si existe track de dosis NE
+    vasopressor_epinephrine:    null
+    vasopressor_dopamine:       null
+    lactate:                    null
+    SOFA_respiratory:           null
+    SOFA_cardiovascular:        null
+    SOFA_total:                 null
+
+  vitaldb:
+    # Nombres extraídos directamente de los archivos .vital
+    # Waveforms
+    ECG:   "Intellivue/ECG_II"    # En VitalDB aparece también ECG_II_WAV, asumimos ECG_II si es el estándar
+    PPG:   "Intellivue/PLETH"
+    ABP:   "Intellivue/ABP"
+    # Numéricos
+    HR:    "Intellivue/ECG_HR"
+    SBP:   "Intellivue/ABP_SYS"
+    DBP:   "Intellivue/ABP_DIA"
+    MAP:   "Intellivue/ABP_MEAN"
+    SpO2:  "Intellivue/PLETH_SAT_O2"
+    RR:    "Intellivue/RR"
+    FiO2:  null                       # No visto en los primeros 10
+    PEEP:  null                       # No visto en los primeros 10
+    TV:    "Intellivue/TV_EXP"
+    MV:    "Intellivue/MV_EXP"
+    PIP:   null                       # No visto en los primeros 10
+    # Outcome variables
+    vasopressor_norepinephrine: null
+    vasopressor_epinephrine:    null
+    vasopressor_dopamine:       null
+    lactate:                    null
+    SOFA_respiratory:           null
+    SOFA_cardiovascular:        null
+    SOFA_total:                 null
+
+  mimic:
+    # MIMIC no tiene waveforms ECG ni PPG → null por definición
+    ECG:   null
+    PPG:   null
+    # ABP waveform: solo en el matched-waveform subset (algunos casos)
+    ABP:   "MIMIC/ART"               # Confirmar: ¿ART o ABP según el archivo?
+    # Numéricos (tracks enriched de chartevents)
+    HR:    "MIMIC/HR"
+    SBP:   "MIMIC/ABP_S"
+    DBP:   "MIMIC/ABP_D"
+    MAP:   "MIMIC/ABP_M"
+    SpO2:  "MIMIC/SpO2"
+    RR:    "MIMIC/RESP"
+    FiO2:  "MIMIC/FiO2"
+    PEEP:  "MIMIC/PEEP"
+    TV:    "MIMIC/TV"
+    MV:    "MIMIC/MV"
+    PIP:   "MIMIC/PIP"
+    # Outcome variables — desde chartevents/inputevents_mv
+    vasopressor_norepinephrine: null  # P12: itemid 221906 en inputevents_mv
+    vasopressor_epinephrine:    null
+    vasopressor_dopamine:       null
+    lactate:                    null  # P12: itemid 50813 en labevents
+    SOFA_respiratory:           null
+    SOFA_cardiovascular:        null
+    SOFA_total:                 null
+
+  eicu:
+    # No waveforms
+    ECG:   null
+    PPG:   null
+    ABP:   null
+    # Numerics (tracks from vitaldb)
+    HR:    "eICU/HR"
+    SBP:   "eICU/ABP_S"
+    DBP:   "eICU/ABP_D"
+    MAP:   "eICU/ABP_M"
+    SpO2:  "eICU/SpO2"
+    RR:    "eICU/RR_V"
+    FiO2:  "eICU/FiO2"
+    PEEP:  "eICU/PEEP"
+    TV:    "eICU/TV"
+    MV:    "eICU/MV"
+    PIP:   "eICU/PIP"
+    vasopressor_norepinephrine: "eICU/Norepinephrine"
+    vasopressor_epinephrine:    "eICU/Epinephrine"
+    vasopressor_dopamine:       "eICU/Dopamine"
+    lactate:                    "eICU/Lactate"
+    SOFA_respiratory:           null
+    SOFA_cardiovascular:        null
+    SOFA_total:                 null
+
+
+# ── Fuentes de eventos clínicos por cohorte (DECLARATIVO) ────────────────────
+# Define cómo detectar t0, extubación, reintubación en cada cohorte.
+event_sources:
+
+  clinic:
+    # t0 = inicio del archivo .vital
+    t0_source: "first_timestamp"
+    # Extubación = fin del archivo .vital
+    extubation_source: "last_timestamp"
+    # Reintubaciones: no hay registradas (100% éxito)
+    reintubation_source: null
+    reintubation_join_key: null
+    death_source: null
+    tracheostomy_source: null
+
+  vitaldb:
+    # Extracción de t0 (inicio ventilación)
+    t0_source: "first_timestamp"
+
+    # Extubaciones y reintubaciones
+    extubation_source: "last_timestamp"
+    reintubation_source: null
+    death_source: null
+    tracheostomy_source: null
+
+  mimic:
+    # t0 = PROCEDUREEVENTS_MV.starttime donde itemid == 225792
+    t0_source: "procedureevents_mv"
+    t0_itemid: 225792               # Invasive Mechanical Ventilation
+    # Extubación = vent_end del episodio (PROCEDUREEVENTS_MV.endtime)
+    # PERO: verificar contra ADMISSIONS.DEATHTIME (P10/P11)
+    extubation_source: "procedureevents_mv"
+    extubation_itemid: 225792       # endtime del mismo evento
+    # Extubaciones explícitas (si existen en PROCEDUREEVENTS_MV)
+    explicit_extubation_itemid: null  # P10: ¿existe itemid de Extubation?
+    # Reintubación = nuevo evento 225792 tras fin del anterior
+    reintubation_source: "procedureevents_mv"
+    reintubation_itemid: 225792
+    # Muerte
+    death_source: "admissions"       # ADMISSIONS.DEATHTIME
+    # Tablas clínicas disponibles (P11)
+    requires_admissions_csv: true    # ADMISSIONS.csv.gz
+    requires_patients_csv: true      # PATIENTS.csv.gz
+
+  eicu:
+    t0_source: "respiratoryCare"
+    extubation_source: "respiratoryCare"
+    reintubation_source: "respiratoryCare"
+    death_source: "patient"
+    tracheostomy_source: null
+
+# ── MIMIC itemids para outcome_variables ───────────────────────────────────────
+# (chartevents / inputevents_mv / labevents)
+# P12: confirmar que estos archivos están disponibles y los itemids son correctos
+mimic_outcome_itemids:
+  # Vasopresores (inputevents_mv)
+  norepinephrine: [221906]
+  epinephrine:    [221289]
+  dopamine:       [221662]
+  vasopressin:    [222315]
+  # Lactato (labevents)
+  lactate:        [50813]
+  # P/F ratio aproximado: PaO2 de labevents
+  pao2:           [50821]
+  # FiO2 para P/F (chartevents)
+  fio2_pf:        [3420, 223835]
+
+# ── Reproducibilidad ──────────────────────────────────────────────────────────
+random_seed: 42
+log_level: "INFO"           # DEBUG | INFO | WARNING | ERROR

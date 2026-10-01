@@ -1,0 +1,8 @@
+CONCLUSIÓN CLINIC: R(t) SÍ muestra estructura.
+
+Pendiente Mediana: -1.019 (Ideal: -1.0)
+Convergentes (< -0.5): 63.2%
+Planos (-0.5 a 0.2): 7.9%
+Divergentes (> 0.2): 28.9%
+Tasa de Monotonía (Real): 0.560 (Null: 0.542)
+Suavidad (Real/Nulo): 0.564 (Estructurado: < 1.0)
