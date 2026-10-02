@@ -162,7 +162,7 @@ def extract_waveform_window(
         a 125 Hz: 5 * 60 * 125 = 37500 muestras.
     """
     mask = (timestamps_rel_hours >= win_start_h) & (timestamps_rel_hours <= win_end_h)
-    window = signal[mask].astype(np.float32)
+    window = np.asarray(signal[mask]).ravel().astype(np.float32)
     return window
 
 

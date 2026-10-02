@@ -39,6 +39,49 @@ from .base import (
 
 logger = logging.getLogger(__name__)
 
+
+def _flatten_track(trk) -> tuple[np.ndarray, np.ndarray]:
+    """Devuelve (times, values) 1D para una pista VitalFile.
+
+    En esta versión de vitaldb, cada rec WAV tiene `val` como array de nsamp
+    muestras; hay que concatenarlos y expandir los timestamps por muestra.
+    Las pistas NUM tienen `val` escalar y se tratan como 1 muestra.
+    """
+    if trk is None or not trk.recs:
+        return np.empty(0, dtype=np.float64), np.empty(0, dtype=np.float32)
+
+    srate = float(trk.srate) if trk.srate and trk.srate > 0 else 0.0
+    times_list: list[np.ndarray] = []
+    vals_list: list[np.ndarray] = []
+    for r in trk.recs:
+        v = np.asarray(r['val'], dtype=np.float32)
+        if v.ndim == 0:
+            v = v.reshape(1)
+        n = len(v)
+        if n == 0:
+            continue
+        dt = float(r['dt'])
+        vals_list.append(v)
+        if srate > 0:
+            times_list.append(dt + np.arange(n, dtype=np.float64) / srate)
+        else:
+            times_list.append(np.full(n, dt, dtype=np.float64))
+
+    if not vals_list:
+        return np.empty(0, dtype=np.float64), np.empty(0, dtype=np.float32)
+    return np.concatenate(times_list), np.concatenate(vals_list)
+
+# Alias de nombres de pista en VitalDB: algunas cajas miden la presión arterial
+# de forma invasiva (ABP_*) y otras no invasiva (NIBP_*); RR vs VENT_RR;
+# ECG_HR vs PLETH_HR vs HR. Orden = prioridad de resolución.
+VITALDB_CHANNEL_ALIASES: dict[str, list[str]] = {
+    "SBP": ["Intellivue/ABP_SYS", "Intellivue/NIBP_SYS"],
+    "DBP": ["Intellivue/ABP_DIA", "Intellivue/NIBP_DIA"],
+    "MAP": ["Intellivue/ABP_MEAN", "Intellivue/NIBP_MEAN"],
+    "RR":  ["Intellivue/RR", "Intellivue/VENT_RR"],
+    "HR":  ["Intellivue/ECG_HR", "Intellivue/PLETH_HR", "Intellivue/HR"],
+}
+
 STANDARD_NUMERIC_COLS = [
     "HR", "SBP", "DBP", "MAP", "SpO2", "RR",
     "FiO2", "PEEP", "TV", "MV", "PIP",
@@ -100,15 +143,37 @@ class VitalDBAdapter(CohortAdapter):
             self._vf_cache[patient_id] = vitaldb.VitalFile(str(path))
         return self._vf_cache[patient_id]
 
+    def _resolve_available_channel(
+        self, canonical_name: str, vf: vitaldb.VitalFile
+    ) -> Optional[str]:
+        """Devuelve el nombre de pista realmente presente en el fichero.
+
+        Prueba primero el canal configurado y luego los alias conocidos
+        (ABP_* vs NIBP_*, RR vs VENT_RR...). Devuelve None si ninguno existe.
+        """
+        candidates: list[str] = []
+        configured = self._resolve_channel(canonical_name)
+        if configured:
+            candidates.append(configured)
+        for alt in VITALDB_CHANNEL_ALIASES.get(canonical_name, []):
+            if alt not in candidates:
+                candidates.append(alt)
+        for c in candidates:
+            trk = vf.trks.get(c)
+            if trk is not None and trk.recs:
+                return c
+        return configured
+
     def _get_t0_unix(self, patient_id: str) -> float:
         """
-        t0 = inicio del episodio de VM.
-        Por defecto: start_time del evento en el índice.
-        Si la config especifica t0_source = "track_threshold", se usa
-        el primer timestamp donde el track supera el umbral configurado.
-        (P2: a confirmar con el usuario)
+        t0 = inicio del episodio de VM (epoch).
+        Prioriza el campo `t0_unix` del índice (si el builder lo escribió).
+        Si no existe, usa la lógica configurada (t0_source).
         """
         ev = self._get_event_by_patient(patient_id)
+        if ev.get("t0_unix") is not None:
+            return float(ev["t0_unix"])
+
         t0_source = self._event_source.get("t0_source", "vital_file_start")
 
         if t0_source == "vital_file_start" or t0_source is None:
@@ -168,7 +233,7 @@ class VitalDBAdapter(CohortAdapter):
         waveforms: dict[str, WaveformRecord] = {}
 
         for signal_name in self.REQUIRED_WAVEFORMS:
-            track_name = self._resolve_channel(signal_name)
+            track_name = self._resolve_available_channel(signal_name, vf)
 
             if track_name is None:
                 # P1: nombre no configurado aún → pendiente
@@ -182,8 +247,7 @@ class VitalDBAdapter(CohortAdapter):
                 trk = vf.trks.get(track_name)
                 if not trk or not trk.recs:
                     raise ValueError("track vacío")
-                times = np.array([r['dt'] for r in trk.recs], dtype=np.float64)
-                values = np.array([r['val'] for r in trk.recs], dtype=np.float32)
+                times, values = _flatten_track(trk)
             except Exception as e:
                 logger.warning(
                     "[vitaldb] patient=%s canal=%s error: %s", patient_id, track_name, e
@@ -228,7 +292,7 @@ class VitalDBAdapter(CohortAdapter):
 
         series_dict: dict[str, tuple[np.ndarray, np.ndarray]] = {}
         for canonical in STANDARD_NUMERIC_COLS:
-            track = self._resolve_channel(canonical)
+            track = self._resolve_available_channel(canonical, vf)
             if track is None:
                 continue
             try:
@@ -252,13 +316,13 @@ class VitalDBAdapter(CohortAdapter):
                 data=pd.DataFrame(columns=STANDARD_NUMERIC_COLS),
             )
 
-        dfs = []
+        # Alinear a rejilla de 1 s (promediar duplicados por timestamp redondeado).
+        grid: dict[str, pd.Series] = {}
         for canonical, (times, values) in series_dict.items():
-            dfs.append(pd.DataFrame(
-                {canonical: values},
-                index=pd.Index(times, name="time_rel_s"),
-            ))
-        df = pd.concat(dfs, axis=1).sort_index()
+            t = np.round(times).astype(np.float64)
+            s = pd.Series(values, index=t)
+            grid[canonical] = s.groupby(level=0).mean()
+        df = pd.DataFrame(grid).sort_index()
         for col in STANDARD_NUMERIC_COLS:
             if col not in df.columns:
                 df[col] = np.nan
@@ -277,7 +341,10 @@ class VitalDBAdapter(CohortAdapter):
     def get_clinical_events(self, patient_id: str) -> ClinicalEvents:
         ev = self._get_event_by_patient(patient_id)
         t0_unix = self._get_t0_unix(patient_id)
-        t_end_unix = pd.Timestamp(ev["end_time"]).timestamp()
+        if ev.get("tend_unix") is not None:
+            t_end_unix = float(ev["tend_unix"])
+        else:
+            t_end_unix = pd.Timestamp(ev["end_time"]).timestamp()
 
         record_end_hours = (t_end_unix - t0_unix) / 3600.0
         extubation_hours = record_end_hours  # por construcción

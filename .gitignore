@@ -35,6 +35,7 @@ src/vitalfileAPI_test.py
 *.csv
 *.png
 *.pt
+*.log
 !*.keep
 
 # ── IDE / SO ───────────────────────────────────────────────────────────

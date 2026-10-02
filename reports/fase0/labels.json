@@ -1,0 +1,237 @@
+{
+  "versions": {
+    "v0.1.0_5d65a7ab": {
+      "survival_48h": {
+        "n_rows": 210,
+        "event_type_by_cohort": {
+          "successful_extubation": {
+            "clinic": 50,
+            "mimic": 82,
+            "vitaldb": 78
+          }
+        },
+        "censored_with_finite_extub": 0,
+        "negative_extubation_time": 0,
+        "negative_t0_unix": 0,
+        "n_failed_attempts_distribution": {
+          "0": 210
+        }
+      },
+      "survival_72h": {
+        "n_rows": 210,
+        "event_type_by_cohort": {
+          "successful_extubation": {
+            "clinic": 50,
+            "mimic": 82,
+            "vitaldb": 78
+          }
+        },
+        "censored_with_finite_extub": 0,
+        "negative_extubation_time": 0,
+        "negative_t0_unix": 0,
+        "n_failed_attempts_distribution": {
+          "0": 210
+        }
+      }
+    },
+    "v0.1.0_bcd96ef7": {
+      "survival_48h": {
+        "n_rows": 44772,
+        "event_type_by_cohort": {
+          "censored_no_extubation": {
+            "eicu": 2420
+          },
+          "successful_extubation": {
+            "eicu": 42352
+          }
+        },
+        "censored_with_finite_extub": 0,
+        "negative_extubation_time": 0,
+        "negative_t0_unix": 30191,
+        "n_failed_attempts_distribution": {
+          "0": 43695,
+          "1": 1067,
+          "2": 10
+        }
+      },
+      "survival_72h": {
+        "n_rows": 44772,
+        "event_type_by_cohort": {
+          "censored_no_extubation": {
+            "eicu": 2420
+          },
+          "successful_extubation": {
+            "eicu": 42352
+          }
+        },
+        "censored_with_finite_extub": 0,
+        "negative_extubation_time": 0,
+        "negative_t0_unix": 30191,
+        "n_failed_attempts_distribution": {
+          "0": 43695,
+          "1": 1067,
+          "2": 10
+        }
+      },
+      "eicu_reintubation_gaps": {
+        "n_attempts": 92378,
+        "n_failures": 2364,
+        "gap_48_72h": 0,
+        "gap_min_h": 2.017,
+        "gap_max_h": 47.483,
+        "gap_median_h": 4.017
+      }
+    },
+    "v0.1.0_df652b7b": {
+      "survival_48h": {
+        "n_rows": 82,
+        "event_type_by_cohort": {
+          "successful_extubation": {
+            "mimic": 82
+          }
+        },
+        "censored_with_finite_extub": 0,
+        "negative_extubation_time": 0,
+        "negative_t0_unix": 0,
+        "n_failed_attempts_distribution": {
+          "0": 82
+        }
+      },
+      "survival_72h": {
+        "n_rows": 82,
+        "event_type_by_cohort": {
+          "successful_extubation": {
+            "mimic": 82
+          }
+        },
+        "censored_with_finite_extub": 0,
+        "negative_extubation_time": 0,
+        "negative_t0_unix": 0,
+        "n_failed_attempts_distribution": {
+          "0": 82
+        }
+      }
+    },
+    "v0.1.0_e9d2ab7c": {
+      "survival_48h": {
+        "n_rows": 132,
+        "event_type_by_cohort": {
+          "successful_extubation": {
+            "clinic": 50,
+            "mimic": 82
+          }
+        },
+        "censored_with_finite_extub": 0,
+        "negative_extubation_time": 0,
+        "negative_t0_unix": 0,
+        "n_failed_attempts_distribution": {
+          "0": 132
+        }
+      },
+      "survival_72h": {
+        "n_rows": 132,
+        "event_type_by_cohort": {
+          "successful_extubation": {
+            "clinic": 50,
+            "mimic": 82
+          }
+        },
+        "censored_with_finite_extub": 0,
+        "negative_extubation_time": 0,
+        "negative_t0_unix": 0,
+        "n_failed_attempts_distribution": {
+          "0": 132
+        }
+      }
+    },
+    "v0.1.0_fbb5b280": {
+      "survival_48h": {
+        "n_rows": 44850,
+        "event_type_by_cohort": {
+          "censored_no_extubation": {
+            "eicu": 2420,
+            "vitaldb": 0
+          },
+          "successful_extubation": {
+            "eicu": 42352,
+            "vitaldb": 78
+          }
+        },
+        "censored_with_finite_extub": 0,
+        "negative_extubation_time": 0,
+        "negative_t0_unix": 30191,
+        "n_failed_attempts_distribution": {
+          "0": 43773,
+          "1": 1067,
+          "2": 10
+        }
+      },
+      "survival_72h": {
+        "n_rows": 44850,
+        "event_type_by_cohort": {
+          "censored_no_extubation": {
+            "eicu": 2420,
+            "vitaldb": 0
+          },
+          "successful_extubation": {
+            "eicu": 42352,
+            "vitaldb": 78
+          }
+        },
+        "censored_with_finite_extub": 0,
+        "negative_extubation_time": 0,
+        "negative_t0_unix": 30191,
+        "n_failed_attempts_distribution": {
+          "0": 43773,
+          "1": 1067,
+          "2": 10
+        }
+      },
+      "eicu_reintubation_gaps": {
+        "n_attempts": 92378,
+        "n_failures": 2364,
+        "gap_48_72h": 0,
+        "gap_min_h": 2.017,
+        "gap_max_h": 47.483,
+        "gap_median_h": 4.017
+      }
+    }
+  },
+  "summary": {
+    "event_type_by_cohort_consolidated": {
+      "clinic": {
+        "n_rows": 50,
+        "event_type_counts": {
+          "successful_extubation": 50
+        },
+        "source": "v0.1.0_5d65a7ab/survival_48h"
+      },
+      "mimic": {
+        "n_rows": 82,
+        "event_type_counts": {
+          "successful_extubation": 82
+        },
+        "source": "v0.1.0_5d65a7ab/survival_48h"
+      },
+      "vitaldb": {
+        "n_rows": 78,
+        "event_type_counts": {
+          "successful_extubation": 78
+        },
+        "source": "v0.1.0_5d65a7ab/survival_48h"
+      },
+      "eicu": {
+        "n_rows": 44772,
+        "event_type_counts": {
+          "successful_extubation": 42352,
+          "censored_no_extubation": 2420
+        },
+        "source": "v0.1.0_bcd96ef7/survival_48h"
+      }
+    },
+    "mimic_hadm_check": {
+      "clinical_dir_exists": false,
+      "note": "No hay tablas ICUSTAYS/ADMISSIONS ni HADM_ID en los datos; no se puede comprobar si un episodio procede de otro HADM."
+    }
+  }
+}

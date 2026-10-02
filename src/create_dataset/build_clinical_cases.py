@@ -31,6 +31,8 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
+import vitaldb
+
 
 # ── constantes ──────────────────────────────────────────────────────────
 
@@ -101,7 +103,9 @@ def scan_files(base_dir: str) -> Dict[str, List[Tuple[datetime, str, bool, bool,
     total = 0
     errors = 0
 
-    for root, _, files in os.walk(base_dir):
+    for root, dirs, files in os.walk(base_dir):
+        # Excluir exportaciones previas (dataset_clinic) para no duplicar boxes
+        dirs[:] = [d for d in dirs if d != "dataset_clinic"]
         for f in files:
             if not f.lower().endswith(".vital"):
                 continue
@@ -222,8 +226,35 @@ def find_events(
 
 # ── fusión de archivos ─────────────────────────────────────────────────
 
-def merge_vital_files(event: dict, output_dir: str) -> str:
-    """Fusiona todos los .vital del evento en un único archivo."""
+# Tracks que se conservan en el .vital fusionado (los que usa la armonización).
+# Se descartan leads ECG redundantes (ECG_I/III), CO2 y ST_* para acotar memoria.
+MERGE_TRACK_NAMES = [
+    # Waveforms
+    "Intellivue/ECG_II",
+    "Intellivue/PLETH",
+    "Intellivue/ART",
+    # Numéricos (constantes vitales + ventilador)
+    "Intellivue/HR",
+    "Intellivue/ECG_HR",
+    "Intellivue/ART_SYS",
+    "Intellivue/ART_DIA",
+    "Intellivue/ART_MEAN",
+    "Intellivue/PLETH_SAT_O2",
+    "Intellivue/VENT_RR",
+    "Intellivue/FIO2",
+    "Intellivue/PEEP_CMH2O",
+    "Intellivue/TV_EXP",
+    "Intellivue/MV_EXP",
+    "Intellivue/PIP_CMH2O",
+]
+
+
+def merge_vital_files(event: dict, output_dir: str) -> tuple[str, float, float]:
+    """
+    Fusiona todos los .vital del evento en un único archivo válido usando el
+    parser de vitaldb (no concatenación de bytes, que corrompía el fichero).
+    Devuelve (ruta_salida, t0_unix, tend_unix) según la cabecera fusionada.
+    """
     start_str = event["start_time"].strftime("%y%m%d_%H%M%S")
     end_str = event["end_time"].strftime("%y%m%d_%H%M%S")
     box = event["box"]
@@ -232,12 +263,10 @@ def merge_vital_files(event: dict, output_dir: str) -> str:
 
     os.makedirs(output_dir, exist_ok=True)
 
-    with open(out_path, "wb") as out:
-        for src_path in event["files"]:
-            with open(src_path, "rb") as src:
-                shutil.copyfileobj(src, out)
+    vf = vitaldb.VitalFile(event["files"], track_names=MERGE_TRACK_NAMES)
+    vf.to_vital(out_path)
 
-    return out_path
+    return out_path, float(vf.dtstart), float(vf.dtend)
 
 
 # ── main ───────────────────────────────────────────────────────────────
@@ -279,7 +308,7 @@ def main():
         print(f"  -> {len(events)} evento(s)")
 
         for idx, ev in enumerate(events):
-            merged_path = merge_vital_files(ev, args.output_dir)
+            merged_path, t0_unix, tend_unix = merge_vital_files(ev, args.output_dir)
             merged_size = os.path.getsize(merged_path)
 
             has_induction = ev["start_file"] != files[0][1] or ev["start_time"] != files[0][0]
@@ -292,6 +321,8 @@ def main():
                 "file_size_bytes": merged_size,
                 "start_time": ev["start_time"].isoformat(),
                 "end_time": ev["end_time"].isoformat(),
+                "t0_unix": t0_unix,
+                "tend_unix": tend_unix,
                 "duration_seconds": ev["duration_seconds"],
                 "duration_str": ev["duration_str"],
                 "num_vital_files_merged": ev["num_files"],
