@@ -234,6 +234,36 @@ def segment_attempts(
     ]
 
 
+def spans_from_points(
+    times_h: Iterable[float],
+    max_gap_h: float = DISCONNECT_GAP_H,
+) -> list[Span]:
+    """Construye tramos a partir de INSTANTES con huecos consecutivos <= ``max_gap_h``.
+
+    Es la versión para cohortes donde la presencia se registra como
+    observaciones puntuales (p. ej. CHARTEVENTS de MIMIC): una racha de
+    observaciones separadas por <= ``max_gap_h`` es un tramo continuo (D1).
+    Las rachas de un solo instante (duración 0) se descartan, porque un registro
+    aislado no es un curso de ventilación.
+    """
+    ts = sorted(float(t) for t in times_h if np.isfinite(t))
+    spans: list[Span] = []
+    start: Optional[float] = None
+    prev: Optional[float] = None
+    for t in ts:
+        if start is None:
+            start = prev = t
+        elif t - prev <= max_gap_h + _EPS:  # type: ignore[operator]
+            prev = t
+        else:
+            if prev > start:
+                spans.append(Span(start, prev))
+            start = prev = t
+    if start is not None and prev is not None and prev > start:
+        spans.append(Span(start, prev))
+    return spans
+
+
 def monitor_change_boundaries(
     monitor_times_h: Iterable[float],
     patient_gap_h: float = PATIENT_GAP_H,

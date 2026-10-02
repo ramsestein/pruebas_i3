@@ -37,7 +37,7 @@ from typing import Iterable, Iterator, Optional, Sequence
 import numpy as np
 import pandas as pd
 
-from src.common.episodes import Span, build_episodes
+from src.common.episodes import DISCONNECT_GAP_H, Span, build_episodes, spans_from_points
 from src.common.labels import (
     assign_labels_all_windows,
     attempts_from_pairs,
@@ -48,7 +48,8 @@ from src.common.timeutils import series_to_utc, to_epoch_utc
 from src.create_dataset.mimic_itemids import (
     MIMIC_CHART_ITEMIDS,
     PROCEDURE_ITEMIDS,
-    VENT_CHART_KEYS,
+    TRACH_PROCEDURE_ITEMIDS,
+    VENT_MARKER_KEYS,
     all_catalogued_itemids,
     itemid_to_concept,
     itemids_for,
@@ -89,50 +90,60 @@ def load_vent_procedures(clinical_dir: str | Path) -> pd.DataFrame:
     return df
 
 
-# ── CHARTEVENTS en streaming ─────────────────────────────────────────────────
+def load_trach_procedures(clinical_dir: str | Path) -> pd.DataFrame:
+    """Traqueostomías con hora (PROCEDUREEVENTS_MV 225448 / 226237) para D5."""
+    path = Path(clinical_dir) / "PROCEDUREEVENTS_MV.csv.gz"
+    df = pd.read_csv(
+        path, compression="gzip",
+        usecols=["SUBJECT_ID", "HADM_ID", "ICUSTAY_ID", "ITEMID", "STARTTIME"],
+    )
+    df = df[df["ITEMID"].isin(TRACH_PROCEDURE_ITEMIDS)].rename(columns=str.lower)
+    df["start_unix"] = series_to_utc(df["starttime"]).astype("int64") / 1e9
+    return df
 
-@dataclass
-class StayVentAggregate:
-    """Agregado por estancia y concepto de ventilador."""
-    stay_id: int
-    subject_id: int
-    hadm_id: int
-    per_concept: dict[str, tuple[float, float, int]] = field(default_factory=dict)
+
+def load_deaths(clinical_dir: str | Path) -> pd.DataFrame:
+    """DEATHTIME por HADM_ID (ADMISSIONS) para D5."""
+    path = Path(clinical_dir) / "ADMISSIONS.csv.gz"
+    df = pd.read_csv(
+        path, compression="gzip",
+        usecols=["SUBJECT_ID", "HADM_ID", "DEATHTIME"],
+    ).rename(columns=str.lower)
+    df = df.dropna(subset=["deathtime"]).copy()
+    df["death_unix"] = series_to_utc(df["deathtime"]).astype("int64") / 1e9
+    return df[["subject_id", "hadm_id", "death_unix"]]
 
 
-def aggregate_vent_chartevents_df(df: pd.DataFrame) -> pd.DataFrame:
-    """Agrega un subconjunto de CHARTEVENTS (ya filtrado) por (ICUSTAY, itemid).
+# ── CHARTEVENTS en streaming: OBSERVACIONES con su hora ──────────────────────
 
-    Función pura (testeable). Devuelve columnas:
-    ``ICUSTAY_ID, SUBJECT_ID, HADM_ID, ITEMID, CONCEPT, t_min, t_max, n``.
+_OBS_COLUMNS = ["SUBJECT_ID", "HADM_ID", "ICUSTAY_ID", "ITEMID",
+                "CONCEPT", "t_unix", "VALUENUM"]
+
+
+def observations_from_chunk(df: pd.DataFrame) -> pd.DataFrame:
+    """Convierte un subconjunto de CHARTEVENTS en observaciones con su hora.
+
+    NO resume a primer/último registro: conserva cada observación (la Fase 2 las
+    necesita). Devuelve ``SUBJECT_ID, HADM_ID, ICUSTAY_ID, ITEMID, CONCEPT,
+    t_unix, VALUENUM``.
     """
     if df.empty:
-        return pd.DataFrame(
-            columns=["ICUSTAY_ID", "SUBJECT_ID", "HADM_ID", "ITEMID",
-                     "CONCEPT", "t_min", "t_max", "n"]
-        )
+        return pd.DataFrame(columns=_OBS_COLUMNS)
     d = df.copy()
     d["CONCEPT"] = d["ITEMID"].map(itemid_to_concept())
     d = d.dropna(subset=["CONCEPT"])
     if d.empty:
-        return pd.DataFrame(
-            columns=["ICUSTAY_ID", "SUBJECT_ID", "HADM_ID", "ITEMID",
-                     "CONCEPT", "t_min", "t_max", "n"]
-        )
+        return pd.DataFrame(columns=_OBS_COLUMNS)
     d["t_unix"] = series_to_utc(d["CHARTTIME"]).astype("int64") / 1e9
-    g = d.groupby(
-        ["ICUSTAY_ID", "SUBJECT_ID", "HADM_ID", "ITEMID", "CONCEPT"],
-        as_index=False,
-    ).agg(t_min=("t_unix", "min"), t_max=("t_unix", "max"), n=("t_unix", "size"))
-    return g
+    return d[_OBS_COLUMNS]
 
 
-def stream_vent_chartevents(
+def stream_chartevents(
     chart_path: str | Path,
     *,
     chunksize: int = 500_000,
 ) -> pd.DataFrame:
-    """Recorre CHARTEVENTS.csv.gz y agrega los itemids de ventilador y monitor."""
+    """Recorre CHARTEVENTS.csv.gz y devuelve las observaciones de interés."""
     itemids = all_catalogued_itemids()
     parts: list[pd.DataFrame] = []
     reader = pd.read_csv(
@@ -144,64 +155,64 @@ def stream_vent_chartevents(
     for i, chunk in enumerate(reader, start=1):
         sel = chunk[chunk["ITEMID"].isin(itemids)]
         if not sel.empty:
-            parts.append(aggregate_vent_chartevents_df(sel))
+            parts.append(observations_from_chunk(sel))
         if i % 10 == 0:
             logger.info("[mimic] CHARTEVENTS chunk %d (%d filas leídas)", i, i * chunksize)
     if not parts:
-        return pd.DataFrame(
-            columns=["ICUSTAY_ID", "SUBJECT_ID", "HADM_ID", "ITEMID",
-                     "CONCEPT", "t_min", "t_max", "n"]
-        )
-    agg = pd.concat(parts, ignore_index=True)
-    # Re-agrega por si un ICUSTAY aparece en varios chunks.
-    return agg.groupby(
-        ["ICUSTAY_ID", "SUBJECT_ID", "HADM_ID", "ITEMID", "CONCEPT"],
-        as_index=False,
-    ).agg(t_min=("t_min", "min"), t_max=("t_max", "max"), n=("n", "sum"))
+        return pd.DataFrame(columns=_OBS_COLUMNS)
+    obs = pd.concat(parts, ignore_index=True)
+    return obs.sort_values(["ICUSTAY_ID", "t_unix"], kind="stable").reset_index(drop=True)
 
+
+# ── Tramos de ventilación con huecos REALES (D1) ─────────────────────────────
 
 def vent_spans_for_stay(
-    chart_agg: pd.DataFrame,
+    obs: pd.DataFrame,
     proc_df: pd.DataFrame,
     stay_id: int,
+    *,
+    gap_h: float = DISCONNECT_GAP_H,
 ) -> list[Span]:
-    """Tramos con actividad de ventilador de una estancia (segundos epoch).
+    """Tramos de ventilación invasiva de una estancia, en HORAS desde epoch.
 
-    Combina los ajustes observados en CHARTEVENTS y los episodios de
-    PROCEDUREEVENTS_MV (225792).
+    Los tramos se construyen con los huecos reales entre observaciones de los
+    marcadores específicos de ventilador (D1: los huecos <= 2 h se fusionan),
+    más los episodios de PROCEDUREEVENTS_MV 225792. La FiO2 NO marca ventilación.
     """
     spans: list[Span] = []
-    sub = chart_agg[chart_agg["ICUSTAY_ID"] == stay_id] if not chart_agg.empty else chart_agg
-    sub = sub[sub["CONCEPT"].isin(VENT_CHART_KEYS)] if not sub.empty else sub
-    for _, row in sub.iterrows():
-        spans.append(Span(float(row["t_min"]), float(row["t_max"])))
-    proc = proc_df[proc_df["icustay_id"] == stay_id] if not proc_df.empty else proc_df
-    for _, row in proc.iterrows():
-        if np.isfinite(row["start_unix"]) and np.isfinite(row["end_unix"]):
-            spans.append(Span(float(row["start_unix"]), float(row["end_unix"])))
-    return spans
+    if not obs.empty:
+        sub = obs[(obs["ICUSTAY_ID"] == stay_id) & (obs["CONCEPT"].isin(VENT_MARKER_KEYS))]
+        times_h = sub["t_unix"].to_numpy(dtype=np.float64) / _SECONDS_PER_HOUR
+        spans.extend(spans_from_points(times_h, gap_h))
+    if not proc_df.empty:
+        proc = proc_df[proc_df["icustay_id"] == stay_id]
+        for _, row in proc.iterrows():
+            if np.isfinite(row["start_unix"]) and np.isfinite(row["end_unix"]):
+                spans.append(Span(float(row["start_unix"]) / _SECONDS_PER_HOUR,
+                                  float(row["end_unix"]) / _SECONDS_PER_HOUR))
+    return sorted(spans, key=lambda s: s.start_h)
 
 
 def monitor_spans_for_stay(
-    chart_agg: pd.DataFrame,
+    obs: pd.DataFrame,
     stay_id: int,
     concepts: Sequence[str],
+    *,
+    gap_h: float = DISCONNECT_GAP_H,
 ) -> list[Span]:
-    """Tramos de presencia de monitor (p.ej. HR o SpO2) de una estancia."""
-    spans: list[Span] = []
-    if chart_agg.empty:
-        return spans
-    sub = chart_agg[(chart_agg["ICUSTAY_ID"] == stay_id) & (chart_agg["CONCEPT"].isin(concepts))]
-    for _, row in sub.iterrows():
-        spans.append(Span(float(row["t_min"]), float(row["t_max"])))
-    return spans
+    """Tramos de presencia de monitor (HR/SpO2), en HORAS desde epoch."""
+    if obs.empty:
+        return []
+    sub = obs[(obs["ICUSTAY_ID"] == stay_id) & (obs["CONCEPT"].isin(concepts))]
+    times_h = sub["t_unix"].to_numpy(dtype=np.float64) / _SECONDS_PER_HOUR
+    return spans_from_points(times_h, gap_h)
 
 
 # ── Construcción de eventos ──────────────────────────────────────────────────
 
 @dataclass
 class StayInputs:
-    """Datos necesarios para segmentar una estancia."""
+    """Datos necesarios para segmentar una estancia. Los tramos van en HORAS."""
     stay_id: int
     subject_id: int
     hadm_id: int
@@ -214,17 +225,14 @@ class StayInputs:
 
 def build_stay_events(stay: StayInputs) -> list[dict]:
     """Segmenta una estancia MIMIC en eventos (D1/D2/D4) y los devuelve como dicts."""
-    def _hours(spans: Iterable[Span]) -> list[Span]:
-        return [Span(s.start_h / _SECONDS_PER_HOUR, s.end_h / _SECONDS_PER_HOUR) for s in spans]
-
     stay_bounds = [(
         stay.intime_unix / _SECONDS_PER_HOUR,
         stay.outtime_unix / _SECONDS_PER_HOUR,
     )]
     episodes = build_episodes(
-        _hours(stay.vent_spans),
-        hr_spans=_hours(stay.hr_spans),
-        spo2_spans=_hours(stay.spo2_spans),
+        stay.vent_spans,
+        hr_spans=stay.hr_spans,
+        spo2_spans=stay.spo2_spans,
         stay_bounds=stay_bounds,
     )
 
@@ -288,13 +296,13 @@ def _mimic_end_reason(ep, stay: StayInputs) -> str:
 
 def build_mimic_index(
     icustays: pd.DataFrame,
-    chart_agg: pd.DataFrame,
+    obs: pd.DataFrame,
     proc_df: pd.DataFrame,
     *,
     limit_stays: Optional[int] = None,
 ) -> dict:
     """Construye el índice completo de casos MIMIC."""
-    stays_with_vent = chart_agg["ICUSTAY_ID"].dropna().unique() if not chart_agg.empty else []
+    stays_with_vent = obs["ICUSTAY_ID"].dropna().unique() if not obs.empty else []
     proc_stays = proc_df["icustay_id"].dropna().unique() if not proc_df.empty else []
     candidate_ids = set(int(x) for x in stays_with_vent) | set(int(x) for x in proc_stays)
 
@@ -304,15 +312,16 @@ def build_mimic_index(
 
     events: list[dict] = []
     for _, row in icu.iterrows():
+        sid = int(row["icustay_id"])
         stay = StayInputs(
-            stay_id=int(row["icustay_id"]),
+            stay_id=sid,
             subject_id=int(row["subject_id"]),
             hadm_id=int(row["hadm_id"]),
             intime_unix=float(row["intime_unix"]),
             outtime_unix=float(row["outtime_unix"]),
-            vent_spans=vent_spans_for_stay(chart_agg, proc_df, int(row["icustay_id"])),
-            hr_spans=monitor_spans_for_stay(chart_agg, int(row["icustay_id"]), ("HR",)),
-            spo2_spans=monitor_spans_for_stay(chart_agg, int(row["icustay_id"]), ("SpO2",)),
+            vent_spans=vent_spans_for_stay(obs, proc_df, sid),
+            hr_spans=monitor_spans_for_stay(obs, sid, ("HR",)),
+            spo2_spans=monitor_spans_for_stay(obs, sid, ("SpO2",)),
         )
         events.extend(build_stay_events(stay))
 
@@ -348,10 +357,16 @@ def run(config: dict, *, limit_stays: Optional[int] = None) -> dict:
 
     icustays = load_icustays(clinical_dir)
     proc_df = load_vent_procedures(clinical_dir)
-    chart_agg = stream_vent_chartevents(chart_path)
-    index = build_mimic_index(icustays, chart_agg, proc_df, limit_stays=limit_stays)
+    obs = stream_chartevents(chart_path)
+    index = build_mimic_index(icustays, obs, proc_df, limit_stays=limit_stays)
 
     out_dir.mkdir(parents=True, exist_ok=True)
+    if not obs.empty:
+        # Observaciones con su hora: las necesita la Fase 2 (no se resumen).
+        obs_path = out_dir / "mimic_observations.parquet"
+        obs.to_parquet(obs_path, index=False)
+        logger.info("[mimic] %d observaciones -> %s", len(obs), obs_path)
+
     index_path = out_dir / "mimic_cases_index.json"
     with open(index_path, "w", encoding="utf-8") as fh:
         json.dump(index, fh, ensure_ascii=False, indent=2)

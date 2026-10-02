@@ -18,42 +18,58 @@ from typing import Iterable
 # ── CHARTEVENTS ──────────────────────────────────────────────────────────────
 # etiqueta oficial entre comillas (verificada en D_ITEMS)
 MIMIC_CHART_ITEMIDS: dict[str, tuple[tuple[int, str], ...]] = {
-    # "FIO2" (CareVue) / "Inspired O2 Fraction" (Metavision)
-    "FiO2": ((3420, "FIO2"), (223835, "Inspired O2 Fraction")),
-    # "PEEP" (CareVue) / "Total PEEP Level" (Metavision)
-    "PEEP": ((505, "PEEP"), (224700, "Total PEEP Level")),
-    # "Tidal Volume" (CareVue) / "Tidal Volume (Obser)" / "Tidal Volume (observed)"
-    "TV": ((681, "Tidal Volume"), (682, "Tidal Volume (Obser)"),
-           (224685, "Tidal Volume (observed)")),
-    # "PIP" (CareVue) / "Peak Insp. Pressure" (Metavision).
+    # --- Marcadores ESPECÍFICOS de ventilación invasiva (D6, corrección 2) ---
+    # "Ventilator Mode" (CareVue) / "Ventilator Mode" (Metavision)
+    "VentMode": ((720, "Ventilator Mode"), (223849, "Ventilator Mode")),
+    # "PEEP" (CareVue) / "Total PEEP Level" (CareVue) / "Total PEEP Level" (Metavision)
+    "PEEP": ((505, "PEEP"), (686, "Total PEEP Level"), (224700, "Total PEEP Level")),
+    # Volumen tidal PAUTADO: "Tidal Volume (Set)" / "Tidal Volume (set)"
+    "TV_set": ((683, "Tidal Volume (Set)"), (224684, "Tidal Volume (set)")),
+    # Volumen tidal OBSERVADO: "Tidal Volume" / "Tidal Volume (observed)" /
+    # "Tidal Volume (spontaneous)"
+    "TV_observed": ((681, "Tidal Volume"), (224685, "Tidal Volume (observed)"),
+                    (224686, "Tidal Volume (spontaneous)")),
+    # "PIP" (CareVue) / "Peak Insp. Pressure" (CareVue) / "Peak Insp. Pressure" (Metavision).
     # OJO: 224696 ("Plateau Pressure") NO es PIP.
-    "PIP": ((507, "PIP"), (224695, "Peak Insp. Pressure")),
-    # "Respiratory Rate (Total)" (Metavision) / "Respiratory Rate" (CareVue).
-    # La RR del ventilador NO es la impedancia del monitor (D7).
-    "RR_V": ((224690, "Respiratory Rate (Total)"), (618, "Respiratory Rate")),
-    # "Minute Volume" (Metavision) / "Minute Volume" (CareVue)
-    "MV": ((224687, "Minute Volume"), (448, "Minute Volume")),
-    # "Heart Rate" (Metavision) / "Heart Rate" (CareVue)
+    "PIP": ((507, "PIP"), (535, "Peak Insp. Pressure"), (224695, "Peak Insp. Pressure")),
+    # FR TOTAL del ventilador (no la del monitor): "Respiratory Rate (Total)"
+    "RR_V": ((224690, "Respiratory Rate (Total)"),),
+    # --- NO marcan ventilación ---
+    # "FIO2" / "Inspired O2 Fraction": se anota también con oxigenoterapia (corrección 2).
+    "FiO2": ((3420, "FIO2"), (223835, "Inspired O2 Fraction")),
+    # "Minute Volume": no es marcador específico exigido (corrección 2).
+    "MV": ((448, "Minute Volume"), (224687, "Minute Volume")),
+    # --- Monitor (D2/D4 y D7) ---
     "HR": ((220045, "Heart Rate"), (211, "Heart Rate")),
-    # "O2 saturation pulseoxyphemetry" (Metavision) / "SpO2" (CareVue)
     "SpO2": ((220277, "O2 saturation pulseoxymetry"), (646, "SpO2")),
-    # MAP invasiva -> no invasiva (D7)
     "MAP_invasive": ((220052, "Arterial Blood Pressure mean"),),
     "MAP_non_invasive": ((220181, "Non Invasive Blood Pressure mean"),),
+    # --- Vía aérea (D5) ---
+    "AirwayType": ((40, "Airway Type"), (223836, "Airway Type")),
 }
 
 # ── PROCEDUREEVENTS_MV ───────────────────────────────────────────────────────
-# "Invasive Ventilation", LINKSTO = procedureevents_mv
 PROCEDURE_ITEMIDS: dict[str, int] = {
+    # "Invasive Ventilation"
     "invasive_ventilation": 225792,
+    # "Percutaneous Tracheostomy" / "Open Tracheostomy" (D5; con hora)
+    "trach_percutaneous": 225448,
+    "trach_open": 226237,
 }
+TRACH_PROCEDURE_ITEMIDS: frozenset[int] = frozenset({225448, 226237})
 
-# Pistas que definen "ajustes del ventilador" (D6).
-VENT_CHART_KEYS: tuple[str, ...] = ("FiO2", "PEEP", "TV", "PIP", "RR_V", "MV")
+# Marcadores ESPECÍFICOS de ventilación invasiva (D6). La FiO2 NO está aquí.
+VENT_MARKER_KEYS: tuple[str, ...] = (
+    "VentMode", "PEEP", "TV_set", "TV_observed", "PIP", "RR_V",
+)
+# Pistas anotadas que NO marcan ventilación por sí solas.
+NON_MARKER_VENT_KEYS: tuple[str, ...] = ("FiO2", "MV")
 
 # Pistas de monitor (D2/D4 y D7).
 MONITOR_CHART_KEYS: tuple[str, ...] = ("HR", "SpO2", "MAP_invasive", "MAP_non_invasive")
 
+# Pistas de vía aérea (D5).
+AIRWAY_CHART_KEYS: tuple[str, ...] = ("AirwayType",)
 
 def itemids_for(key: str) -> tuple[int, ...]:
     """Todos los itemids de CHARTEVENTS asociados a un concepto."""
@@ -72,9 +88,13 @@ def _union_itemids(keys: Iterable[str]) -> set[int]:
     return out
 
 
-def all_vent_itemids() -> set[int]:
-    """Unión de los itemids de ajustes del ventilador (D6)."""
-    return _union_itemids(VENT_CHART_KEYS)
+def all_vent_marker_itemids() -> set[int]:
+    """Itemids que SÍ marcan ventilación invasiva (D6, corrección 2).
+
+    Incluye modo ventilatorio, PEEP, volumen tidal pautado/observado, PIP y FR
+    total del ventilador. NO incluye la FiO2 (se anota con oxigenoterapia).
+    """
+    return _union_itemids(VENT_MARKER_KEYS)
 
 
 def all_monitor_itemids() -> set[int]:
@@ -82,9 +102,16 @@ def all_monitor_itemids() -> set[int]:
     return _union_itemids(MONITOR_CHART_KEYS)
 
 
+def all_airway_itemids() -> set[int]:
+    """Itemids de tipo de vía aérea (D5)."""
+    return _union_itemids(AIRWAY_CHART_KEYS)
+
+
 def all_catalogued_itemids() -> set[int]:
-    """Unión de todos los itemids del catálogo."""
-    return _union_itemids(VENT_CHART_KEYS + MONITOR_CHART_KEYS)
+    """Unión de todos los itemids que se conservan de CHARTEVENTS."""
+    return _union_itemids(
+        VENT_MARKER_KEYS + NON_MARKER_VENT_KEYS + MONITOR_CHART_KEYS + AIRWAY_CHART_KEYS
+    )
 
 
 def itemid_to_concept() -> dict[int, str]:
