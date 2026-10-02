@@ -50,7 +50,7 @@ from src.common.labels import (
     labels_to_dict,
 )
 from src.common.paths import config_path, repo_root
-from src.common.timeutils import series_to_utc, to_epoch_utc
+from src.common.timeutils import series_to_epoch_seconds, series_to_utc, to_epoch_utc
 from src.create_dataset.mimic_itemids import (
     MIMIC_CHART_ITEMIDS,
     PROCEDURE_ITEMIDS,
@@ -77,8 +77,8 @@ def load_icustays(clinical_dir: str | Path) -> pd.DataFrame:
         usecols=["SUBJECT_ID", "HADM_ID", "ICUSTAY_ID", "INTIME", "OUTTIME"],
     )
     df = df.rename(columns=str.lower)
-    df["intime_unix"] = series_to_utc(df["intime"]).astype("int64") / 1e9
-    df["outtime_unix"] = series_to_utc(df["outtime"]).astype("int64") / 1e9
+    df["intime_unix"] = series_to_epoch_seconds(df["intime"])
+    df["outtime_unix"] = series_to_epoch_seconds(df["outtime"])
     return df
 
 
@@ -91,8 +91,8 @@ def load_vent_procedures(clinical_dir: str | Path) -> pd.DataFrame:
         usecols=["SUBJECT_ID", "HADM_ID", "ICUSTAY_ID", "ITEMID", "STARTTIME", "ENDTIME"],
     )
     df = df[df["ITEMID"] == iid].rename(columns=str.lower)
-    df["start_unix"] = series_to_utc(df["starttime"]).astype("int64") / 1e9
-    df["end_unix"] = series_to_utc(df["endtime"]).astype("int64") / 1e9
+    df["start_unix"] = series_to_epoch_seconds(df["starttime"])
+    df["end_unix"] = series_to_epoch_seconds(df["endtime"])
     return df
 
 
@@ -104,7 +104,7 @@ def load_trach_procedures(clinical_dir: str | Path) -> pd.DataFrame:
         usecols=["SUBJECT_ID", "HADM_ID", "ICUSTAY_ID", "ITEMID", "STARTTIME"],
     )
     df = df[df["ITEMID"].isin(TRACH_PROCEDURE_ITEMIDS)].rename(columns=str.lower)
-    df["start_unix"] = series_to_utc(df["starttime"]).astype("int64") / 1e9
+    df["start_unix"] = series_to_epoch_seconds(df["starttime"])
     return df
 
 
@@ -116,7 +116,7 @@ def load_deaths(clinical_dir: str | Path) -> pd.DataFrame:
         usecols=["SUBJECT_ID", "HADM_ID", "DEATHTIME"],
     ).rename(columns=str.lower)
     df = df.dropna(subset=["deathtime"]).copy()
-    df["death_unix"] = series_to_utc(df["deathtime"]).astype("int64") / 1e9
+    df["death_unix"] = series_to_epoch_seconds(df["deathtime"])
     return df[["subject_id", "hadm_id", "death_unix"]]
 
 
@@ -155,7 +155,7 @@ def observations_from_chunk(df: pd.DataFrame) -> pd.DataFrame:
     d = d.dropna(subset=["CONCEPT"])
     if d.empty:
         return pd.DataFrame(columns=_OBS_COLUMNS)
-    d["t_unix"] = series_to_utc(d["CHARTTIME"]).astype("int64") / 1e9
+    d["t_unix"] = series_to_epoch_seconds(d["CHARTTIME"])
     d["VALUE_RAW"] = d["VALUE"].astype("string")
     return d[_OBS_COLUMNS]
 

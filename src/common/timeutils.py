@@ -58,3 +58,15 @@ def series_to_utc(values: pd.Series) -> pd.Series:
     if s.dt.tz is None:
         return s.dt.tz_localize("UTC")
     return s.dt.tz_convert("UTC")
+
+
+def series_to_epoch_seconds(values) -> np.ndarray:
+    """Segundos epoch UTC, independiente de la resolución de ``datetime64``.
+
+    No usa ``astype("int64") / 1e9`` (que asume resolución de nanosegundos y se
+    rompe con pandas recientes, que pueden usar microsegundos). Se calcula la
+    diferencia contra el epoch y se divide por un ``Timedelta``.
+    """
+    s = series_to_utc(values)
+    delta = (s - pd.Timestamp(0, tz="UTC")) / pd.Timedelta(seconds=1)
+    return delta.to_numpy(dtype=np.float64)

@@ -14,9 +14,16 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 import pytest
 
-from src.common.timeutils import ALLOWED_TIMESTAMP_MODULES, ensure_utc, to_epoch_utc
+from src.common.timeutils import (
+    ALLOWED_TIMESTAMP_MODULES,
+    ensure_utc,
+    series_to_epoch_seconds,
+    to_epoch_utc,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCAN_DIRS = ("src", "scripts")
@@ -93,3 +100,27 @@ def test_ensure_utc_attaches_naive_local_independence():
 def test_to_epoch_utc_rejects_non_datetime():
     with pytest.raises(TypeError):
         to_epoch_utc("2025-01-01")  # type: ignore[arg-type]
+
+
+def test_series_to_epoch_seconds_is_resolution_independent():
+    """Corrección 5: microsegundos y nanosegundos dan el MISMO epoch."""
+    ts = ["2150-01-01 00:00:00", "2150-01-01 06:00:00"]
+    ref = None
+    for unit in ("us", "ns"):
+        s = pd.to_datetime(pd.Series(ts)).astype(f"datetime64[{unit}]")
+        out = series_to_epoch_seconds(s)
+        assert out[1] - out[0] == pytest.approx(6 * 3600.0)
+        if ref is None:
+            ref = out
+        else:
+            assert np.allclose(out, ref)
+
+
+def test_negative_control_old_astype_depends_on_resolution():
+    """Control: ``astype('int64') / 1e9`` SÍ depende de la resolución."""
+    ts = ["2150-01-01 00:00:00", "2150-01-01 06:00:00"]
+    s_us = pd.to_datetime(pd.Series(ts)).astype("datetime64[us]")
+    s_us = s_us.dt.tz_localize("UTC")
+    naive_old = s_us.astype("int64") / 1e9
+    # Con microsegundos el delta sale 1000x menor: el método nuevo lo evita.
+    assert not np.isclose(naive_old.iloc[1] - naive_old.iloc[0], 6 * 3600.0)

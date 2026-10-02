@@ -1,6 +1,14 @@
-pandas
-python-dotenv
-requests
-vitaldb
-pyarrow
-wfdb
+# Versiones fijadas (Fase 1, corrección 5) para que las fechas y los esquemas
+# no dependan de la versión instalada (p. ej. resolución datetime64 de pandas).
+pandas==2.2.3
+numpy==2.3.5
+pyarrow==23.0.1
+vitaldb==1.6.0
+scipy==1.16.2
+duckdb==1.5.4
+
+# Necesarias para cargar la config y los datos
+PyYAML==6.0.3
+python-dotenv==1.2.2
+requests==2.32.5
+wfdb==4.3.1
