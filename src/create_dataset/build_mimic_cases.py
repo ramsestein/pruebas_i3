@@ -405,13 +405,19 @@ def build_mimic_index(
     if limit_stays:
         icu = icu.head(limit_stays)
 
+    # Agrupar las observaciones UNA vez (evita O(n_estancias x n_observaciones)).
+    obs_groups: dict[int, pd.DataFrame] = {}
+    if not obs.empty:
+        obs_groups = {
+            int(sid): g for sid, g in obs.groupby("ICUSTAY_ID", dropna=True)
+        }
+
     trach_by_stay: dict[int, list[float]] = {}
     if trach_df is not None and not trach_df.empty:
         for _, r in trach_df.dropna(subset=["icustay_id"]).iterrows():
             trach_by_stay.setdefault(int(r["icustay_id"]), []).append(float(r["start_unix"]))
     for sid, times in _airway_trach_unix(obs).items():
         trach_by_stay.setdefault(sid, []).extend(times)
-
     deaths_by_hadm: dict[int, float] = {}
     if deaths is not None and not deaths.empty:
         for _, r in deaths.dropna(subset=["hadm_id", "death_unix"]).iterrows():
@@ -422,15 +428,18 @@ def build_mimic_index(
     for _, row in icu.iterrows():
         sid = int(row["icustay_id"])
         hadm = int(row["hadm_id"])
+        o = obs_groups.get(sid)
+        if o is None:
+            o = obs.iloc[0:0]
         stay = StayInputs(
             stay_id=sid,
             subject_id=int(row["subject_id"]),
             hadm_id=hadm,
             intime_unix=float(row["intime_unix"]),
             outtime_unix=float(row["outtime_unix"]),
-            vent_spans=vent_spans_for_stay(obs, proc_df, sid),
-            hr_spans=monitor_spans_for_stay(obs, sid, ("HR",)),
-            spo2_spans=monitor_spans_for_stay(obs, sid, ("SpO2",)),
+            vent_spans=vent_spans_for_stay(o, proc_df, sid),
+            hr_spans=monitor_spans_for_stay(o, sid, ("HR",)),
+            spo2_spans=monitor_spans_for_stay(o, sid, ("SpO2",)),
             trach_unix=trach_by_stay.get(sid, []),
             trach_icd9_no_time=(hadm in trach_icd9),
             death_unix=deaths_by_hadm.get(hadm),
@@ -468,29 +477,34 @@ def output_root(config: dict) -> tuple[Path, str]:
     return Path(base), version
 
 
-def run(config: dict, *, limit_stays: Optional[int] = None) -> dict:
+def run(config: dict, *, limit_stays: Optional[int] = None, force: bool = False) -> dict:
     clinical_dir = config_path(config, "paths", "mimic_clinical_dir")
     chart_path = config_path(config, "paths", "mimic_chartevents_raw")
     out_dir, version = output_root(config)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    obs_path = out_dir / "mimic_observations.parquet"
 
     icustays = load_icustays(clinical_dir)
     proc_df = load_vent_procedures(clinical_dir)
     trach_df = load_trach_procedures(clinical_dir)
     deaths = load_deaths(clinical_dir)
     trach_icd9 = load_trach_icd9(clinical_dir)
-    obs = stream_chartevents(chart_path)
+
+    # Cache: el streaming de CHARTEVENTS (4,3 GB, ~15 min) no se repite.
+    if obs_path.exists() and not force:
+        logger.info("[mimic] reutilizando observaciones de %s", obs_path)
+        obs = pd.read_parquet(obs_path)
+    else:
+        obs = stream_chartevents(chart_path)
+        if not obs.empty:
+            obs.to_parquet(obs_path, index=False)
+            logger.info("[mimic] %d observaciones -> %s", len(obs), obs_path)
+
     index = build_mimic_index(
         icustays, obs, proc_df,
         trach_df=trach_df, deaths=deaths, trach_icd9=trach_icd9,
         limit_stays=limit_stays,
     )
-
-    out_dir.mkdir(parents=True, exist_ok=True)
-    if not obs.empty:
-        # Observaciones con su hora: las necesita la Fase 2 (no se resumen).
-        obs_path = out_dir / "mimic_observations.parquet"
-        obs.to_parquet(obs_path, index=False)
-        logger.info("[mimic] %d observaciones -> %s", len(obs), obs_path)
 
     index_path = out_dir / "mimic_cases_index.json"
     with open(index_path, "w", encoding="utf-8") as fh:
@@ -506,6 +520,8 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Casos MIMIC desde CHARTEVENTS/PROCEDUREEVENTS_MV")
     p.add_argument("--config", default="src/stage0/config/harmonize.yaml")
     p.add_argument("--limit-stays", type=int, default=None)
+    p.add_argument("--force", action="store_true",
+                   help="Reprocesa CHARTEVENTS aunque exista el parquet de observaciones")
     p.add_argument("-v", "--verbose", action="store_true")
     args = p.parse_args()
 
@@ -514,7 +530,7 @@ def main() -> None:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     config = load_config(args.config)
-    res = run(config, limit_stays=args.limit_stays)
+    res = run(config, limit_stays=args.limit_stays, force=args.force)
     print(json.dumps(
         {"version": res["version"], "output_dir": res["output_dir"],
          "total_events": res["index"]["total_events"],
