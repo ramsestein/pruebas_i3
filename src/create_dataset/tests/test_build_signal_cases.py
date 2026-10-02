@@ -188,6 +188,60 @@ class TestNoPatient:
         assert seg.excluded_episodes == []
 
 
+# ── Corrección 1: fin de observación = fin del MONITOR ───────────────────────
+
+class TestEndOfObservation:
+    def _write(self, tmp_path: Path, offsets_and_specs):
+        for i, (hours, minutes, duration_s, vent) in enumerate(offsets_and_specs):
+            dt = BASE + timedelta(hours=hours, minutes=minutes)
+            write_hour(
+                tmp_path / "box2" / _fname(f"tok{i}", dt), dt,
+                monitor=True, vent=vent, duration_s=duration_s,
+            )
+
+    def _events(self, tmp_path: Path):
+        boxes = scan_source_files(tmp_path, CLINIC_SPEC)
+        segs = [(b, segment_box(b, f)) for b, f in boxes.items()]
+        idx = build_cohort_index(segs, cohort="clinic", spec=CLINIC_SPEC, merged=False)
+        return idx["events"]
+
+    def test_vent_until_end_of_record_is_censored(self, tmp_path: Path):
+        self._write(tmp_path, [(0, 0, 3600, True), (1, 0, 3600, True)])
+        ev = self._events(tmp_path)[0]
+        assert ev["monitor_tail_h"] == pytest.approx(0.0, abs=1e-6)
+        assert ev["end_reason"] == "end_of_record"
+        assert ev["labels"]["48h"]["event_type"] == "censored_end_of_record"
+        assert ev["labels"]["48h"]["extubation_time_h"] is None
+
+    def test_30min_monitor_after_disconnect_is_censored(self, tmp_path: Path):
+        self._write(tmp_path, [(0, 0, 3600, True), (1, 0, 1800, False)])
+        ev = self._events(tmp_path)[0]
+        assert ev["monitor_tail_h"] == pytest.approx(0.5, abs=1e-6)
+        assert ev["end_reason"] == "end_of_record"
+        assert ev["labels"]["48h"]["event_type"] == "censored_end_of_record"
+
+    def test_2h_monitor_after_disconnect_is_success(self, tmp_path: Path):
+        self._write(tmp_path, [
+            (0, 0, 3600, True), (1, 0, 3600, False), (2, 0, 3600, False),
+        ])
+        ev = self._events(tmp_path)[0]
+        assert ev["monitor_tail_h"] == pytest.approx(2.0, abs=1e-6)
+        assert ev["end_reason"] == "extubation_observed"
+        lab = ev["labels"]["48h"]
+        assert lab["event_type"] == "successful_extubation"
+        assert lab["extubation_time_h"] == pytest.approx(1.0, abs=1e-3)
+
+    def test_merge_includes_monitor_only_files(self, tmp_path: Path):
+        """La fusión incluye los ficheros de monitor sin ventilador (corrección 1)."""
+        self._write(tmp_path, [
+            (0, 0, 3600, True), (1, 0, 3600, False), (2, 0, 3600, False),
+        ])
+        boxes = scan_source_files(tmp_path, CLINIC_SPEC)
+        segs = [(b, segment_box(b, f)) for b, f in boxes.items()]
+        idx = build_cohort_index(segs, cohort="clinic", spec=CLINIC_SPEC, merged=False)
+        assert len(idx["events"][0]["source_files"]) == 3
+
+
 # ── Índice y fusión ──────────────────────────────────────────────────────────
 
 class TestIndexAndMerge:

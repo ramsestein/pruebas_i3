@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -62,6 +63,11 @@ from src.common.timeutils import to_epoch_utc
 logger = logging.getLogger(__name__)
 
 _SECONDS_PER_HOUR = 3600.0
+
+# D3 (corrección 1): un intento solo es una extubación si tras él hay al menos
+# 1 h de monitor (HR o SpO2) SIN ventilador. Si no, el evento queda censurado.
+MIN_EXTUBATION_MONITOR_TAIL_H: float = 1.0
+_EPS: float = 1e-9
 
 
 # ── Configuración por cohorte ────────────────────────────────────────────────
@@ -225,15 +231,36 @@ def segment_box(
 
 # ── Materialización de eventos (fusión + índice) ─────────────────────────────
 
+def _region_end_h(episode: Episode) -> float:
+    """Fin de la observación = fin del MONITOR de la región de paciente (D2)."""
+    if math.isfinite(episode.region_end_h):
+        return float(episode.region_end_h)
+    return float(episode.end_h)
+
+
+def monitor_tail_h(episode: Episode) -> float:
+    """Horas de monitor sin ventilador tras el último intento."""
+    return float(_region_end_h(episode) - episode.attempts[-1].end_h)
+
+
+def is_confirmed_extubation(episode: Episode) -> bool:
+    """D3: la última desconexión es extubación si hay >= 1 h de monitor sin VM."""
+    return monitor_tail_h(episode) >= MIN_EXTUBATION_MONITOR_TAIL_H - _EPS
+
+
 def _files_for_episode(files: Sequence[SourceFile], episode: Episode) -> list[SourceFile]:
-    """Ficheros de origen que solapan algún intento del episodio."""
+    """Ficheros desde t0 hasta el fin del MONITOR de la región (corrección 1).
+
+    No solo los que solapan con ventilación: el monitor posterior a la
+    desconexión es necesario para confirmar la extubación y para D5.
+    """
+    start_h = episode.start_h
+    end_h = _region_end_h(episode)
     out: list[SourceFile] = []
     for sf in files:
         f_start = sf.dt_unix / _SECONDS_PER_HOUR
         f_end = f_start + 1.0  # los ficheros de origen son horarios
-        if any(
-            a.start_h < f_end and a.end_h > f_start for a in episode.attempts
-        ):
+        if f_start < end_h and f_end > start_h:
             out.append(sf)
     return out
 
@@ -246,14 +273,11 @@ def _arrived_ventilated(episode: Episode, files: Sequence[SourceFile]) -> bool:
     return abs(episode.start_h - first_file_start) < (1.0 / 60.0)
 
 
-def _end_reason(episode: Episode, files: Sequence[SourceFile]) -> str:
-    """Motivo de fin del evento observable con señales (D5 refina la muerte)."""
-    if not files:
-        return "unknown"
-    last_file_end = files[-1].dt_unix / _SECONDS_PER_HOUR + 1.0
-    if episode.end_h >= last_file_end - 30.0 / 3600.0:
-        return "end_of_record"
-    return "extubation_observed"
+def _end_reason(episode: Episode) -> str:
+    """Motivo de fin del evento, calculado contra el fin del MONITOR (D3)."""
+    if is_confirmed_extubation(episode):
+        return "extubation_observed"
+    return "end_of_record"
 
 
 def build_event_record(
@@ -279,11 +303,19 @@ def build_event_record(
     ]
 
     # Etiquetas D3 (Fase 1.6) a partir de la lista de intentos.
+    # El fin de la observación es el fin del MONITOR de la región (corrección 1);
+    # si la última desconexión no va seguida de >= 1 h de monitor sin ventilador,
+    # NO es una extubación confirmada → el evento queda censurado (end_of_record).
+    obs_end_h = _region_end_h(episode) - episode.start_h
+    tail_h = monitor_tail_h(episode)
+    censor_cause = None if is_confirmed_extubation(episode) else "end_of_record"
     labels = labels_to_dict(assign_labels_all_windows(
         attempts_from_pairs([
             (a["vent_end_h"], a["reintubation_h"]) for a in attempts
         ]),
-        obs_end_h=episode.duration_h,
+        obs_end_h=obs_end_h,
+        censor_cause=censor_cause,
+        censor_time_h=(obs_end_h if censor_cause else None),
     ))
 
     return {
@@ -299,9 +331,11 @@ def build_event_record(
         ),
         "arrived_ventilated": _arrived_ventilated(episode, files),
         "duration_seconds": int(round(episode.duration_h * _SECONDS_PER_HOUR)),
+        "obs_end_h": round(obs_end_h, 4),
+        "monitor_tail_h": round(tail_h, 4),
         "n_attempts": episode.n_attempts,
         "attempts": attempts,
-        "end_reason": _end_reason(episode, files),
+        "end_reason": _end_reason(episode),
         "ventilated_hours": round(episode.ventilated_hours, 4),
         "labels": labels,       # Fase 1.6 (D3)
         "trach": None,         # Fase 1.5 (D5)

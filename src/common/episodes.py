@@ -108,6 +108,11 @@ class Episode:
     exclusion_reason: Optional[str] = None
     # Fracción del tiempo ventilado sin HR ni SpO2 (D4). None si no evaluada.
     no_patient_fraction: Optional[float] = None
+    # Frontera de la región de identidad de paciente (D2). El final de la
+    # observación es `region_end_h` (fin del MONITOR), no el fin del último
+    # intento: puede haber monitor sin ventilador después de la extubación.
+    region_start_h: float = float("nan")
+    region_end_h: float = float("nan")
 
     @property
     def n_attempts(self) -> int:
@@ -295,11 +300,17 @@ def _identity_regions(
     """Regiones de identidad de paciente (ningún episodio las cruza, D2)."""
     if stay_bounds is not None:
         regions = _as_spans(stay_bounds)
-    elif vent_spans:
-        regions = [Span(min(s.start_h for s in vent_spans),
-                        max(s.end_h for s in vent_spans))]
     else:
-        return []
+        # La región de identidad abarca ventilador Y monitor: el fin de la
+        # observación es el fin del monitor (puede haber monitor sin ventilador
+        # tras la extubación; Fase 1 corrección 1).
+        extent = list(vent_spans)
+        if monitor_spans is not None:
+            extent += _as_spans(monitor_spans)
+        if not extent:
+            return []
+        regions = [Span(min(s.start_h for s in extent),
+                        max(s.end_h for s in extent))]
 
     cuts: list[float] = []
     if monitor_times_h is not None:
@@ -391,7 +402,11 @@ def build_episodes(
             Attempt(attempt_idx=i, start_h=x.start_h, end_h=x.end_h)
             for i, x in enumerate(assigned)
         ]
-        episodes.append(Episode(attempts=assigned))
+        episodes.append(Episode(
+            attempts=assigned,
+            region_start_h=region.start_h,
+            region_end_h=region.end_h,
+        ))
 
     episodes.sort(key=lambda e: e.start_h)
 
