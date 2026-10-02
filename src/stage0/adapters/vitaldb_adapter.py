@@ -36,6 +36,7 @@ from .base import (
     NumericsRecord,
     WaveformRecord,
 )
+from ...common.timeutils import to_epoch_utc
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +178,7 @@ class VitalDBAdapter(CohortAdapter):
         t0_source = self._event_source.get("t0_source", "vital_file_start")
 
         if t0_source == "vital_file_start" or t0_source is None:
-            return pd.Timestamp(ev["start_time"]).timestamp()
+            return to_epoch_utc(pd.Timestamp(ev["start_time"]))
 
         if t0_source == "track_threshold":
             # P2: detección de t0 por umbral de track (ej. PEEP > 3 cmH2O)
@@ -190,10 +191,10 @@ class VitalDBAdapter(CohortAdapter):
                     "[vitaldb] t0_source='track_threshold' pero track/value no configurados; "
                     "usando start_time del índice"
                 )
-                return pd.Timestamp(ev["start_time"]).timestamp()
+                return to_epoch_utc(pd.Timestamp(ev["start_time"]))
 
         # Fallback
-        return pd.Timestamp(ev["start_time"]).timestamp()
+        return to_epoch_utc(pd.Timestamp(ev["start_time"]))
 
     def _detect_t0_by_threshold(
         self, patient_id: str, track: str, threshold: float
@@ -217,7 +218,7 @@ class VitalDBAdapter(CohortAdapter):
                 patient_id, track, e,
             )
             ev = self._get_event_by_patient(patient_id)
-            return pd.Timestamp(ev["start_time"]).timestamp()
+            return to_epoch_utc(pd.Timestamp(ev["start_time"]))
 
     # ── list_patients ─────────────────────────────────────────────────────────
 
@@ -344,7 +345,7 @@ class VitalDBAdapter(CohortAdapter):
         if ev.get("tend_unix") is not None:
             t_end_unix = float(ev["tend_unix"])
         else:
-            t_end_unix = pd.Timestamp(ev["end_time"]).timestamp()
+            t_end_unix = to_epoch_utc(pd.Timestamp(ev["end_time"]))
 
         record_end_hours = (t_end_unix - t0_unix) / 3600.0
         extubation_hours = record_end_hours  # por construcción

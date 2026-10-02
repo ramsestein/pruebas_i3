@@ -43,6 +43,7 @@ from .base import (
     NumericsRecord,
     WaveformRecord,
 )
+from ...common.timeutils import to_epoch_utc
 
 logger = logging.getLogger(__name__)
 
@@ -152,8 +153,8 @@ class MimicAdapter(CohortAdapter):
                 "path": path,
                 "start_dt": start_dt,
                 "end_dt": end_dt,
-                "t0_unix": start_dt.timestamp(),
-                "tend_unix": end_dt.timestamp(),
+                "t0_unix": to_epoch_utc(start_dt),
+                "tend_unix": to_epoch_utc(end_dt),
             }
         return meta
 
@@ -411,7 +412,7 @@ class MimicAdapter(CohortAdapter):
         for _, row in pat_adm.iterrows():
             if pd.isna(row.get("deathtime")):
                 continue
-            death_unix = pd.Timestamp(row["deathtime"]).timestamp()
+            death_unix = to_epoch_utc(pd.Timestamp(row["deathtime"]))
             if abs(death_unix - tend_unix) <= DEATH_TOLERANCE_S:
                 return True, "death_at_vent_end"
 
@@ -453,12 +454,12 @@ class MimicAdapter(CohortAdapter):
         # El siguiente inicio es la reintubación → fallo
         attempts: list[ExtubationAttempt] = []
         for i in range(len(pat)):
-            end_unix = pat.loc[i, "endtime"].timestamp()
+            end_unix = to_epoch_utc(pat.loc[i, "endtime"])
             attempt_hours = (end_unix - t0_unix) / 3600.0
 
             if i < len(pat) - 1:
                 # Hay un episodio siguiente → este intento fue un fallo
-                next_start_unix = pat.loc[i + 1, "starttime"].timestamp()
+                next_start_unix = to_epoch_utc(pat.loc[i + 1, "starttime"])
                 reintub_hours = (next_start_unix - t0_unix) / 3600.0
                 attempts.append(ExtubationAttempt(
                     attempt_index=i,

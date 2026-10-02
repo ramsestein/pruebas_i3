@@ -26,6 +26,8 @@ sys.path.insert(0, str(ROOT))
 
 import numpy as np
 
+from src.common.timeutils import to_epoch_utc
+
 from scripts.verify.fase0b.checks import (
     check_expected_channels,
     check_fused_vs_source,
@@ -236,7 +238,7 @@ MIMIC_CASE_PAT = re.compile(r"mimic_(\d+)_(\d{8})_(\d{6})_to_(\d{8})_(\d{6})\.vi
 def _parse_yyyy_to_epoch(date_part: str, time_part: str) -> float:
     from datetime import datetime, timezone
     dt = datetime.strptime(date_part + time_part, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
-    return dt.timestamp()
+    return to_epoch_utc(dt)
 
 
 def mimic_filename_bounds(fname: str) -> tuple[float, float] | None:
@@ -413,7 +415,7 @@ def collect_clinic_fusion(clinic_raw: Path, index_path: Path, cases_dir: Path) -
 def _parse_yy(date_part: str, time_part: str) -> float:
     from datetime import datetime, timezone
     dt = datetime.strptime(date_part + time_part, "%y%m%d%H%M%S").replace(tzinfo=timezone.utc)
-    return dt.timestamp()
+    return to_epoch_utc(dt)
 
 
 # ── análisis de plausibilidad (P2) sobre un caso ──────────────────────────────

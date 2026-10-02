@@ -34,6 +34,7 @@ from .base import (
     NumericsRecord,
     WaveformRecord,
 )
+from ...common.timeutils import to_epoch_utc
 
 logger = logging.getLogger(__name__)
 
@@ -193,14 +194,14 @@ class ClinicAdapter(CohortAdapter):
         ev = self._get_event_by_patient(patient_id)
         if ev.get("t0_unix") is not None:
             return float(ev["t0_unix"])
-        return pd.Timestamp(ev["start_time"]).timestamp()
+        return to_epoch_utc(pd.Timestamp(ev["start_time"]))
 
     def _get_tend_unix(self, patient_id: str) -> float:
         """Fin del evento en epoch (prefiere tend_unix del índice)."""
         ev = self._get_event_by_patient(patient_id)
         if ev.get("tend_unix") is not None:
             return float(ev["tend_unix"])
-        return pd.Timestamp(ev["end_time"]).timestamp()
+        return to_epoch_utc(pd.Timestamp(ev["end_time"]))
 
     # ── list_patients ─────────────────────────────────────────────────────────
 

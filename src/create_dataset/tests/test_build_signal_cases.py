@@ -22,6 +22,7 @@ from src.create_dataset.build_signal_cases import (
     scan_source_files,
     segment_box,
 )
+from src.common.timeutils import to_epoch_utc
 
 BASE = datetime(2025, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 
@@ -44,7 +45,7 @@ def write_hour(
     duration_s: float = 3599.0,
 ) -> Path:
     """Escribe un .vital sintético de ~1 h."""
-    dt_unix = dt.timestamp()
+    dt_unix = to_epoch_utc(dt)
     vf = vitaldb.VitalFile()
     vf.dtstart = dt_unix
     vf.dtend = dt_unix + duration_s

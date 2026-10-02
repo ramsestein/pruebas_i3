@@ -52,6 +52,7 @@ from src.common.vital_signals import (
     vent_span_from_probe,
 )
 from src.stage0.io.versioning import compute_config_hash, load_config
+from src.common.timeutils import to_epoch_utc
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,7 @@ def _parse_name(path: Path, spec: CohortSpec, top_dir: str) -> Optional[tuple[st
         box = top_dir
     token = m.group("token") if "token" in m.groupdict() and m.group("token") else box
     dt = datetime.strptime(m.group("date") + m.group("time"), "%y%m%d%H%M%S")
-    dt_unix = dt.replace(tzinfo=timezone.utc).timestamp()
+    dt_unix = to_epoch_utc(dt)
     return box, token, dt_unix
 
 

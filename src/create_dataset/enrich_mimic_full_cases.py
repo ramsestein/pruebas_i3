@@ -16,6 +16,10 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import math
 
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from src.common.timeutils import to_epoch_utc  # noqa: E402
+
 # ── Paths ─────────────────────────────────────────────────────────────────────
 IN_DIR      = Path("datasets/mimic3wdb/mimic_full_cases")
 OUT_DIR     = Path("datasets/mimic3wdb/mimic_full_cases_enriched")
@@ -375,8 +379,8 @@ def enrich_one(vital_path, out_path, chart_groups):
     # 2) Extraer tracks necesarios UNA SOLA VEZ como arrays numpy
     # Coste máximo: ~19 tracks × 2 semanas × 4 bytes = ~93 MB por paciente
     print(f"    Extrayendo {len(needed_tracks)} tracks base a 1Hz...")
-    start_ts = t_start.timestamp()
-    end_ts   = t_end.timestamp()
+    start_ts = to_epoch_utc(t_start)
+    end_ts   = to_epoch_utc(t_end)
     dt_index, track_arrays = extract_tracks_as_arrays(vf, needed_tracks, start_ts, end_ts)
     tnames_present = set(track_arrays.keys())
     n_pts = len(dt_index)
