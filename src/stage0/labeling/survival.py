@@ -32,6 +32,13 @@ import numpy as np
 import pandas as pd
 
 from ..adapters.base import ClinicalEvents, ExtubationAttempt
+from ...common.d5_events import d5_censor_for_window
+from ...common.labels import (
+    AttemptOutcome,
+    assign_label,
+    attempts_from_pairs,
+    classify_attempt,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,71 +49,31 @@ def classify_attempts(
     events: ClinicalEvents,
     failure_window_h: float,
 ) -> list[ExtubationAttempt]:
-    """
-    Re-clasifica los intentos de extubación aplicando la ventana de fallo.
+    """Re-clasifica los intentos aplicando la ventana de fallo.
 
-    Regla:
-      - Si después de un intento hay reintubación dentro de failure_window_h → FAILURE
-      - Si no hay reintubación en failure_window_h (o es el último intento confirmado
-        como exitoso) → SUCCESS
-
-    Args:
-        events: ClinicalEvents del paciente (puede tener attempts pre-clasificados)
-        failure_window_h: Ventana de fallo en horas
-
-    Returns:
-        Lista de ExtubationAttempt con outcome correcto para esta ventana.
+    Delega la decisión en ``src.common.labels.classify_attempt`` (etiquetador
+    ÚNICO del proyecto; Fase 1 corrección 4).
     """
     attempts = events.extubation_attempts
     if not attempts:
         return []
 
     classified: list[ExtubationAttempt] = []
-
-    for i, attempt in enumerate(attempts):
-        # Si hay reintubación registrada y ocurre dentro de la ventana → fallo
-        if attempt.reintubation_time_rel_hours is not None:
-            time_to_reintub = (
-                attempt.reintubation_time_rel_hours - attempt.time_rel_hours
-            )
-            if time_to_reintub <= failure_window_h:
-                # Fallo confirmado con esta ventana
-                classified.append(ExtubationAttempt(
-                    attempt_index=attempt.attempt_index,
-                    time_rel_hours=attempt.time_rel_hours,
-                    outcome="failure",
-                    reintubation_time_rel_hours=attempt.reintubation_time_rel_hours,
-                ))
-                continue
-            else:
-                # La reintubación ocurrió después de la ventana → este intento
-                # se considera exitoso (el paciente estuvo extubado > failure_window_h)
-                classified.append(ExtubationAttempt(
-                    attempt_index=attempt.attempt_index,
-                    time_rel_hours=attempt.time_rel_hours,
-                    outcome="success",
-                    reintubation_time_rel_hours=None,
-                ))
-                continue
-
-        # Sin reintubación registrada
-        if events.extubation_confirmed:
-            # Es el intento exitoso final (confirmado por construcción del dataset)
-            classified.append(ExtubationAttempt(
-                attempt_index=attempt.attempt_index,
-                time_rel_hours=attempt.time_rel_hours,
-                outcome="success",
-                reintubation_time_rel_hours=None,
-            ))
-        else:
-            # censored_no_extubation: no sabemos si fue exitoso
-            classified.append(ExtubationAttempt(
-                attempt_index=attempt.attempt_index,
-                time_rel_hours=attempt.time_rel_hours,
-                outcome="unknown",
-                reintubation_time_rel_hours=None,
-            ))
-
+    for attempt in attempts:
+        outcome = classify_attempt(
+            AttemptOutcome(attempt.attempt_index, attempt.time_rel_hours,
+                           attempt.reintubation_time_rel_hours),
+            failure_window_h,
+            extubation_confirmed=events.extubation_confirmed,
+        )
+        classified.append(ExtubationAttempt(
+            attempt_index=attempt.attempt_index,
+            time_rel_hours=attempt.time_rel_hours,
+            outcome=outcome,
+            reintubation_time_rel_hours=(
+                attempt.reintubation_time_rel_hours if outcome == "failure" else None
+            ),
+        ))
     return classified
 
 
@@ -127,85 +94,65 @@ def build_survival_row(
     failure_window_h: float,
     dataset_version: str,
 ) -> dict:
-    """
-    Construye una fila de la tabla de supervivencia para un paciente
-    y una ventana de fallo dada.
+    """Construye una fila de supervivencia delegando en el etiquetador común.
 
-    Args:
-        events: Eventos clínicos del paciente
-        failure_window_h: Ventana de fallo (48 o 72 horas)
-        dataset_version: Hash de la config para trazabilidad
-
-    Returns:
-        Diccionario con los campos de la tabla survival.
+    Fase 1 corrección 4: la decisión (éxito / fallo / censura, incluida la
+    censura D5 por traqueostomía o extubación terminal) la toma
+    ``src.common.labels``. Esta función solo la traduce al esquema de la tabla
+    de supervivencia.
     """
     pid = events.patient_id
+    attempts = events.extubation_attempts
+    pairs = [
+        (a.time_rel_hours, a.reintubation_time_rel_hours) for a in attempts
+    ]
+    last_disconnect_h = pairs[-1][0] if pairs else None
 
-    # Caso censored (edge case MIMIC: muerte en vent_end)
-    if events.censored_no_extubation:
-        return {
-            "patient_id": pid,
-            "cohort": events.cohort,
-            "t0_unix": events.t0_unix,
-            "extubation_time_hours": np.nan,
-            "event_type": "censored_no_extubation",
-            "failure_window_hours": failure_window_h,
-            "n_failed_attempts": 0,
-            "first_attempt_time_hours": np.nan,
-            "selection_bias_note": "clinical_table",
-            "dataset_version": dataset_version,
-        }
-
-    # Re-clasificar intentos con esta ventana de fallo
-    classified = classify_attempts(events, failure_window_h)
-    first_success = find_first_success(classified)
-
-    if first_success is None:
-        # No se encontró extubación exitosa con esta ventana
-        # (no debería ocurrir en Clínic/VitalDB; posible en MIMIC si todos
-        # los intentos fallaron dentro de la ventana y no hay confirmación)
-        logger.warning(
-            "[survival] patient=%s: sin extubación exitosa con ventana=%.0fh; "
-            "marcando como censored",
-            pid, failure_window_h,
-        )
-        return {
-            "patient_id": pid,
-            "cohort": events.cohort,
-            "t0_unix": events.t0_unix,
-            "extubation_time_hours": events.record_end_hours,
-            "event_type": "censored_no_extubation",
-            "failure_window_hours": failure_window_h,
-            "n_failed_attempts": sum(1 for a in classified if a.outcome == "failure"),
-            "first_attempt_time_hours": (
-                classified[0].time_rel_hours if classified else np.nan
-            ),
-            "selection_bias_note": "clinical_table",
-            "dataset_version": dataset_version,
-        }
-
-    n_failed = sum(
-        1 for a in classified
-        if a.outcome == "failure" and a.attempt_index < first_success.attempt_index
+    # D5: traqueostomía y extubación terminal, resueltas por ventana.
+    decision = d5_censor_for_window(
+        failure_window_h=failure_window_h,
+        last_disconnect_h=last_disconnect_h,
+        trach_time_h=events.trach_time_hours,
+        trach_time_unknown=events.trach_time_unknown,
+        death_time_h=events.death_time_hours,
+        died_ventilated=events.died_ventilated,
     )
-    first_attempt_h = classified[0].time_rel_hours if classified else np.nan
 
-    # Nota de sesgo de selección
-    if events.cohort in ("clinic", "vitaldb"):
-        bias_note = "by_construction"
+    lab = assign_label(
+        attempts_from_pairs(pairs),
+        obs_end_h=events.record_end_hours,
+        failure_window_h=failure_window_h,
+        censor_cause=decision.censor_cause,
+        censor_time_h=decision.censor_time_h,
+    )
+
+    if lab.event_type == "successful_extubation":
+        event_type = "successful_extubation"
     else:
-        bias_note = "clinical_table"
+        event_type = "censored_no_extubation"
+        logger.debug(
+            "[survival] patient=%s ventana=%.0fh censurado (%s)",
+            pid, failure_window_h, lab.censor_cause,
+        )
 
     return {
         "patient_id": pid,
         "cohort": events.cohort,
         "t0_unix": events.t0_unix,
-        "extubation_time_hours": first_success.time_rel_hours,
-        "event_type": "successful_extubation",
+        "extubation_time_hours": (
+            lab.extubation_time_h if lab.extubation_time_h is not None else np.nan
+        ),
+        "event_type": event_type,
+        "censor_cause": lab.censor_cause,
         "failure_window_hours": failure_window_h,
-        "n_failed_attempts": n_failed,
-        "first_attempt_time_hours": first_attempt_h,
-        "selection_bias_note": bias_note,
+        "n_failed_attempts": lab.n_failed_attempts,
+        "first_attempt_time_hours": (
+            lab.first_attempt_h if lab.first_attempt_h is not None else np.nan
+        ),
+        "selection_bias_note": (
+            "by_construction" if events.cohort in ("clinic", "vitaldb")
+            else "clinical_table"
+        ),
         "dataset_version": dataset_version,
     }
 
