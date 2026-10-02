@@ -31,12 +31,25 @@ from src.create_dataset.enrich_mimic_full_cases import (
 IN_DIR = Path("datasets/eicu_collaborative")
 OUT_DIR = Path("datasets/eicu_collaborative/eicu_full_cases")
 
+# Reglas eICU compartidas con el adaptador (Fase 1.4).
+from src.common.eicu_rules import (  # noqa: E402
+    DOSE_UNKNOWN_SENTINEL,
+    MAP_NONINVASIVE_TRACK,
+    RR_NURSE_TRACK,
+    RR_VENT_TRACK,
+    add_vasopressor_series,
+    eicu_t0_minutes,
+    merge_vent_episodes as _merge_vent_episodes,
+    sanitize_vent_episodes,
+)
+
 EICU_NUMERIC_MAP = {
     "heartrate": "eICU/HR",
     "sao2": "eICU/SpO2",
     "systemicsystolic": "eICU/ABP_S",
     "systemicdiastolic": "eICU/ABP_D",
     "systemicmean": "eICU/ABP_M",
+    "noninvasivemean": MAP_NONINVASIVE_TRACK,   # D7: MAP no invasiva (vitalAperiodic)
     "respiration": "eICU/RESP",
     "temperature": "eICU/Temp"
 }
@@ -49,25 +62,9 @@ EICU_VENT_MAP = {
     "rr": "eICU/RR_V"
 }
 
-def merge_vent_episodes(pt_vent: pd.DataFrame) -> pd.DataFrame:
-    """Fusiona episodios de ventilación cercanos (< 2h)"""
-    pt_vent = pt_vent.sort_values('ventstartoffset')
-    merged = []
-    current_episode = None
-    
-    for _, row in pt_vent.iterrows():
-        if current_episode is None:
-            current_episode = row.copy()
-        else:
-            gap = row['ventstartoffset'] - current_episode['ventendoffset']
-            if gap <= 120:  # 2 horas
-                current_episode['ventendoffset'] = max(current_episode['ventendoffset'], row['ventendoffset'])
-            else:
-                merged.append(current_episode)
-                current_episode = row.copy()
-    if current_episode is not None:
-        merged.append(current_episode)
-    return pd.DataFrame(merged)
+def merge_vent_episodes(pt_vent: pd.DataFrame) -> pd.DataFrame:  # noqa: D401
+    """Compatibilidad: delega en ``src.common.eicu_rules.merge_vent_episodes``."""
+    return _merge_vent_episodes(pt_vent)
 
 def load_data(in_dir):
     print("Cargando patient.csv.gz...")
@@ -85,7 +82,14 @@ def load_data(in_dir):
     print("Cargando respiratoryCharting.csv.gz...")
     df_resp = pd.read_csv(in_dir / "respiratoryCharting.csv.gz",
                           usecols=["patientunitstayid", "respchartoffset", "respchartvaluelabel", "respchartvalue"])
-    
+
+    # D7: MAP no invasiva desde vitalAperiodic.noninvasivemean. Se añade como
+    # filas extra de vitales (resto de columnas NaN) para no cambiar el flujo.
+    print("Cargando vitalAperiodic.csv.gz (MAP no invasiva)...")
+    df_ap = pd.read_csv(in_dir / "vitalAperiodic.csv.gz",
+                        usecols=["patientunitstayid", "observationoffset", "noninvasivemean"])
+    df_vit = pd.concat([df_vit, df_ap], ignore_index=True, sort=False)
+
     return df_pat, df_vent, df_vit, df_resp
 
 def load_chunked_filtered(in_dir, valid_pids):
@@ -144,17 +148,22 @@ def _process_patient(pid, meta, pdata, out_dir):
     vaso_inf_df = pdata['vaso_inf']
     vaso_med_df = pdata['vaso_med']
     
-    # Encontrar T0 (inicio del primer episodio de ventilación)
+    # Encontrar T0 (inicio del primer episodio de ventilación) con la regla
+    # compartida con el adaptador (Fase 1.4).
     if vent_df is None or vent_df.empty:
         return 0
-        
-    merged_vent = merge_vent_episodes(vent_df)
-    if merged_vent.empty:
-        return 0
-        
-    t0_minutes = merged_vent.iloc[0]['ventstartoffset']
+
     t_max_minutes = meta['unitdischargeoffset']
-    
+
+    # Anomalías de duración/hueco (offsets fuera de la estancia): se REGISTRAN.
+    san = sanitize_vent_episodes(vent_df, t_max_minutes)
+    for a in san.anomalies:
+        print(f"  [eicu][anomalia] pid={a.patientunitstayid} {a.kind}: {a.detail}")
+
+    t0_minutes = eicu_t0_minutes(san.episodes)
+    if t0_minutes is None:
+        return 0
+
     # Rango en segundos desde T0
     t0_sec = 0.0
     tend_sec = (t_max_minutes - t0_minutes) * 60.0
@@ -209,7 +218,8 @@ def _process_patient(pid, meta, pdata, out_dir):
                 if recs:
                     vf.add_track(eicu_track, recs, srate=0)
                     
-    # 3. Añadir nurseCharting (Respiratory Rate)
+    # 3. Añadir nurseCharting (FR de enfermería) — NUNCA como RR del modelo (D7):
+    # la RR debe ser la del ventilador (respiratoryCharting, ya añadida arriba).
     if nurse_df is not None and not nurse_df.empty:
         nurse_df = nurse_df.sort_values('nursingchartoffset')
         nurse_df['val'] = pd.to_numeric(nurse_df['nursingchartvalue'], errors='coerce')
@@ -219,7 +229,7 @@ def _process_patient(pid, meta, pdata, out_dir):
             v = nurse_df['val'].values
             recs = numeric_recs(t, v)
             if recs:
-                vf.add_track('eICU/RR_V', recs, srate=0)
+                vf.add_track(RR_NURSE_TRACK, recs, srate=0)
                 
     # 4. Añadir Lactate
     if lab_df is not None and not lab_df.empty:
@@ -233,30 +243,24 @@ def _process_patient(pid, meta, pdata, out_dir):
             if recs:
                 vf.add_track('eICU/Lactate', recs, srate=0)
                 
-    # 5. Añadir Vasopressors
-    def process_vaso(df, offset_col, val_col):
-        if df is None or df.empty: return
-        df = df.sort_values(offset_col)
-        # Usamos -1.0 para indicar 'dosis desconocida/no numérica' en lugar de 1.0, 
-        # así evitamos colisiones con dosis reales de 1.0.
-        df['val'] = pd.to_numeric(df[val_col], errors='coerce').fillna(-1.0)
-        
-        mapping = {
-            'norepi': 'eICU/Norepinephrine',
-            'epine': 'eICU/Epinephrine',
-            'dopam': 'eICU/Dopamine'
-        }
-        for kw, trk_name in mapping.items():
-            sub = df[df['drugname'].str.contains(kw, case=False, na=False)]
-            if not sub.empty:
-                t = (sub[offset_col] - t0_minutes) * 60.0
-                v = sub['val'].values
-                recs = numeric_recs(t, v)
-                if recs:
-                    vf.add_track(trk_name, recs, srate=0)
-                    
-    process_vaso(vaso_inf_df, 'infusionoffset', 'drugrate')
-    process_vaso(vaso_med_df, 'drugstartoffset', 'dosage')
+    # 5. Añadir Vasopresores (infusión continua con PRIORIDAD sobre bolos, Fase 1.4)
+    vaso_store: dict[str, tuple[list[float], list[float]]] = {}
+    add_vasopressor_series(
+        vaso_store, vaso_inf_df,
+        offset_col='infusionoffset', value_col='drugrate',
+        t0_minutes=t0_minutes, overwrite=True,
+    )
+    # Los bolos de medication NO sobrescriben las infusiones continuas.
+    add_vasopressor_series(
+        vaso_store, vaso_med_df,
+        offset_col='drugstartoffset', value_col='dosage',
+        t0_minutes=t0_minutes, overwrite=False,
+    )
+    for trk_name, (times, vals) in vaso_store.items():
+        recs = numeric_recs(np.asarray(times, dtype=np.float64),
+                            np.asarray(vals, dtype=np.float32))
+        if recs:
+            vf.add_track(trk_name, recs, srate=0)
     
     # Calcular MAP si falta pero SBP y DBP están (ya lo hace vitalPeriodic pero porsi)
     # Extraer los tracks al estilo enrich_mimic_full_cases para calcular derivadas
