@@ -38,6 +38,11 @@ import numpy as np
 import pandas as pd
 
 from src.common.episodes import Span, build_episodes
+from src.common.labels import (
+    assign_labels_all_windows,
+    attempts_from_pairs,
+    labels_to_dict,
+)
 from src.common.paths import config_path, repo_root
 from src.common.timeutils import series_to_utc, to_epoch_utc
 from src.create_dataset.mimic_itemids import (
@@ -239,6 +244,13 @@ def build_stay_events(stay: StayInputs) -> list[dict]:
             for j, a in enumerate(ep.attempts)
         ]
         arrived = abs(ep.start_h - stay.intime_unix / _SECONDS_PER_HOUR) < (1.0 / 60.0)
+        obs_end_h = (stay.outtime_unix - t0_unix) / _SECONDS_PER_HOUR
+        labels = labels_to_dict(assign_labels_all_windows(
+            attempts_from_pairs([
+                (a["vent_end_h"], a["reintubation_h"]) for a in attempts
+            ]),
+            obs_end_h=obs_end_h,
+        ))
         out.append({
             "event_id": f"mimic_{stay.stay_id}_event_{i + 1}",
             "cohort": "mimic",
@@ -258,7 +270,7 @@ def build_stay_events(stay: StayInputs) -> list[dict]:
             "ventilated_hours": round(ep.ventilated_hours, 4),
             "excluded": bool(ep.excluded),
             "exclusion_reason": ep.exclusion_reason,
-            "labels": {},       # Fase 1.6
+            "labels": labels,   # Fase 1.6 (D3)
             "trach": None,      # Fase 1.5
             "terminal": None,   # Fase 1.5
         })

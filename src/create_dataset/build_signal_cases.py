@@ -40,6 +40,11 @@ from pathlib import Path
 from typing import Callable, Optional, Sequence
 
 from src.common.episodes import Episode, Span, build_episodes, segment_attempts
+from src.common.labels import (
+    assign_labels_all_windows,
+    attempts_from_pairs,
+    labels_to_dict,
+)
 from src.common.paths import config_path, repo_root, resolve_path
 from src.common.vital_signals import (
     MERGE_TRACK_NAMES,
@@ -272,6 +277,15 @@ def build_event_record(
         }
         for i, a in enumerate(episode.attempts)
     ]
+
+    # Etiquetas D3 (Fase 1.6) a partir de la lista de intentos.
+    labels = labels_to_dict(assign_labels_all_windows(
+        attempts_from_pairs([
+            (a["vent_end_h"], a["reintubation_h"]) for a in attempts
+        ]),
+        obs_end_h=episode.duration_h,
+    ))
+
     return {
         "event_id": "",  # se rellena en el orquestador
         "cohort": cohort,
@@ -289,7 +303,7 @@ def build_event_record(
         "attempts": attempts,
         "end_reason": _end_reason(episode, files),
         "ventilated_hours": round(episode.ventilated_hours, 4),
-        "labels": {},          # Fase 1.6 (D3)
+        "labels": labels,       # Fase 1.6 (D3)
         "trach": None,         # Fase 1.5 (D5)
         "terminal": None,      # Fase 1.5 (D5)
         "file": None,          # se rellena al fusionar

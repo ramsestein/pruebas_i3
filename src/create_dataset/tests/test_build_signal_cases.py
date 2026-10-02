@@ -213,6 +213,21 @@ class TestIndexAndMerge:
         assert ev["arrived_ventilated"] is True
         assert ev["t0_source"] == "already_ventilated_at_record_start"
 
+    def test_labels_d3_are_consistent_with_attempts(self, tmp_path: Path):
+        """D3: un fallo a 48 h seguido de éxito debe etiquetarse así."""
+        make_box(tmp_path / "raw", "box2", list(range(0, 9)), [0, 7])
+        boxes = scan_source_files(tmp_path / "raw", CLINIC_SPEC)
+        segs = [(b, segment_box(b, f)) for b, f in boxes.items()]
+        idx = build_cohort_index(segs, cohort="clinic", spec=CLINIC_SPEC, merged=False)
+        ev = idx["events"][0]
+        assert ev["n_attempts"] == 2
+        lab = ev["labels"]["48h"]
+        assert lab["event_type"] == "successful_extubation"
+        assert lab["n_failed_attempts"] == 1
+        assert lab["first_attempt_h"] == pytest.approx(
+            ev["attempts"][0]["vent_end_h"], abs=1e-6
+        )
+
     def test_run_cohort_merges_and_aborts_on_existing_version(self, tmp_path: Path):
         make_box(tmp_path / "raw", "box2", [0, 1], [0])
         cfg = self._config(tmp_path)
