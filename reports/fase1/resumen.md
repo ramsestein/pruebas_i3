@@ -17,8 +17,25 @@
 | 2 | `cff0d46` | `src/common/paths.py`, `src/common/vital_signals.py`, `src/create_dataset/build_signal_cases.py` | `src/create_dataset/tests/test_build_signal_cases.py` (15) |
 | 3 | `1e5ffc7` | `src/common/timeutils.py`, `src/create_dataset/mimic_itemids.py`, `src/create_dataset/build_mimic_cases.py` | `test_no_naive_timestamp.py`, `test_mimic_cases.py` |
 | 4 | `ef89b43` | `src/common/eicu_rules.py` + adaptador/builder eICU | `src/common/tests/test_eicu_rules.py` (19) |
-| 5 | `6b47c029` | `src/common/d5_events.py` | `src/common/tests/test_d5_events.py` (22) |
+| 5 | `ab15aa1` | `src/common/d5_events.py` | `src/common/tests/test_d5_events.py` (22) |
 | 6 | `c7fe70a` | `src/common/labels.py` (D3) + índices de las 4 cohortes | `src/common/tests/test_labels.py` (10) |
+
+**Entorno (versiones fijadas en `requirements.txt`, corrección 5):**
+`pandas==2.2.3`, `numpy==2.3.5`, `pyarrow==23.0.1`, `vitaldb==1.6.0`,
+`scipy==1.16.2`, `duckdb==1.5.4`, `PyYAML==6.0.3`.
+
+## 1.bis Correcciones previas a los builds
+
+Tras la revisión de `95ff59e..79147e0` se aplicaron cinco correcciones, cada una
+con su commit y sus tests (el nº 6 es este informe):
+
+| Corrección | Commit | Qué cambia |
+|---|---|---|
+| 1. Fin de observación = fin del monitor | `23731e5` | Extubación solo con ≥ 1 h de monitor sin VM; `_end_reason` contra el fin del monitor; la fusión incluye los ficheros hasta el fin del monitor |
+| 2. MIMIC: observaciones con hora | `72ed0a4` | No se resume a primer/último registro (`mimic_observations.parquet`); tramos con huecos reales (D1); marcadores de VM sin FiO2 (modo, PEEP, TV pautado/observado, PIP, FR total) + 225792 |
+| 3. D5 conectado en las 4 cohortes | `e6af3c7` | MIMIC (PROCEDUREEVENTS_MV 225448/226237, tipo de vía aérea, ICD-9 31.1/31.2x marcando sin hora, DEATHTIME), eICU (`airwaytype`, `Expired`), Clínic/VitalDB (pérdida de constantes); censura solo si ocurre ANTES del primer éxito |
+| 4. Etiquetador único | `dd66832` | `survival.py` delega en `src/common/labels.py` + test de equivalencia |
+| 5. Fechas independientes de pandas | `6c789d0` | `series_to_epoch_seconds` (sin `astype("int64")/1e9`); test con resolución µs y ns + control negativo |
 
 Total: **146 tests en verde, 1 saltado** (el que valida itemids contra
 `datasets/mimic3wdb/clinical/D_ITEMS.csv.gz`, no presente; el de `D:/data`
