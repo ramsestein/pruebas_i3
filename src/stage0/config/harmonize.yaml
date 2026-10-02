@@ -9,6 +9,15 @@ version: "0.1.0"
 
 # ── Rutas ──────────────────────────────────────────────────────────────────────
 paths:
+  # Datos crudos de señal (FUERA del repo; sobrescribibles por entorno).
+  # El valor admite ${VAR:-default}; ver src/common/paths.py.
+  clinic_raw_dir:   "${IPROVE3_CLINIC_RAW_DIR:-D:/data/clinic_vitals}"
+  vitaldb_raw_dir:  "${IPROVE3_VITALDB_RAW_DIR:-D:/data/vitaldb_sicu}"
+
+  # Salidas versionadas de Fase 1 (casos). null = derivar v<version>_<hash>.
+  clinic_cases_out:   null
+  vitaldb_cases_out:  null
+
   # MIMIC-III
   mimic_cases_dir:    "datasets/mimic3wdb/mimic_full_cases_enriched"
   mimic_index:        "datasets/mimic3wdb/mimic_full_cases_index.json"

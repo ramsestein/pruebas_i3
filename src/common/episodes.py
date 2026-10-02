@@ -248,6 +248,25 @@ def monitor_change_boundaries(
     return boundaries
 
 
+def monitor_span_boundaries(
+    monitor_spans: Iterable[Span | Sequence[float]],
+    patient_gap_h: float = PATIENT_GAP_H,
+) -> list[float]:
+    """Puntos de corte por cambio de paciente a partir de intervalos de presencia.
+
+    A diferencia de ``monitor_change_boundaries`` (marcas de muestra), aquí la
+    entrada son intervalos de presencia de monitor ya construidos. Se fusionan
+    (unión) y se marca cambio de paciente cuando el hueco entre bloques es
+    estrictamente mayor que ``patient_gap_h``.
+    """
+    blocks = merge_spans(monitor_spans, 0.0)
+    boundaries: list[float] = []
+    for a, b in zip(blocks, blocks[1:]):
+        if b.start_h - a.end_h > patient_gap_h + _EPS:
+            boundaries.append((a.end_h + b.start_h) / 2.0)
+    return boundaries
+
+
 def split_regions(
     regions: Iterable[Span],
     cut_points: Iterable[float],
@@ -270,6 +289,7 @@ def _identity_regions(
     vent_spans: Sequence[Span],
     stay_bounds: Optional[Sequence[Sequence[float]]],
     monitor_times_h: Optional[Sequence[float]],
+    monitor_spans: Optional[Sequence[Span | Sequence[float]]],
     monitor_gap_h: float,
 ) -> list[Span]:
     """Regiones de identidad de paciente (ningún episodio las cruza, D2)."""
@@ -281,8 +301,12 @@ def _identity_regions(
     else:
         return []
 
+    cuts: list[float] = []
     if monitor_times_h is not None:
-        cuts = monitor_change_boundaries(monitor_times_h, monitor_gap_h)
+        cuts.extend(monitor_change_boundaries(monitor_times_h, monitor_gap_h))
+    if monitor_spans is not None:
+        cuts.extend(monitor_span_boundaries(monitor_spans, monitor_gap_h))
+    if cuts:
         regions = split_regions(regions, cuts)
     return regions
 
@@ -311,6 +335,7 @@ def build_episodes(
     hr_spans: Optional[Iterable[Span | Sequence[float]]] = None,
     spo2_spans: Optional[Iterable[Span | Sequence[float]]] = None,
     monitor_times_h: Optional[Iterable[float]] = None,
+    monitor_spans: Optional[Iterable[Span | Sequence[float]]] = None,
     stay_bounds: Optional[Sequence[Sequence[float]]] = None,
     disconnect_gap_h: float = DISCONNECT_GAP_H,
     monitor_gap_h: float = PATIENT_GAP_H,
@@ -329,6 +354,9 @@ def build_episodes(
     monitor_times_h:
         Instantes de CUALQUIER señal de monitor (HR/SpO2/ECG/PLETH) para
         detectar cambios de paciente (D2). Si es ``None`` no se usa.
+    monitor_spans:
+        Alternativa a ``monitor_times_h``: intervalos de presencia de monitor
+        (horas). Complementario (se combinan ambos si se pasan los dos).
     stay_bounds:
         Fronteras duras de estancia (eICU/MIMIC). Si se pasan, se usan como
         regiones de identidad en lugar de derivarlas de ``monitor_times_h``.
@@ -344,7 +372,7 @@ def build_episodes(
     attempts = segment_attempts(raw_vent, disconnect_gap_h)
 
     regions = _identity_regions(
-        raw_vent, stay_bounds, monitor_times_h, monitor_gap_h
+        raw_vent, stay_bounds, monitor_times_h, monitor_spans, monitor_gap_h
     )
 
     # Asigna cada intento (recortado a las fronteras de identidad) a su región.

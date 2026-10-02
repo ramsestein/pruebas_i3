@@ -21,6 +21,7 @@ from src.common.episodes import (
     episode_extubation_events,
     merge_spans,
     monitor_change_boundaries,
+    monitor_span_boundaries,
     segment_attempts,
 )
 from src.stage0.adapters.base import ClinicalEvents, ExtubationAttempt
@@ -209,6 +210,17 @@ class TestHelpers:
     def test_monitor_boundaries_gap_above_1h(self):
         b = monitor_change_boundaries([0.0, 2.0], 1.0)
         assert b == [1.0]
+
+    def test_monitor_span_boundaries(self):
+        # Presencia [0,10] y [13,26] -> hueco 3 h > 1 h -> corte en 11.5.
+        b = monitor_span_boundaries([Span(0.0, 10.0), Span(13.0, 26.0)], 1.0)
+        assert b == [11.5]
+
+    def test_build_episodes_with_monitor_spans(self):
+        vent = [Span(0.0, 10.0), Span(16.0, 26.0)]
+        spans = [Span(0.0, 10.5), Span(12.5, 26.0)]  # hueco 2 h
+        eps = build_episodes(vent, monitor_spans=spans)
+        assert len(eps) == 2
 
     def test_span_rejects_inverted(self):
         with pytest.raises(ValueError):

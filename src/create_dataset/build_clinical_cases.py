@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+[Sustituido en Fase 1.2 por `src/create_dataset/build_signal_cases.py`]
+Este builder detectaba la ventilación buscando las cadenas "CO2"/"TV_EXP" en
+los bytes del gzip (detección por bytes) y descartaba episodios que compartían
+hora de inicio. Se conserva solo como referencia histórica.
+
 Construye eventos de ventilación mecánica a partir de los archivos .vital
 de clinic_vitals.
 

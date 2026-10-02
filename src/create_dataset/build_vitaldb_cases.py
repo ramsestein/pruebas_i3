@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+[Sustituido en Fase 1.2 por `src/create_dataset/build_signal_cases.py`]
+Este builder detectaba la ventilación buscando nombres de pista en los bytes
+del gzip, recortaba el merge a 7 días y reutilizaba salidas previas ("resume").
+Se conserva solo como referencia histórica.
+
 Construye eventos de ventilación mecánica a partir de archivos .vital
 en vitaldb_sicu (archivos por hora y por box).
 
