@@ -217,9 +217,27 @@ generan en local):
 
 ### 5.11 VitalDB y las variables obligatorias (D7)
 
-Pendiente de la comprobación de cobertura de pistas (`Intellivue/FIO2`,
-`PEEP_CMH2O`, `PIP_CMH2O`) sobre una muestra de 300 ficheros de origen; si no
-aparecen, VitalDB solo serviría para un modelo reducido (se indicará aquí).
+Cobertura de pistas medida sobre una muestra de 300 ficheros de origen (semilla
+fija 0; 200 legibles, 100 sin pistas legibles / error de lectura):
+
+| Pista | Cobertura |
+|---|---|
+| `Intellivue/ECG_HR` (HR) | 96 % |
+| `Intellivue/PLETH_SAT_O2` (SpO2) | 96 % |
+| `Intellivue/TV_EXP` (TV) | 49 % |
+| `Intellivue/MV_EXP` (MV) | 49 % |
+| `Intellivue/VENT_RR` (RR) | 49 % |
+| `Intellivue/FLOW_WAV` | 39 % |
+| `Intellivue/AWP_WAV` | 34 % |
+| `Intellivue/FIO2` (FiO2) | 22 % |
+| `Intellivue/PEEP_CMH2O` (PEEP) | 18 % |
+| `Intellivue/PIP_CMH2O` (PIP) | 18 % |
+
+**Conclusión: VitalDB NO cumple las variables obligatorias** (FiO2 22 %,
+PEEP 18 %; MAP no invasiva muy rara). Sirve como **validación externa con un
+modelo reducido** (HR, SpO2, RR, TV y, donde exista, FiO2/PEEP). Se documenta
+sin estimar la parte ausente con tasas de otras cohortes. Además, ~1/3 de los
+ficheros muestreados no fueron legibles con el parser (se registran y excluyen).
 
 ## 6. Limitaciones explícitas
 
