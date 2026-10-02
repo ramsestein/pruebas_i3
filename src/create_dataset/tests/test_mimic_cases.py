@@ -242,6 +242,31 @@ class TestMimicD5:
         assert ev["trach"]["icd9_marked_without_time"] is True
 
 
+# ── Robusteza ante ICUSTAY_ID nulo (fallo real del build) ───────────────────
+
+class TestNullableStayIds:
+    def test_airway_trach_with_null_icustay_id_does_not_crash(self):
+        """ICUSTAY_ID es nullable: las filas sin estancia no deben romper el build."""
+        from src.create_dataset.build_mimic_cases import _airway_trach_unix
+        obs = pd.DataFrame({
+            "CONCEPT": ["AirwayType", "AirwayType"],
+            "VALUE_RAW": ["Tracheostomy", "Tracheostomy"],
+            "ICUSTAY_ID": pd.array([100, pd.NA], dtype="Int64"),
+            "t_unix": [1.0, 2.0],
+        })
+        assert _airway_trach_unix(obs) == {100: [1.0]}
+
+    def test_negative_control_valid_id_is_kept(self):
+        from src.create_dataset.build_mimic_cases import _airway_trach_unix
+        obs = pd.DataFrame({
+            "CONCEPT": ["AirwayType"],
+            "VALUE_RAW": ["Oral ETT"],
+            "ICUSTAY_ID": pd.array([7], dtype="Int64"),
+            "t_unix": [1.0],
+        })
+        assert _airway_trach_unix(obs) == {}
+
+
 # ── Verificación contra D_ITEMS real (si existe) ─────────────────────────────
 
 D_ITEMS_CANDIDATES = [

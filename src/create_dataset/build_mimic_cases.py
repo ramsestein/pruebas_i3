@@ -374,7 +374,11 @@ def _airway_trach_unix(obs: pd.DataFrame) -> dict[int, list[float]]:
     out: dict[int, list[float]] = {}
     if obs.empty or "VALUE_RAW" not in obs.columns:
         return out
-    sub = obs[(obs["CONCEPT"] == "AirwayType") & (obs["VALUE_RAW"].notna())]
+    sub = obs[
+        (obs["CONCEPT"] == "AirwayType")
+        & (obs["VALUE_RAW"].notna())
+        & (obs["ICUSTAY_ID"].notna())
+    ]
     for _, row in sub.iterrows():
         if is_trach_text(row["VALUE_RAW"]):
             sid = int(row["ICUSTAY_ID"])
@@ -403,16 +407,15 @@ def build_mimic_index(
 
     trach_by_stay: dict[int, list[float]] = {}
     if trach_df is not None and not trach_df.empty:
-        for _, r in trach_df.iterrows():
+        for _, r in trach_df.dropna(subset=["icustay_id"]).iterrows():
             trach_by_stay.setdefault(int(r["icustay_id"]), []).append(float(r["start_unix"]))
     for sid, times in _airway_trach_unix(obs).items():
         trach_by_stay.setdefault(sid, []).extend(times)
 
     deaths_by_hadm: dict[int, float] = {}
     if deaths is not None and not deaths.empty:
-        deaths_by_hadm = {
-            int(r["hadm_id"]): float(r["death_unix"]) for _, r in deaths.iterrows()
-        }
+        for _, r in deaths.dropna(subset=["hadm_id", "death_unix"]).iterrows():
+            deaths_by_hadm[int(r["hadm_id"])] = float(r["death_unix"])
     trach_icd9 = trach_icd9 or set()
 
     events: list[dict] = []

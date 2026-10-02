@@ -469,12 +469,19 @@ def output_root(config: dict, cohort: str) -> tuple[Path, str]:
     return Path(base), version
 
 
+def _segment_box_task(args: tuple[str, list[SourceFile]]) -> tuple[str, BoxSegmentation]:
+    """Trabajo por box para el pool de procesos (debe ser de nivel de módulo)."""
+    box, files = args
+    return box, segment_box(box, files)
+
+
 def run_cohort(
     config: dict,
     cohort: str,
     *,
     do_merge: bool = True,
     limit_boxes: Optional[int] = None,
+    workers: int = 1,
 ) -> dict:
     """Ejecuta el pipeline completo de una cohorte con señal."""
     spec = SPECS[cohort]
@@ -482,15 +489,20 @@ def run_cohort(
     out_dir, version = output_root(config, cohort)
     index_path = out_dir / f"{cohort}_cases_index.json"
 
-    logger.info("[%s] origen=%s salida=%s", cohort, raw_dir, out_dir)
+    logger.info("[%s] origen=%s salida=%s workers=%d", cohort, raw_dir, out_dir, workers)
     boxes = scan_source_files(raw_dir, spec)
     if limit_boxes:
         boxes = dict(list(boxes.items())[:limit_boxes])
 
     results: list[tuple[str, BoxSegmentation]] = []
-    for box, files in boxes.items():
-        seg = segment_box(box, files)
-        results.append((box, seg))
+    if workers and workers > 1:
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(max_workers=workers) as ex:
+            for box, seg in ex.map(_segment_box_task, list(boxes.items())):
+                results.append((box, seg))
+    else:
+        for box, files in boxes.items():
+            results.append((box, segment_box(box, files)))
 
     if do_merge and out_dir.exists():
         raise FileExistsError(
@@ -533,6 +545,8 @@ def main() -> None:
     p.add_argument("--config", default="src/stage0/config/harmonize.yaml")
     p.add_argument("--no-merge", action="store_true", help="Solo segmentar e índice")
     p.add_argument("--limit-boxes", type=int, default=None)
+    p.add_argument("--workers", type=int, default=1,
+                   help="Procesos en paralelo (un box por tarea)")
     p.add_argument("-v", "--verbose", action="store_true")
     args = p.parse_args()
 
@@ -545,6 +559,7 @@ def main() -> None:
         config, args.cohort,
         do_merge=not args.no_merge,
         limit_boxes=args.limit_boxes,
+        workers=args.workers,
     )
     print(json.dumps(
         {
