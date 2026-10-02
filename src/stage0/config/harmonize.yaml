@@ -17,9 +17,9 @@ paths:
   mimic_chartevents_raw: "${IPROVE3_MIMIC_CHARTEVENTS:-D:/data/mimiciii/CHARTEVENTS.csv.gz}"
 
   # Salidas versionadas de Fase 1 (casos). null = derivar v<version>_<hash>.
-  clinic_cases_out:   null
-  vitaldb_cases_out:  null
-  mimic_cases_out:    null
+  clinic_cases_out: null
+  vitaldb_cases_out: null
+  mimic_cases_out: null
 
   # MIMIC-III
   mimic_cases_dir: "datasets/mimic3wdb/mimic_full_cases_enriched"
