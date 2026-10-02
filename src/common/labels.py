@@ -82,6 +82,27 @@ def _is_failure(att: AttemptOutcome, failure_window_h: float) -> bool:
     )
 
 
+def classify_attempt(
+    att: AttemptOutcome,
+    failure_window_h: float,
+    *,
+    extubation_confirmed: bool,
+) -> str:
+    """Clasifica UN intento para una ventana: 'failure' | 'success' | 'unknown'.
+
+    Lógica ÚNICA compartida por `src/stage0/labeling/survival.py` (corrección 4):
+    - fallo si hay reintubación dentro de la ventana;
+    - éxito si la reintubación llega después de la ventana o si la extubación
+      está confirmada;
+    - en otro caso, desconocido.
+    """
+    if _is_failure(att, failure_window_h):
+        return "failure"
+    if att.reintubation_h is not None or extubation_confirmed:
+        return "success"
+    return "unknown"
+
+
 def count_failures(attempts: Sequence[AttemptOutcome], failure_window_h: float) -> int:
     """Nº total de intentos fallidos (se conserva aunque haya censura)."""
     return sum(1 for a in attempts if _is_failure(a, failure_window_h))
@@ -95,25 +116,38 @@ def assign_label(
     censor_cause: Optional[str] = None,
     censor_time_h: Optional[float] = None,
 ) -> LabelResult:
-    """Etiqueta un evento según D3 (y censura explícita de D5 si se indica)."""
+    """Etiqueta un evento según D3 (y censura explícita de D5 si se indica).
+
+    **Orden temporal (D5):** una censura solo se aplica si ocurre ANTES (o en el
+    mismo instante) de la primera extubación exitosa. Si la traqueostomía o la
+    muerte llegan después de un éxito ya consolidado, la etiqueta sigue siendo
+    éxito.
+    """
     first_attempt = attempts[0].extubation_h if attempts else None
     n_failed = count_failures(attempts, failure_window_h)
-
-    # Censura explícita (D5): traqueostomía, extubación terminal...
-    if censor_cause is not None:
-        t_censor = censor_time_h if censor_time_h is not None else _last_event_h(attempts, obs_end_h)
-        return LabelResult(
-            event_type=f"censored_{censor_cause}",
-            failure_window_h=failure_window_h,
-            extubation_time_h=None,
-            censor_cause=censor_cause,
-            censor_time_h=float(t_censor),
-            n_failed_attempts=n_failed,
-            first_attempt_h=first_attempt,
-            is_at_risk_until_h=float(t_censor),
-        )
-
     idx, n_failed_before = evaluate_attempts(attempts, failure_window_h)
+
+    if censor_cause is not None:
+        t_censor = (
+            float(censor_time_h) if censor_time_h is not None
+            else _last_event_h(attempts, obs_end_h)
+        )
+        apply_censor = (
+            idx is None
+            or t_censor <= attempts[idx].extubation_h + EPS
+        )
+        if apply_censor:
+            return LabelResult(
+                event_type=f"censored_{censor_cause}",
+                failure_window_h=failure_window_h,
+                extubation_time_h=None,
+                censor_cause=censor_cause,
+                censor_time_h=t_censor,
+                n_failed_attempts=n_failed,
+                first_attempt_h=first_attempt,
+                is_at_risk_until_h=t_censor,
+            )
+        # Hay un éxito consolidado antes de la censura → se mantiene el éxito.
 
     if idx is None:
         # Sin extubación exitosa dentro de la observación → censura por fin de datos.

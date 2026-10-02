@@ -32,6 +32,7 @@ from .base import (
     NumericsRecord,
     WaveformRecord,
 )
+from ...common.d5_events import is_trach_text, trach_time_from_offset_rows
 from ...common.eicu_rules import (
     eicu_t0_minutes,
     merge_vent_episodes,
@@ -40,6 +41,13 @@ from ...common.eicu_rules import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _rel_hours(offset_min: Optional[float], t0_min: float) -> Optional[float]:
+    """Convierte un offset de eICU (min) a horas desde t0."""
+    if offset_min is None:
+        return None
+    return (float(offset_min) - float(t0_min)) / 60.0
 
 
 class EicuAdapter(CohortAdapter):
@@ -90,7 +98,7 @@ class EicuAdapter(CohortAdapter):
                 
             self._respcare_df = pd.read_csv(
                 path, compression='gzip',
-                usecols=['patientunitstayid', 'ventstartoffset', 'ventendoffset', 'respcarestatusoffset']
+                usecols=['patientunitstayid', 'ventstartoffset', 'ventendoffset', 'respcarestatusoffset', 'airwaytype']
             )
             self._respcare_df.dropna(subset=['ventstartoffset'], inplace=True)
             self._respcare_df['patient_id'] = 'eicu_' + self._respcare_df['patientunitstayid'].astype(str)
@@ -207,6 +215,11 @@ class EicuAdapter(CohortAdapter):
         censored_no_extubation = False
         censored_reason = None
         attempts = []
+        # D5 (Fase 1, corrección 3)
+        trach_time_hours = None
+        trach_time_unknown = False
+        death_time_hours = None
+        died_ventilated = False
         
         if patient_id in self._patients_df.index:
             pt_meta = self._patients_df.loc[patient_id]
@@ -280,6 +293,21 @@ class EicuAdapter(CohortAdapter):
                                 extubation_confirmed = True
                                 extub_confirmed_hours = last_att.time_rel_hours
 
+                        # ── D5: traqueostomía y extubación terminal ──────────
+                        if 'airwaytype' in pt_vent.columns:
+                            trach_mask = pt_vent['airwaytype'].astype(str).map(is_trach_text)
+                            trach_time_hours = _rel_hours(
+                                trach_time_from_offset_rows(
+                                    pt_vent.loc[trach_mask, 'respcarestatusoffset']
+                                ), t0_minutes,
+                            )
+                        if str(pt_meta['unitdischargestatus']).strip().lower() == 'expired':
+                            death_time_hours = _rel_hours(pt_meta['unitdischargeoffset'], t0_minutes)
+                            last_end_off = float(merged.iloc[-1]['ventendoffset'])
+                            died_ventilated = (
+                                float(pt_meta['unitdischargeoffset']) - last_end_off
+                            ) <= 1.0
+
         return ClinicalEvents(
             patient_id=patient_id,
             cohort=self.cohort_name,
@@ -289,7 +317,11 @@ class EicuAdapter(CohortAdapter):
             extubation_confirmed=extubation_confirmed,
             extubation_attempts=attempts,
             censored_no_extubation=censored_no_extubation,
-            censored_reason=censored_reason
+            censored_reason=censored_reason,
+            trach_time_hours=trach_time_hours,
+            trach_time_unknown=trach_time_unknown,
+            death_time_hours=death_time_hours,
+            died_ventilated=died_ventilated,
         )
 
     def _merge_vent_episodes(self, df: pd.DataFrame, gap_tolerance_mins: float = 120.0) -> pd.DataFrame:

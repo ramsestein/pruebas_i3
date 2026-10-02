@@ -13,12 +13,15 @@ from src.common.d5_events import (
     EXCLUDE,
     CensorDecision,
     apply_policy,
+    eicu_terminal_decision,
     is_trach_icd9,
     is_trach_text,
     sensitivity_report,
     terminal_from_death,
     terminal_from_signal_loss,
     threshold_simultaneous_shutdown,
+    trach_decision,
+    trach_time_from_offset_rows,
 )
 
 H = 3600.0
@@ -123,3 +126,56 @@ class TestSimultaneousShutdown:
 
     def test_negative_control_beyond_15min(self):
         assert threshold_simultaneous_shutdown(10.0, 11.0) is False
+
+
+# ── Detección por cohorte ────────────────────────────────────────────────────
+
+class TestCohortDetection:
+    def test_trach_time_is_earliest(self):
+        assert trach_time_from_offset_rows([500.0, 120.0, None]) == 120.0
+
+    def test_negative_control_trach_time_none(self):
+        assert trach_time_from_offset_rows([]) is None
+        assert trach_time_from_offset_rows([None]) is None
+
+    def test_trach_decision_with_time(self):
+        d = trach_decision([50.0], icd9_marked_without_time=False, last_vent_end_h=99.0)
+        assert d.censor_cause == "trach"
+        assert d.censor_time_h == 50.0
+
+    def test_trach_decision_icd9_without_time(self):
+        d = trach_decision([], icd9_marked_without_time=True, last_vent_end_h=99.0)
+        assert d.censor_cause == "trach_time_unknown"
+        assert d.censor_time_h == 99.0
+
+    def test_negative_control_trach_decision_none(self):
+        d = trach_decision([], icd9_marked_without_time=False, last_vent_end_h=99.0)
+        assert d.censor_cause is None
+
+    def test_eicu_expired_within_window_censors_at_disconnect(self):
+        d = eicu_terminal_decision(
+            unit_discharge_status="Expired",
+            unit_discharge_offset_min=1000.0,   # t0=600 -> 400 min = 6.67 h
+            last_disconnect_min=900.0,          # 300 min = 5 h
+            t0_min=600.0, failure_window_h=48.0,
+        )
+        assert d.censor_cause == "terminal_extubation"
+        assert d.censor_time_h == pytest.approx(5.0)
+
+    def test_eicu_negative_control_alive(self):
+        d = eicu_terminal_decision(
+            unit_discharge_status="Alive",
+            unit_discharge_offset_min=1000.0,
+            last_disconnect_min=900.0,
+            t0_min=600.0, failure_window_h=48.0,
+        )
+        assert d.censor_cause is None
+
+    def test_eicu_death_at_vent_when_no_disconnect(self):
+        d = eicu_terminal_decision(
+            unit_discharge_status="Expired",
+            unit_discharge_offset_min=1200.0,
+            last_disconnect_min=None,
+            t0_min=600.0, failure_window_h=48.0,
+        )
+        assert d.censor_cause == "death_at_vent"

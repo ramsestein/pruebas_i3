@@ -75,16 +75,35 @@ class TestCensoring:
         assert lab.n_failed_attempts == 2  # los fallos NO se pierden
 
     def test_explicit_censor_cause_keeps_previous_failures(self):
-        # Un fallo previo y luego una traqueostomía → censura con n_failed=1.
+        # Un fallo previo y luego una traqueostomía ANTES del éxito → censura.
         att = attempts_from_pairs([(10.0, 20.0), (40.0, None)])
         lab = assign_label(
             att, obs_end_h=60.0, failure_window_h=48.0,
-            censor_cause="trach", censor_time_h=45.0,
+            censor_cause="trach", censor_time_h=30.0,
         )
         assert lab.event_type == "censored_trach"
         assert lab.extubation_time_h is None
-        assert lab.censor_time_h == 45.0
+        assert lab.censor_time_h == 30.0
         assert lab.n_failed_attempts == 1
+
+    def test_censor_after_consolidated_success_keeps_success(self):
+        """D5: éxito el día 3, reintubación el día 10 y muerte el día 20 → éxito."""
+        att = attempts_from_pairs([(72.0, 240.0)])  # día 3 -> día 10
+        lab = assign_label(
+            att, obs_end_h=480.0, failure_window_h=48.0,
+            censor_cause="death_at_vent", censor_time_h=480.0,  # día 20
+        )
+        assert lab.event_type == "successful_extubation"
+        assert lab.extubation_time_h == 72.0
+
+    def test_censor_before_success_applies(self):
+        """Control: la misma censura ANTES del éxito sí censura."""
+        att = attempts_from_pairs([(480.0, None)])
+        lab = assign_label(
+            att, obs_end_h=600.0, failure_window_h=48.0,
+            censor_cause="death_at_vent", censor_time_h=100.0,
+        )
+        assert lab.event_type == "censored_death_at_vent"
 
     def test_negative_control_no_censor_uses_success(self):
         att = attempts_from_pairs([(10.0, 20.0), (40.0, None)])

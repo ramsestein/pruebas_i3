@@ -168,3 +168,89 @@ def threshold_simultaneous_shutdown(
     y deben reportarse aparte.
     """
     return abs(vent_end_h - monitor_end_h) * 60.0 <= tolerance_min
+
+
+# ── Detección por cohorte ────────────────────────────────────────────────────
+
+def trach_time_from_offset_rows(
+    offsets_min: Sequence[float],
+) -> Optional[float]:
+    """Hora (min desde admisión) más temprana de traqueostomía, o ``None``."""
+    valid = [float(o) for o in offsets_min if o is not None and float(o) == float(o)]
+    return min(valid) if valid else None
+
+
+def eicu_terminal_decision(
+    *,
+    unit_discharge_status: Optional[str],
+    unit_discharge_offset_min: Optional[float],
+    last_disconnect_min: Optional[float],
+    t0_min: float,
+    failure_window_h: float,
+) -> CensorDecision:
+    """D5 en eICU: ``unitdischargestatus == 'Expired'``.
+
+    - Muerte dentro de la ventana de fallo tras la última desconexión -> censura
+      en la desconexión.
+    - Muerte ventilado (sin desconexión posterior) -> censura en la muerte.
+    """
+    if str(unit_discharge_status or "").strip().lower() != "expired":
+        return CensorDecision(None, None)
+    if unit_discharge_offset_min is None:
+        return CensorDecision(None, None)
+    t_death_h = (float(unit_discharge_offset_min) - float(t0_min)) / 60.0
+    if last_disconnect_min is None:
+        return CensorDecision("death_at_vent", t_death_h)
+    t_disc_h = (float(last_disconnect_min) - float(t0_min)) / 60.0
+    if (t_death_h - t_disc_h) <= failure_window_h:
+        return CensorDecision("terminal_extubation", t_disc_h)
+    return CensorDecision(None, None)
+
+
+def trach_decision(
+    trach_times_h: Sequence[float],
+    *,
+    icd9_marked_without_time: bool,
+    last_vent_end_h: float,
+) -> CensorDecision:
+    """Censura por traqueostomía (D5).
+
+    Si solo hay marca ICD-9 sin hora, se censura en el último fin de
+    ventilación y se reporta (``trach_time_unknown``).
+    """
+    if trach_times_h:
+        return CensorDecision("trach", float(min(trach_times_h)))
+    if icd9_marked_without_time:
+        return CensorDecision("trach_time_unknown", float(last_vent_end_h))
+    return CensorDecision(None, None)
+
+
+def d5_censor_for_window(
+    *,
+    failure_window_h: float,
+    last_disconnect_h: Optional[float],
+    trach_time_h: Optional[float] = None,
+    trach_time_unknown: bool = False,
+    death_time_h: Optional[float] = None,
+    died_ventilated: bool = False,
+) -> CensorDecision:
+    """Decisión D5 unificada (horas desde t0) para UNA ventana de fallo.
+
+    Orden: primero traqueostomía; después muerte. La variante "muerte dentro de
+    la ventana tras la desconexión" censura en la desconexión; "muerte
+    ventilado" censura en la muerte.
+    """
+    dec = trach_decision(
+        [trach_time_h] if trach_time_h is not None else [],
+        icd9_marked_without_time=trach_time_unknown,
+        last_vent_end_h=(last_disconnect_h if last_disconnect_h is not None else 0.0),
+    )
+    if dec.censor_cause is not None:
+        return dec
+    if death_time_h is not None:
+        if died_ventilated or last_disconnect_h is None:
+            return CensorDecision("death_at_vent", float(death_time_h))
+        gap = float(death_time_h) - float(last_disconnect_h)
+        if 0.0 <= gap <= failure_window_h:
+            return CensorDecision("terminal_extubation", float(last_disconnect_h))
+    return CensorDecision(None, None)

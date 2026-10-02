@@ -40,6 +40,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Optional, Sequence
 
+from src.common.d5_events import (
+    terminal_from_signal_loss,
+    threshold_simultaneous_shutdown,
+)
 from src.common.episodes import Episode, Span, build_episodes, segment_attempts
 from src.common.labels import (
     assign_labels_all_windows,
@@ -173,6 +177,8 @@ class BoxSegmentation:
     files: list[SourceFile]
     episodes: list[Episode]
     excluded_episodes: list[Episode] = field(default_factory=list)
+    # Prueba de cada fichero de origen (para D5: pérdida de constantes).
+    probes: dict[str, Optional[VitalProbe]] = field(default_factory=dict)
 
 
 def _to_hours(span: Optional[Span]) -> Optional[Span]:
@@ -195,9 +201,11 @@ def segment_box(
     monitor_spans: list[Span] = []
     hr_spans: list[Span] = []
     spo2_spans: list[Span] = []
+    probes: dict[str, Optional[VitalProbe]] = {}
 
     for sf in files:
         probe = probe_fn(sf.path)
+        probes[str(sf.path)] = probe
         if probe is None:
             continue
         v = _to_hours(vent_span_from_probe(probe))
@@ -226,7 +234,7 @@ def segment_box(
     kept = [e for e in episodes if not e.excluded]
     excluded = [e for e in episodes if e.excluded]
     return BoxSegmentation(box=box, files=list(files), episodes=kept,
-                           excluded_episodes=excluded)
+                           excluded_episodes=excluded, probes=probes)
 
 
 # ── Materialización de eventos (fusión + índice) ─────────────────────────────
@@ -280,6 +288,32 @@ def _end_reason(episode: Episode) -> str:
     return "end_of_record"
 
 
+def signal_loss_at_end(
+    files: Sequence[SourceFile],
+    probes: dict[str, Optional[VitalProbe]],
+    episode: Episode,
+) -> bool:
+    """D5 (Clínic/VitalDB): el último fichero del evento pierde HR y SpO2.
+
+    Indica pérdida de constantes (posible muerte o traslado) sin poder
+    detectarlo con tablas.
+    """
+    ep_files = _files_for_episode(files, episode)
+    if not ep_files:
+        return False
+    last = probes.get(str(ep_files[-1].path))
+    if last is None:
+        return False
+    return (hr_span_from_probe(last) is None) and (spo2_span_from_probe(last) is None)
+
+
+def simultaneous_shutdown(episode: Episode) -> bool:
+    """D5: ventilador y monitor se apagan a la vez (<= 15 min). Se reporta."""
+    return threshold_simultaneous_shutdown(
+        episode.attempts[-1].end_h, _region_end_h(episode)
+    )
+
+
 def build_event_record(
     *,
     cohort: str,
@@ -287,6 +321,7 @@ def build_event_record(
     episode: Episode,
     files: Sequence[SourceFile],
     t0_unix: float,
+    signal_loss: bool = False,
 ) -> dict:
     """Ficha de un evento lista para el índice JSON (D12)."""
     attempts = [
@@ -308,14 +343,31 @@ def build_event_record(
     # NO es una extubación confirmada → el evento queda censurado (end_of_record).
     obs_end_h = _region_end_h(episode) - episode.start_h
     tail_h = monitor_tail_h(episode)
-    censor_cause = None if is_confirmed_extubation(episode) else "end_of_record"
+    last_disconnect_h = episode.attempts[-1].end_h - episode.start_h
+    confirmed = is_confirmed_extubation(episode)
+    # Si la última desconexión NO está confirmada (sin >= 1 h de monitor sin
+    # ventilador) no es una extubación: se excluye del etiquetado (así una
+    # posible extubación anterior consolidada sigue ganando).
+    pairs = [(a["vent_end_h"], a["reintubation_h"]) for a in attempts]
+    label_pairs = pairs if confirmed else pairs[:-1]
+    censor_cause: Optional[str] = None
+    censor_time_h: Optional[float] = None
+    if signal_loss:
+        # D5: pérdida de constantes antes o en la desconexión → censura ahí.
+        dec = terminal_from_signal_loss(
+            asystole_or_hr_zero=True,
+            spo2_lost_without_recovery=True,
+            disconnect_abs=(episode.start_h + last_disconnect_h) * _SECONDS_PER_HOUR,
+            t0_abs=episode.start_h * _SECONDS_PER_HOUR,
+        )
+        censor_cause, censor_time_h = dec.censor_cause, dec.censor_time_h
+    elif not confirmed:
+        censor_cause, censor_time_h = "end_of_record", obs_end_h
     labels = labels_to_dict(assign_labels_all_windows(
-        attempts_from_pairs([
-            (a["vent_end_h"], a["reintubation_h"]) for a in attempts
-        ]),
+        attempts_from_pairs(label_pairs),
         obs_end_h=obs_end_h,
         censor_cause=censor_cause,
-        censor_time_h=(obs_end_h if censor_cause else None),
+        censor_time_h=censor_time_h,
     ))
 
     return {
@@ -335,7 +387,12 @@ def build_event_record(
         "monitor_tail_h": round(tail_h, 4),
         "n_attempts": episode.n_attempts,
         "attempts": attempts,
-        "end_reason": _end_reason(episode),
+        "end_reason": (
+            "death_or_transfer" if signal_loss else _end_reason(episode)
+        ),
+        "d5_censor_cause": censor_cause,
+        "signal_loss_at_end": bool(signal_loss),
+        "simultaneous_shutdown": bool(simultaneous_shutdown(episode)),
         "ventilated_hours": round(episode.ventilated_hours, 4),
         "labels": labels,       # Fase 1.6 (D3)
         "trach": None,         # Fase 1.5 (D5)
@@ -360,6 +417,7 @@ def build_cohort_index(
             rec = build_event_record(
                 cohort=cohort, box=box, episode=ep,
                 files=_files_for_episode(seg.files, ep), t0_unix=t0_unix,
+                signal_loss=signal_loss_at_end(seg.files, seg.probes, ep),
             )
             rec["event_id"] = f"{cohort}_{box}_event_{i + 1}"
             events.append(rec)
@@ -379,7 +437,8 @@ def build_cohort_index(
         "source": f"{cohort}_source_vital",
         "description": (
             "Eventos de ventilación segmentados con señales (D1/D2/D4). "
-            "Sin duración mínima ni límite de 7 días."
+            "Sin duración mínima ni límite de 7 días. D5 conectado "
+            "(pérdida de constantes tras la desconexión)."
         ),
         "method": (
             "Se procesa cada .vital de origen con el parser de vitaldb; la "
@@ -391,6 +450,8 @@ def build_cohort_index(
         "total_boxes": len(results),
         "total_events": len(events),
         "total_excluded_events": len(excluded_events),
+        "n_signal_loss_at_end": sum(1 for e in events if e["signal_loss_at_end"]),
+        "n_simultaneous_shutdown": sum(1 for e in events if e["simultaneous_shutdown"]),
         "events": events,
         "excluded_events": excluded_events,
     }

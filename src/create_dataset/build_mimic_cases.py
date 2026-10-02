@@ -37,8 +37,14 @@ from typing import Iterable, Iterator, Optional, Sequence
 import numpy as np
 import pandas as pd
 
+from src.common.d5_events import (
+    d5_censor_for_window,
+    is_trach_text,
+)
 from src.common.episodes import DISCONNECT_GAP_H, Span, build_episodes, spans_from_points
 from src.common.labels import (
+    FAILURE_WINDOWS_H,
+    assign_label,
     assign_labels_all_windows,
     attempts_from_pairs,
     labels_to_dict,
@@ -114,10 +120,25 @@ def load_deaths(clinical_dir: str | Path) -> pd.DataFrame:
     return df[["subject_id", "hadm_id", "death_unix"]]
 
 
+def load_trach_icd9(clinical_dir: str | Path) -> set[int]:
+    """HADM_ID con traqueostomía por ICD-9 (31.1 / 31.2x).
+
+    PROCEDURES_ICD NO tiene hora: solo sirve para MARCAR el caso. La hora se
+    busca en tablas con tiempo (PROCEDUREEVENTS_MV / tipo de vía aérea); si no
+    aparece, se censura en el último fin de ventilación y se reporta.
+    """
+    path = Path(clinical_dir) / "PROCEDURES_ICD.csv.gz"
+    if not path.exists():
+        return set()
+    df = pd.read_csv(path, compression="gzip", usecols=["HADM_ID", "ICD9_CODE"])
+    mask = df["ICD9_CODE"].astype(str).map(is_trach_icd9)
+    return set(int(h) for h in df.loc[mask, "HADM_ID"].dropna().unique())
+
+
 # ── CHARTEVENTS en streaming: OBSERVACIONES con su hora ──────────────────────
 
 _OBS_COLUMNS = ["SUBJECT_ID", "HADM_ID", "ICUSTAY_ID", "ITEMID",
-                "CONCEPT", "t_unix", "VALUENUM"]
+                "CONCEPT", "t_unix", "VALUENUM", "VALUE_RAW"]
 
 
 def observations_from_chunk(df: pd.DataFrame) -> pd.DataFrame:
@@ -135,6 +156,7 @@ def observations_from_chunk(df: pd.DataFrame) -> pd.DataFrame:
     if d.empty:
         return pd.DataFrame(columns=_OBS_COLUMNS)
     d["t_unix"] = series_to_utc(d["CHARTTIME"]).astype("int64") / 1e9
+    d["VALUE_RAW"] = d["VALUE"].astype("string")
     return d[_OBS_COLUMNS]
 
 
@@ -148,7 +170,7 @@ def stream_chartevents(
     parts: list[pd.DataFrame] = []
     reader = pd.read_csv(
         chart_path, compression="gzip", chunksize=chunksize, low_memory=False,
-        usecols=["SUBJECT_ID", "HADM_ID", "ICUSTAY_ID", "ITEMID", "CHARTTIME", "VALUENUM"],
+        usecols=["SUBJECT_ID", "HADM_ID", "ICUSTAY_ID", "ITEMID", "CHARTTIME", "VALUENUM", "VALUE"],
         dtype={"SUBJECT_ID": "int64", "HADM_ID": "Int64", "ICUSTAY_ID": "Int64",
                "ITEMID": "int64", "VALUENUM": "float64"},
     )
@@ -221,6 +243,49 @@ class StayInputs:
     vent_spans: list[Span]
     hr_spans: list[Span]
     spo2_spans: list[Span]
+    # D5 (corrección 3): horas de traqueostomía con hora conocida (epoch),
+    # marca ICD-9 sin hora, y hora de muerte (epoch).
+    trach_unix: list[float] = field(default_factory=list)
+    trach_icd9_no_time: bool = False
+    death_unix: Optional[float] = None
+
+
+def _mimic_d5_censor(
+    stay: StayInputs, ep, failure_window_h: float
+) -> tuple[Optional[str], Optional[float]]:
+    """Decisión D5 para una ventana (horas relativas a t0), o (None, None)."""
+    last_vent_end_h = ep.attempts[-1].end_h - ep.start_h
+    trach_hours = [
+        (t / _SECONDS_PER_HOUR) - ep.start_h for t in stay.trach_unix
+        if t is not None and np.isfinite(t)
+    ]
+    trach_hours = [t for t in trach_hours if t >= -1e-9]
+    death_h = None
+    died_ventilated = False
+    if stay.death_unix is not None and np.isfinite(stay.death_unix):
+        death_h = (stay.death_unix / _SECONDS_PER_HOUR) - ep.start_h
+        died_ventilated = death_h <= last_vent_end_h + 1e-6
+    dec = d5_censor_for_window(
+        failure_window_h=failure_window_h,
+        last_disconnect_h=last_vent_end_h,
+        trach_time_h=(min(trach_hours) if trach_hours else None),
+        trach_time_unknown=stay.trach_icd9_no_time and not trach_hours,
+        death_time_h=death_h,
+        died_ventilated=died_ventilated,
+    )
+    return dec.censor_cause, dec.censor_time_h
+
+
+def _mimic_end_reason(stay: StayInputs, ep, d5_by_window: dict) -> str:
+    causes = {v.get("censor_cause") for v in d5_by_window.values()}
+    if any(c in ("terminal_extubation", "death_at_vent") for c in causes):
+        return "death"
+    if any(c in ("trach", "trach_time_unknown") for c in causes):
+        return "tracheostomy"
+    out_h = stay.outtime_unix / _SECONDS_PER_HOUR
+    if ep.end_h >= out_h - 30.0 / 3600.0:
+        return "end_of_icu_stay"
+    return "extubation_observed"
 
 
 def build_stay_events(stay: StayInputs) -> list[dict]:
@@ -252,13 +317,24 @@ def build_stay_events(stay: StayInputs) -> list[dict]:
             for j, a in enumerate(ep.attempts)
         ]
         arrived = abs(ep.start_h - stay.intime_unix / _SECONDS_PER_HOUR) < (1.0 / 60.0)
-        obs_end_h = (stay.outtime_unix - t0_unix) / _SECONDS_PER_HOUR
-        labels = labels_to_dict(assign_labels_all_windows(
-            attempts_from_pairs([
-                (a["vent_end_h"], a["reintubation_h"]) for a in attempts
-            ]),
-            obs_end_h=obs_end_h,
-        ))
+        obs_end_h = max(
+            (stay.outtime_unix - t0_unix) / _SECONDS_PER_HOUR, ep.duration_h
+        )
+        pairs = [(a["vent_end_h"], a["reintubation_h"]) for a in attempts]
+        labels: dict[str, dict] = {}
+        d5_by_window: dict[str, dict] = {}
+        for w in FAILURE_WINDOWS_H:
+            cause, t_censor = _mimic_d5_censor(stay, ep, float(w))
+            lab = assign_label(
+                attempts_from_pairs(pairs), obs_end_h=obs_end_h,
+                failure_window_h=float(w),
+                censor_cause=cause, censor_time_h=t_censor,
+            )
+            labels[f"{int(w)}h"] = lab
+            d5_by_window[f"{int(w)}h"] = {
+                "censor_cause": cause, "censor_time_h": t_censor,
+            }
+        labels_dict = labels_to_dict(labels)
         out.append({
             "event_id": f"mimic_{stay.stay_id}_event_{i + 1}",
             "cohort": "mimic",
@@ -274,34 +350,49 @@ def build_stay_events(stay: StayInputs) -> list[dict]:
             "duration_seconds": int(round(ep.duration_h * _SECONDS_PER_HOUR)),
             "n_attempts": ep.n_attempts,
             "attempts": attempts,
-            "end_reason": _mimic_end_reason(ep, stay),
+            "end_reason": _mimic_end_reason(stay, ep, d5_by_window),
             "ventilated_hours": round(ep.ventilated_hours, 4),
             "excluded": bool(ep.excluded),
             "exclusion_reason": ep.exclusion_reason,
-            "labels": labels,   # Fase 1.6 (D3)
-            "trach": None,      # Fase 1.5
-            "terminal": None,   # Fase 1.5
+            "labels": labels_dict,   # Fase 1.6 (D3) + D5
+            "trach": {
+                "times_unix": list(stay.trach_unix),
+                "icd9_marked_without_time": bool(stay.trach_icd9_no_time),
+            },
+            "terminal": {
+                "death_unix": stay.death_unix,
+            },
+            "d5": d5_by_window,
         })
     return out
 
 
-def _mimic_end_reason(ep, stay: StayInputs) -> str:
-    out_h = stay.outtime_unix / _SECONDS_PER_HOUR
-    if ep.end_h >= out_h - 30.0 / 3600.0:
-        return "end_of_icu_stay"
-    return "extubation_observed"
-
-
 # ── Orquestación ─────────────────────────────────────────────────────────────
+
+def _airway_trach_unix(obs: pd.DataFrame) -> dict[int, list[float]]:
+    """Hora de traqueostomía por tipo de vía aérea en CHARTEVENTS (D5)."""
+    out: dict[int, list[float]] = {}
+    if obs.empty or "VALUE_RAW" not in obs.columns:
+        return out
+    sub = obs[(obs["CONCEPT"] == "AirwayType") & (obs["VALUE_RAW"].notna())]
+    for _, row in sub.iterrows():
+        if is_trach_text(row["VALUE_RAW"]):
+            sid = int(row["ICUSTAY_ID"])
+            out.setdefault(sid, []).append(float(row["t_unix"]))
+    return out
+
 
 def build_mimic_index(
     icustays: pd.DataFrame,
     obs: pd.DataFrame,
     proc_df: pd.DataFrame,
     *,
+    trach_df: Optional[pd.DataFrame] = None,
+    deaths: Optional[pd.DataFrame] = None,
+    trach_icd9: Optional[set[int]] = None,
     limit_stays: Optional[int] = None,
 ) -> dict:
-    """Construye el índice completo de casos MIMIC."""
+    """Construye el índice completo de casos MIMIC (con D5, corrección 3)."""
     stays_with_vent = obs["ICUSTAY_ID"].dropna().unique() if not obs.empty else []
     proc_stays = proc_df["icustay_id"].dropna().unique() if not proc_df.empty else []
     candidate_ids = set(int(x) for x in stays_with_vent) | set(int(x) for x in proc_stays)
@@ -310,33 +401,57 @@ def build_mimic_index(
     if limit_stays:
         icu = icu.head(limit_stays)
 
+    trach_by_stay: dict[int, list[float]] = {}
+    if trach_df is not None and not trach_df.empty:
+        for _, r in trach_df.iterrows():
+            trach_by_stay.setdefault(int(r["icustay_id"]), []).append(float(r["start_unix"]))
+    for sid, times in _airway_trach_unix(obs).items():
+        trach_by_stay.setdefault(sid, []).extend(times)
+
+    deaths_by_hadm: dict[int, float] = {}
+    if deaths is not None and not deaths.empty:
+        deaths_by_hadm = {
+            int(r["hadm_id"]): float(r["death_unix"]) for _, r in deaths.iterrows()
+        }
+    trach_icd9 = trach_icd9 or set()
+
     events: list[dict] = []
     for _, row in icu.iterrows():
         sid = int(row["icustay_id"])
+        hadm = int(row["hadm_id"])
         stay = StayInputs(
             stay_id=sid,
             subject_id=int(row["subject_id"]),
-            hadm_id=int(row["hadm_id"]),
+            hadm_id=hadm,
             intime_unix=float(row["intime_unix"]),
             outtime_unix=float(row["outtime_unix"]),
             vent_spans=vent_spans_for_stay(obs, proc_df, sid),
             hr_spans=monitor_spans_for_stay(obs, sid, ("HR",)),
             spo2_spans=monitor_spans_for_stay(obs, sid, ("SpO2",)),
+            trach_unix=trach_by_stay.get(sid, []),
+            trach_icd9_no_time=(hadm in trach_icd9),
+            death_unix=deaths_by_hadm.get(hadm),
         )
         events.extend(build_stay_events(stay))
 
     kept = [e for e in events if not e["excluded"]]
     excluded = [e for e in events if e["excluded"]]
+    n_trach_no_time = sum(
+        1 for e in events
+        if e["trach"]["icd9_marked_without_time"] and not e["trach"]["times_unix"]
+    )
     return {
         "source": "mimic_chartevents_procedureevents",
         "description": (
-            "Casos MIMIC (D6) desde CHARTEVENTS (ajustes de ventilador) y "
-            "PROCEDUREEVENTS_MV (225792). Frontera de paciente = ICUSTAY."
+            "Casos MIMIC (D6) desde CHARTEVENTS (marcadores específicos de VM) y "
+            "PROCEDUREEVENTS_MV (225792). Frontera de paciente = ICUSTAY. D5 "
+            "conectado (traqueostomía y muerte)."
         ),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "total_stays_with_vent": int(len(icu)),
         "total_events": len(kept),
         "total_excluded_events": len(excluded),
+        "n_trach_time_unknown": int(n_trach_no_time),
         "events": kept,
         "excluded_events": excluded,
     }
@@ -357,8 +472,15 @@ def run(config: dict, *, limit_stays: Optional[int] = None) -> dict:
 
     icustays = load_icustays(clinical_dir)
     proc_df = load_vent_procedures(clinical_dir)
+    trach_df = load_trach_procedures(clinical_dir)
+    deaths = load_deaths(clinical_dir)
+    trach_icd9 = load_trach_icd9(clinical_dir)
     obs = stream_chartevents(chart_path)
-    index = build_mimic_index(icustays, obs, proc_df, limit_stays=limit_stays)
+    index = build_mimic_index(
+        icustays, obs, proc_df,
+        trach_df=trach_df, deaths=deaths, trach_icd9=trach_icd9,
+        limit_stays=limit_stays,
+    )
 
     out_dir.mkdir(parents=True, exist_ok=True)
     if not obs.empty:

@@ -127,6 +127,13 @@ class ClinicalEvents:
     censored_no_extubation: bool = False
     censored_reason: Optional[str] = None   # ej. "death_at_vent_end"
 
+    # D5 (Fase 1, corrección 3): traqueostomía y extubación terminal, en horas
+    # desde t0. La decisión por ventana la aplica el etiquetador común.
+    trach_time_hours: Optional[float] = None
+    trach_time_unknown: bool = False
+    death_time_hours: Optional[float] = None
+    died_ventilated: bool = False
+
     @property
     def n_failed_attempts(self) -> int:
         return sum(1 for a in self.extubation_attempts if a.outcome == "failure")

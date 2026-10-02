@@ -84,6 +84,7 @@ class TestObservations:
             "CHARTTIME": ["2150-01-01 00:00:00", "2150-01-01 06:00:00",
                           "2150-01-01 03:00:00"],
             "VALUENUM": [12.0, 14.0, 5.0],
+            "VALUE": ["12", "14", "5"],
         })
 
     def test_keeps_each_observation_with_its_time(self):
@@ -197,6 +198,48 @@ class TestStaySegmentation:
         events = build_stay_events(_stay(vent, hr, []))
         assert len(events) == 1
         assert events[0]["duration_seconds"] <= 48 * H + 1
+
+
+# ── D5 en MIMIC (corrección 3) ───────────────────────────────────────────────
+
+class TestMimicD5:
+    def _stay(self, vent, hr, **kw) -> StayInputs:
+        base = _stay(vent, hr, [])
+        for k, v in kw.items():
+            setattr(base, k, v)
+        return base
+
+    def test_trach_before_extubation_censors(self):
+        vent = [_h(0, 20)]
+        hr = [_h(0, 48)]
+        stay = self._stay(vent, hr, trach_unix=[BASE + 10 * H])
+        ev = build_stay_events(stay)[0]
+        assert ev["end_reason"] == "tracheostomy"
+        assert ev["labels"]["48h"]["event_type"] == "censored_trach"
+        assert ev["labels"]["48h"]["censor_time_h"] == pytest.approx(10.0)
+
+    def test_death_within_window_censors_at_disconnect(self):
+        vent = [_h(0, 20)]
+        hr = [_h(0, 48)]
+        stay = self._stay(vent, hr, death_unix=BASE + 30 * H)
+        ev = build_stay_events(stay)[0]
+        assert ev["labels"]["48h"]["event_type"] == "censored_terminal_extubation"
+        assert ev["labels"]["48h"]["censor_time_h"] == pytest.approx(20.0)
+
+    def test_negative_control_death_after_window_is_success(self):
+        vent = [_h(0, 20)]
+        hr = [_h(0, 48)]
+        stay = self._stay(vent, hr, death_unix=BASE + 100 * H)
+        ev = build_stay_events(stay)[0]
+        assert ev["labels"]["48h"]["event_type"] == "successful_extubation"
+
+    def test_trach_icd9_without_time_censors_at_last_vent(self):
+        vent = [_h(0, 20)]
+        hr = [_h(0, 48)]
+        stay = self._stay(vent, hr, trach_icd9_no_time=True)
+        ev = build_stay_events(stay)[0]
+        assert ev["labels"]["48h"]["event_type"] == "censored_trach_time_unknown"
+        assert ev["trach"]["icd9_marked_without_time"] is True
 
 
 # ── Verificación contra D_ITEMS real (si existe) ─────────────────────────────

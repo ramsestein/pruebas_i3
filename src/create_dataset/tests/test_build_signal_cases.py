@@ -242,6 +242,54 @@ class TestEndOfObservation:
         assert len(idx["events"][0]["source_files"]) == 3
 
 
+# ── D5 en Clínic/VitalDB (corrección 3) ──────────────────────────────────────
+
+class TestSignalD5:
+    def _write_hour(self, tmp_path: Path, hours: int, minutes: int,
+                    duration_s: float, vent: bool, monitor: bool) -> None:
+        dt = BASE + timedelta(hours=hours, minutes=minutes)
+        write_hour(
+            tmp_path / "box2" / _fname(f"t{hours}_{minutes}", dt), dt,
+            monitor=monitor, vent=vent, duration_s=duration_s,
+        )
+
+    def _events(self, tmp_path: Path):
+        boxes = scan_source_files(tmp_path, CLINIC_SPEC)
+        segs = [(b, segment_box(b, f)) for b, f in boxes.items()]
+        return build_cohort_index(
+            segs, cohort="clinic", spec=CLINIC_SPEC, merged=False
+        )["events"]
+
+    def test_signal_loss_after_disconnect_censors(self, tmp_path: Path):
+        """Pérdida de HR y SpO2 tras la desconexión → censura D5."""
+        self._write_hour(tmp_path, 0, 0, 3600, vent=True, monitor=True)
+        self._write_hour(tmp_path, 1, 0, 3600, vent=True, monitor=False)
+        ev = self._events(tmp_path)[0]
+        assert ev["signal_loss_at_end"] is True
+        assert ev["end_reason"] == "death_or_transfer"
+        assert ev["labels"]["48h"]["event_type"] == "censored_terminal_extubation"
+
+    def test_negative_control_monitor_present_no_censor(self, tmp_path: Path):
+        self._write_hour(tmp_path, 0, 0, 3600, vent=True, monitor=True)
+        self._write_hour(tmp_path, 1, 0, 3600, vent=False, monitor=True)
+        self._write_hour(tmp_path, 2, 0, 3600, vent=False, monitor=True)
+        ev = self._events(tmp_path)[0]
+        assert ev["signal_loss_at_end"] is False
+        assert ev["labels"]["48h"]["event_type"] == "successful_extubation"
+
+    def test_simultaneous_shutdown_reported(self, tmp_path: Path):
+        """Ventilador y monitor se apagan a la vez → se reporta (D5)."""
+        self._write_hour(tmp_path, 0, 0, 3600, vent=True, monitor=True)
+        ev = self._events(tmp_path)[0]
+        assert ev["simultaneous_shutdown"] is True
+
+    def test_negative_control_shutdown_not_simultaneous(self, tmp_path: Path):
+        self._write_hour(tmp_path, 0, 0, 3600, vent=True, monitor=True)
+        self._write_hour(tmp_path, 1, 0, 3600, vent=False, monitor=True)
+        ev = self._events(tmp_path)[0]
+        assert ev["simultaneous_shutdown"] is False
+
+
 # ── Índice y fusión ──────────────────────────────────────────────────────────
 
 class TestIndexAndMerge:
