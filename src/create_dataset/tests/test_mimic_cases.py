@@ -148,6 +148,17 @@ class TestVentSpansFromObservations:
                     (100, "PEEP", 224700, 2.0)])
         assert len(vent_spans_for_stay(obs, self._empty_proc(), 100)) == 1
 
+    def test_invalid_procedure_span_is_discarded(self):
+        """Dato real: PROCEDUREEVENTS_MV con fin <= inicio no debe romper el build."""
+        proc = pd.DataFrame({
+            "icustay_id": [100, 100],
+            "start_unix": [BASE + 10 * H, BASE + 20 * H],
+            "end_unix": [BASE + 9 * H, BASE + 22 * H],   # el 1º es inválido
+        })
+        obs = _obs([(100, "RR_V", 224690, 0.0), (100, "RR_V", 224690, 1.0)])
+        spans = vent_spans_for_stay(obs, proc, 100)
+        assert len(spans) == 2  # el inválido se descarta
+
 
 # ── Segmentación de una estancia ─────────────────────────────────────────────
 

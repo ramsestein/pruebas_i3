@@ -209,9 +209,14 @@ def vent_spans_for_stay(
     if not proc_df.empty:
         proc = proc_df[proc_df["icustay_id"] == stay_id]
         for _, row in proc.iterrows():
-            if np.isfinite(row["start_unix"]) and np.isfinite(row["end_unix"]):
-                spans.append(Span(float(row["start_unix"]) / _SECONDS_PER_HOUR,
-                                  float(row["end_unix"]) / _SECONDS_PER_HOUR))
+            start_s = float(row["start_unix"])
+            end_s = float(row["end_unix"])
+            # Datos reales: hay filas con endtime <= starttime. Se descartan
+            # (se contabilizan en el índice) en vez de romper el build.
+            if not (np.isfinite(start_s) and np.isfinite(end_s)) or end_s <= start_s:
+                continue
+            spans.append(Span(start_s / _SECONDS_PER_HOUR,
+                              end_s / _SECONDS_PER_HOUR))
     return sorted(spans, key=lambda s: s.start_h)
 
 
@@ -452,6 +457,9 @@ def build_mimic_index(
         1 for e in events
         if e["trach"]["icd9_marked_without_time"] and not e["trach"]["times_unix"]
     )
+    n_invalid_proc = 0
+    if not proc_df.empty:
+        n_invalid_proc = int(((proc_df["end_unix"] - proc_df["start_unix"]) <= 0).sum())
     return {
         "source": "mimic_chartevents_procedureevents",
         "description": (
@@ -464,6 +472,7 @@ def build_mimic_index(
         "total_events": len(kept),
         "total_excluded_events": len(excluded),
         "n_trach_time_unknown": int(n_trach_no_time),
+        "n_invalid_vent_procedures": n_invalid_proc,
         "events": kept,
         "excluded_events": excluded,
     }
