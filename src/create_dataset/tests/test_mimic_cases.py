@@ -297,6 +297,16 @@ class TestMimicD5:
         assert ev["labels"]["48h"]["event_type"] == "censored_trach_time_unknown"
         assert ev["trach"]["icd9_marked_without_time"] is True
 
+    def test_preexisting_trach_excludes_the_event(self):
+        """Traqueostomía ANTES de t0 → exclusión de inicio, no censura."""
+        vent = [_h(0, 20)]
+        hr = [_h(0, 48)]
+        stay = self._stay(vent, hr, trach_unix=[BASE - 5 * H])
+        ev = build_stay_events(stay)[0]
+        assert ev["excluded"] is True
+        assert ev["exclusion_reason"] == "trach_preexisting"
+        assert ev["end_reason"] == "excluded_trach_preexisting"
+
 
 # ── Robusteza ante ICUSTAY_ID nulo (fallo real del build) ───────────────────
 

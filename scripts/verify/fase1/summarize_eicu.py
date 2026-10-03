@@ -63,6 +63,7 @@ def main() -> None:
     care_groups = {pid: g for pid, g in care.groupby("patientunitstayid")}
 
     n_events = n_excluded = 0
+    excluded_preexisting = 0
     attempts_hist: Counter = Counter()
     reasons: Counter = Counter()
     by_window = {w: Counter() for w in FAILURE_WINDOWS_H}
@@ -86,6 +87,17 @@ def main() -> None:
             continue
         n_events += 1
 
+        # Traqueostomía (antes de contar: la previa a t0 excluye el evento).
+        trach_off = None
+        if "airwaytype" in g.columns:
+            mask = g["airwaytype"].astype(str).map(is_trach_text)
+            trach_off = trach_time_from_offset_rows(g.loc[mask, "respcarestatusoffset"])
+        trach_h = None if trach_off is None else (trach_off - t0) / 60.0
+        if trach_h is not None and trach_h < 0:
+            excluded_preexisting += 1
+            n_events -= 1
+            continue
+
         pairs: list[tuple[float, float | None]] = []
         for i in range(len(merged)):
             extub = (float(merged.iloc[i]["ventendoffset"]) - t0) / 60.0
@@ -97,11 +109,6 @@ def main() -> None:
         attempts_hist[len(pairs)] += 1
         dur_h.append((float(merged.iloc[-1]["ventendoffset"]) - t0) / 60.0)
 
-        trach_off = None
-        if "airwaytype" in g.columns:
-            mask = g["airwaytype"].astype(str).map(is_trach_text)
-            trach_off = trach_time_from_offset_rows(g.loc[mask, "respcarestatusoffset"])
-        trach_h = None if trach_off is None else (trach_off - t0) / 60.0
         died = str(meta["unitdischargestatus"]).strip().lower() == "expired"
         death_h = ((discharge - t0) / 60.0) if died else None
         last_disconnect = pairs[-1][0] if pairs else None
@@ -131,6 +138,7 @@ def main() -> None:
 
     print("## eICU\n")
     print(f"- Estancias con VM (tras sanea): **{n_events}** | descartadas (alta <= t0): {n_excluded}")
+    print(f"- Excluidas por traqueostomía previa a t0: **{excluded_preexisting}**")
     print(f"- Intentos por evento: {dict(sorted(attempts_hist.items()))}")
     if dur_h:
         d = sorted(dur_h)

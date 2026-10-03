@@ -134,6 +134,11 @@ class ClinicalEvents:
     death_time_hours: Optional[float] = None
     died_ventilated: bool = False
 
+    # Exclusión (Fase 1 ajuste 3): p. ej. traqueostomía previa a t0, que es un
+    # criterio de inclusión que se conoce al empezar.
+    excluded: bool = False
+    exclusion_reason: Optional[str] = None
+
     @property
     def n_failed_attempts(self) -> int:
         return sum(1 for a in self.extubation_attempts if a.outcome == "failure")

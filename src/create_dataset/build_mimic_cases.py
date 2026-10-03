@@ -38,6 +38,7 @@ import numpy as np
 import pandas as pd
 
 from src.common.d5_events import (
+    CensorDecision,
     d5_censor_for_window,
     is_trach_text,
 )
@@ -327,22 +328,19 @@ class StayInputs:
     death_unix: Optional[float] = None
 
 
-def _mimic_d5_censor(
-    stay: StayInputs, ep, failure_window_h: float
-) -> tuple[Optional[str], Optional[float]]:
-    """Decisión D5 para una ventana (horas relativas a t0), o (None, None)."""
+def _mimic_d5_censor(stay: StayInputs, ep, failure_window_h: float) -> CensorDecision:
+    """Decisión D5 para una ventana (horas relativas a t0)."""
     last_vent_end_h = ep.attempts[-1].end_h - ep.start_h
     trach_hours = [
         (t / _SECONDS_PER_HOUR) - ep.start_h for t in stay.trach_unix
         if t is not None and np.isfinite(t)
     ]
-    trach_hours = [t for t in trach_hours if t >= -1e-9]
     death_h = None
     died_ventilated = False
     if stay.death_unix is not None and np.isfinite(stay.death_unix):
         death_h = (stay.death_unix / _SECONDS_PER_HOUR) - ep.start_h
         died_ventilated = death_h <= last_vent_end_h + 1e-6
-    dec = d5_censor_for_window(
+    return d5_censor_for_window(
         failure_window_h=failure_window_h,
         last_disconnect_h=last_vent_end_h,
         trach_time_h=(min(trach_hours) if trach_hours else None),
@@ -350,11 +348,12 @@ def _mimic_d5_censor(
         death_time_h=death_h,
         died_ventilated=died_ventilated,
     )
-    return dec.censor_cause, dec.censor_time_h
 
 
 def _mimic_end_reason(stay: StayInputs, ep, d5_by_window: dict) -> str:
     causes = {v.get("censor_cause") for v in d5_by_window.values()}
+    if "trach_preexisting" in causes:
+        return "excluded_trach_preexisting"
     if any(c in ("terminal_extubation", "death_at_vent") for c in causes):
         return "death"
     if any(c in ("trach", "trach_time_unknown") for c in causes):
@@ -400,16 +399,25 @@ def build_stay_events(stay: StayInputs) -> list[dict]:
         pairs = [(a["vent_end_h"], a["reintubation_h"]) for a in attempts]
         labels: dict[str, dict] = {}
         d5_by_window: dict[str, dict] = {}
+        excluded = bool(ep.excluded)
+        exclusion_reason = ep.exclusion_reason
         for w in FAILURE_WINDOWS_H:
-            cause, t_censor = _mimic_d5_censor(stay, ep, float(w))
+            dec = _mimic_d5_censor(stay, ep, float(w))
+            if dec.excluded:
+                # Traqueostomía previa a t0: criterio de inclusión → exclusión.
+                excluded = True
+                exclusion_reason = dec.censor_cause
             lab = assign_label(
                 attempts_from_pairs(pairs), obs_end_h=obs_end_h,
                 failure_window_h=float(w),
-                censor_cause=cause, censor_time_h=t_censor,
+                censor_cause=(None if dec.excluded else dec.censor_cause),
+                censor_time_h=(None if dec.excluded else dec.censor_time_h),
             )
             labels[f"{int(w)}h"] = lab
             d5_by_window[f"{int(w)}h"] = {
-                "censor_cause": cause, "censor_time_h": t_censor,
+                "censor_cause": dec.censor_cause,
+                "censor_time_h": dec.censor_time_h,
+                "excluded": bool(dec.excluded),
             }
         labels_dict = labels_to_dict(labels)
         out.append({
@@ -429,8 +437,8 @@ def build_stay_events(stay: StayInputs) -> list[dict]:
             "attempts": attempts,
             "end_reason": _mimic_end_reason(stay, ep, d5_by_window),
             "ventilated_hours": round(ep.ventilated_hours, 4),
-            "excluded": bool(ep.excluded),
-            "exclusion_reason": ep.exclusion_reason,
+            "excluded": excluded,
+            "exclusion_reason": exclusion_reason,
             "labels": labels_dict,   # Fase 1.6 (D3) + D5
             "trach": {
                 "times_unix": list(stay.trach_unix),

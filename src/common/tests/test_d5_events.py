@@ -148,6 +148,24 @@ class TestCohortDetection:
         assert d.censor_cause == "trach_time_unknown"
         assert d.censor_time_h == 99.0
 
+    def test_trach_decision_preexisting_is_exclusion(self):
+        """Traqueostomía ANTES de t0 → exclusión, no censura."""
+        d = trach_decision([-5.0], icd9_marked_without_time=False, last_vent_end_h=10.0)
+        assert d.censor_cause == "trach_preexisting"
+        assert d.excluded is True
+
+    def test_negative_control_trach_during_episode_censors(self):
+        d = trach_decision([5.0], icd9_marked_without_time=False, last_vent_end_h=10.0)
+        assert d.censor_cause == "trach"
+        assert d.excluded is False
+
+    def test_d5_censor_for_window_preexisting(self):
+        from src.common.d5_events import d5_censor_for_window
+        d = d5_censor_for_window(
+            failure_window_h=48.0, last_disconnect_h=10.0, trach_time_h=-2.0,
+        )
+        assert d.excluded is True and d.censor_cause == "trach_preexisting"
+
     def test_negative_control_trach_decision_none(self):
         d = trach_decision([], icd9_marked_without_time=False, last_vent_end_h=99.0)
         assert d.censor_cause is None

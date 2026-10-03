@@ -32,7 +32,7 @@ from .base import (
     NumericsRecord,
     WaveformRecord,
 )
-from ...common.d5_events import is_trach_text, trach_time_from_offset_rows
+from ...common.d5_events import is_trach_text, trach_decision, trach_time_from_offset_rows
 from ...common.eicu_rules import (
     eicu_t0_minutes,
     merge_vent_episodes,
@@ -220,6 +220,8 @@ class EicuAdapter(CohortAdapter):
         trach_time_unknown = False
         death_time_hours = None
         died_ventilated = False
+        excluded = False
+        exclusion_reason = None
         
         if patient_id in self._patients_df.index:
             pt_meta = self._patients_df.loc[patient_id]
@@ -308,6 +310,16 @@ class EicuAdapter(CohortAdapter):
                                 float(pt_meta['unitdischargeoffset']) - last_end_off
                             ) <= 1.0
 
+                        # Traqueostomía previa a t0 → exclusión de inicio (ajuste 3).
+                        tdec = trach_decision(
+                            [trach_time_hours] if trach_time_hours is not None else [],
+                            icd9_marked_without_time=False,
+                            last_vent_end_h=0.0,
+                        )
+                        if tdec.excluded:
+                            excluded = True
+                            exclusion_reason = tdec.censor_cause
+
         return ClinicalEvents(
             patient_id=patient_id,
             cohort=self.cohort_name,
@@ -322,6 +334,8 @@ class EicuAdapter(CohortAdapter):
             trach_time_unknown=trach_time_unknown,
             death_time_hours=death_time_hours,
             died_ventilated=died_ventilated,
+            excluded=excluded,
+            exclusion_reason=exclusion_reason,
         )
 
     def _merge_vent_episodes(self, df: pd.DataFrame, gap_tolerance_mins: float = 120.0) -> pd.DataFrame:

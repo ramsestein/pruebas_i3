@@ -212,14 +212,23 @@ def trach_decision(
     *,
     icd9_marked_without_time: bool,
     last_vent_end_h: float,
+    t0_h: float = 0.0,
 ) -> CensorDecision:
-    """Censura por traqueostomía (D5).
+    """Decisión por traqueostomía (D5).
 
-    Si solo hay marca ICD-9 sin hora, se censura en el último fin de
-    ventilación y se reporta (``trach_time_unknown``).
+    - Traqueostomía ANTES de t0 → **exclusión de inicio**
+      (``excluded``, causa ``trach_preexisting``): se conoce al empezar.
+    - Traqueostomía durante el episodio → **censura** en su hora.
+    - Solo marca ICD-9 sin hora → censura en el último fin de ventilación
+      (``trach_time_unknown``).
     """
-    if trach_times_h:
-        return CensorDecision("trach", float(min(trach_times_h)))
+    valid = [float(t) for t in trach_times_h if t is not None]
+    preexisting = [t for t in valid if t < t0_h - 1e-9]
+    if preexisting:
+        return CensorDecision("trach_preexisting", float(min(preexisting)), excluded=True)
+    during = [t for t in valid if t >= t0_h - 1e-9]
+    if during:
+        return CensorDecision("trach", float(min(during)))
     if icd9_marked_without_time:
         return CensorDecision("trach_time_unknown", float(last_vent_end_h))
     return CensorDecision(None, None)
@@ -236,9 +245,9 @@ def d5_censor_for_window(
 ) -> CensorDecision:
     """Decisión D5 unificada (horas desde t0) para UNA ventana de fallo.
 
-    Orden: primero traqueostomía; después muerte. La variante "muerte dentro de
-    la ventana tras la desconexión" censura en la desconexión; "muerte
-    ventilado" censura en la muerte.
+    Orden: primero traqueostomía (incluida la previa a t0 → exclusión); después
+    muerte. La variante "muerte dentro de la ventana tras la desconexión"
+    censura en la desconexión; "muerte ventilado" censura en la muerte.
     """
     dec = trach_decision(
         [trach_time_h] if trach_time_h is not None else [],
