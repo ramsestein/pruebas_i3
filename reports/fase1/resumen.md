@@ -32,9 +32,11 @@ con su commit y sus tests (el nº 6 es este informe):
 | 4. Etiquetador único | `dd66832` | `survival.py` delega en `src/common/labels.py` + test de equivalencia |
 | 5. Fechas independientes de pandas | `6c789d0` | `series_to_epoch_seconds` (sin `astype("int64")/1e9`); test con resolución µs y ns + control negativo |
 
-Total: **146 tests en verde, 1 saltado** (el que valida itemids contra
+Total: **223 tests en verde, 1 saltado** (el que valida itemids contra
 `datasets/mimic3wdb/clinical/D_ITEMS.csv.gz`, no presente; el de `D:/data`
 sí se ejecuta y pasa).
+
+Comando: `python -m pytest src/stage0/tests src/common/tests src/create_dataset/tests -q`
 
 ## 2. Decisiones implementadas
 
