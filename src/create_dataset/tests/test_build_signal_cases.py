@@ -31,9 +31,9 @@ def _fname(token: str, dt: datetime) -> str:
     return f"{token}_{dt.strftime('%y%m%d_%H%M%S')}.vital"
 
 
-def _recs(dt_unix: float, duration_s: float, step_s: float = 600.0):
+def _recs(dt_unix: float, duration_s: float, step_s: float = 600.0, value: float = 1.0):
     t = np.arange(0.0, duration_s + 1e-9, step_s)
-    return [{"dt": dt_unix + float(x), "val": 1.0} for x in t]
+    return [{"dt": dt_unix + float(x), "val": value} for x in t]
 
 
 def write_hour(
@@ -50,11 +50,11 @@ def write_hour(
     vf.dtstart = dt_unix
     vf.dtend = dt_unix + duration_s
     if monitor:
-        vf.add_track("Intellivue/ECG_HR", _recs(dt_unix, duration_s))
-        vf.add_track("Intellivue/PLETH_SAT_O2", _recs(dt_unix, duration_s))
+        vf.add_track("Intellivue/ECG_HR", _recs(dt_unix, duration_s, value=80.0))
+        vf.add_track("Intellivue/PLETH_SAT_O2", _recs(dt_unix, duration_s, value=98.0))
     if vent:
-        vf.add_track("Intellivue/TV_EXP", _recs(dt_unix, duration_s))
-        vf.add_track("Intellivue/VENT_RR", _recs(dt_unix, duration_s))
+        vf.add_track("Intellivue/TV_EXP", _recs(dt_unix, duration_s, value=500.0))
+        vf.add_track("Intellivue/VENT_RR", _recs(dt_unix, duration_s, value=14.0))
     path.parent.mkdir(parents=True, exist_ok=True)
     vf.to_vital(str(path))
     return path
@@ -260,14 +260,14 @@ class TestSignalD5:
             segs, cohort="clinic", spec=CLINIC_SPEC, merged=False
         )["events"]
 
-    def test_signal_loss_after_disconnect_censors(self, tmp_path: Path):
-        """Pérdida de HR y SpO2 tras la desconexión → censura D5."""
+    def test_monitor_loss_without_hr_zero_is_not_death(self, tmp_path: Path):
+        """Perder el monitor no es una muerte: sin FC 0 sostenida → end_of_record."""
         self._write_hour(tmp_path, 0, 0, 3600, vent=True, monitor=True)
         self._write_hour(tmp_path, 1, 0, 3600, vent=True, monitor=False)
         ev = self._events(tmp_path)[0]
+        assert ev["death_signal"]["detected"] is False
         assert ev["signal_loss_at_end"] is True
-        assert ev["end_reason"] == "death_or_transfer"
-        assert ev["labels"]["48h"]["event_type"] == "censored_terminal_extubation"
+        assert ev["labels"]["48h"]["event_type"] == "censored_end_of_record"
 
     def test_negative_control_monitor_present_no_censor(self, tmp_path: Path):
         self._write_hour(tmp_path, 0, 0, 3600, vent=True, monitor=True)
@@ -288,6 +288,35 @@ class TestSignalD5:
         self._write_hour(tmp_path, 1, 0, 3600, vent=False, monitor=True)
         ev = self._events(tmp_path)[0]
         assert ev["simultaneous_shutdown"] is False
+
+    def test_signal_death_is_detected_and_censors_at_disconnect(self, tmp_path: Path):
+        """FC 65→0 con desaturación, 16 min tras la desconexión → terminal."""
+        dt = BASE
+        dt_unix = to_epoch_utc(dt)
+        vf = vitaldb.VitalFile()
+        vf.dtstart = dt_unix
+        vf.dtend = dt_unix + 3600
+        hr = [(0.0, 65), (0.2, 55), (0.3, 40), (0.45, 25), (0.6, 12),
+              (0.667, 0), (0.7, 0), (0.8, 0), (0.9, 0), (0.99, 0)]
+        spo2 = [(0.0, 97), (0.3, 93), (0.5, 86), (0.7, 70), (0.9, 65)]
+        vf.add_track("Intellivue/ECG_HR",
+                     [{"dt": dt_unix + t * 3600, "val": v} for t, v in hr], srate=0)
+        vf.add_track("Intellivue/PLETH_SAT_O2",
+                     [{"dt": dt_unix + t * 3600, "val": v} for t, v in spo2], srate=0)
+        # Ventilación solo hasta 0,4 h (desconexión) y sin recuperar monitor.
+        vf.add_track("Intellivue/TV_EXP",
+                     [{"dt": dt_unix + t * 3600, "val": 500.0}
+                      for t in (0.0, 0.2, 0.4)], srate=0)
+        path = tmp_path / "box2" / _fname("tok", dt)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        vf.to_vital(str(path))
+
+        ev = self._events(tmp_path)[0]
+        assert ev["death_signal"]["detected"] is True
+        assert ev["death_signal"]["died_ventilated"] is False
+        assert ev["end_reason"] == "death_signal"
+        assert ev["d5"]["48h"]["censor_cause"] == "terminal_extubation"
+        assert ev["labels"]["48h"]["event_type"] == "censored_terminal_extubation"
 
 
 # ── Índice y fusión ──────────────────────────────────────────────────────────

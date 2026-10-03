@@ -96,6 +96,17 @@ _PROBE_TRACKS: tuple[str, ...] = tuple(dict.fromkeys(
     VENT_TRACKS + MONITOR_NUM_TRACKS + MONITOR_WAVE_TRACKS
 ))
 
+# Pistas para la detección de muerte por señales (Fase 1, ajuste 2).
+# Las de onda se resumen a su amplitud (max-min) por registro.
+_DEATH_TRACKS: dict[str, tuple[str, ...]] = {
+    "HR": ("Intellivue/ECG_HR", "Intellivue/HR", "Intellivue/PLETH_HR"),
+    "SpO2": ("Intellivue/PLETH_SAT_O2",),
+    "MAP": ("Intellivue/ART_MEAN", "Intellivue/ABP_MEAN", "Intellivue/NIBP_MEAN"),
+    "ABP_amp": ("Intellivue/ART", "Intellivue/ABP"),
+    "PPG_amp": ("Intellivue/PLETH",),
+}
+_DEATH_WAVE_KEYS = ("ABP_amp", "PPG_amp")
+
 
 @dataclass
 class TrackProbe:
@@ -192,6 +203,48 @@ def hr_span_from_probe(probe: VitalProbe) -> Optional[Span]:
 
 def spo2_span_from_probe(probe: VitalProbe) -> Optional[Span]:
     return _union_extent(probe, SPO2_TRACKS)
+
+
+def read_death_series(
+    paths: Sequence[str | Path],
+    t0_unix: float,
+) -> dict[str, list[tuple[float, float]]]:
+    """Series para la detección de muerte por señales, en horas desde t0.
+
+    Devuelve ``{"HR": [(t, v), ...], "SpO2": ..., "MAP": ...,
+    "ABP_amp": ..., "PPG_amp": ...}``. Las pistas de onda se resumen a su
+    amplitud (max-min) de cada registro, que es lo que delata la pérdida de
+    pulsatilidad.
+    """
+    track_names = [n for names in _DEATH_TRACKS.values() for n in names]
+    out: dict[str, list[tuple[float, float]]] = {k: [] for k in _DEATH_TRACKS}
+    for p in paths:
+        try:
+            vf = vitaldb.VitalFile(str(p), track_names=track_names)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("[vital_signals] no se pudo leer %s: %s", p, exc)
+            continue
+        if vf is None or not getattr(vf, "trks", None):
+            continue
+        for canonical, names in _DEATH_TRACKS.items():
+            for n in names:
+                trk = vf.trks.get(n)
+                if not trk or not trk.recs:
+                    continue
+                for r in trk.recs:
+                    dt = float(r["dt"])
+                    t_h = (dt - t0_unix) / 3600.0
+                    if canonical in _DEATH_WAVE_KEYS:
+                        arr = np.asarray(r["val"], dtype=np.float64).ravel()
+                        if arr.size == 0:
+                            continue
+                        out[canonical].append((t_h, float(np.nanmax(arr) - np.nanmin(arr))))
+                    else:
+                        v = float(r["val"])
+                        if np.isfinite(v):
+                            out[canonical].append((t_h, v))
+                break  # primera pista disponible de ese canal
+    return out
 
 
 def merge_event_files(

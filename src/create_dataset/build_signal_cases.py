@@ -41,15 +41,19 @@ from pathlib import Path
 from typing import Callable, Optional, Sequence
 
 from src.common.d5_events import (
+    d5_censor_for_window,
     terminal_from_signal_loss,
     threshold_simultaneous_shutdown,
 )
 from src.common.episodes import Episode, Span, build_episodes, segment_attempts
 from src.common.labels import (
+    FAILURE_WINDOWS_H,
+    assign_label,
     assign_labels_all_windows,
     attempts_from_pairs,
     labels_to_dict,
 )
+from src.common.signal_death import DeathDecision, Series, detect_signal_death
 from src.common.paths import config_path, repo_root, resolve_path
 from src.common.vital_signals import (
     MERGE_TRACK_NAMES,
@@ -58,6 +62,7 @@ from src.common.vital_signals import (
     merge_event_files,
     monitor_span_from_probe,
     probe_vital_file,
+    read_death_series,
     spo2_span_from_probe,
     vent_span_from_probe,
 )
@@ -293,10 +298,10 @@ def signal_loss_at_end(
     probes: dict[str, Optional[VitalProbe]],
     episode: Episode,
 ) -> bool:
-    """D5 (Clínic/VitalDB): el último fichero del evento pierde HR y SpO2.
+    """(QC) el último fichero del evento pierde HR y SpO2.
 
-    Indica pérdida de constantes (posible muerte o traslado) sin poder
-    detectarlo con tablas.
+    Se conserva como indicador de calidad; la censura por muerte la decide
+    ``detect_death_for_episode`` (ajuste 2).
     """
     ep_files = _files_for_episode(files, episode)
     if not ep_files:
@@ -305,6 +310,37 @@ def signal_loss_at_end(
     if last is None:
         return False
     return (hr_span_from_probe(last) is None) and (spo2_span_from_probe(last) is None)
+
+
+DEATH_TAIL_FILES = 4
+
+
+def detect_death_for_episode(
+    files: Sequence[SourceFile],
+    episode: Episode,
+    *,
+    tail_files: int = DEATH_TAIL_FILES,
+) -> tuple[DeathDecision, dict[str, list[tuple[float, float]]]]:
+    """Detección de muerte por señales en el final del monitor del evento.
+
+    Lee solo los últimos ``tail_files`` ficheros de la región (la ventana de
+    detección es de minutos) y aplica ``detect_signal_death``.
+    """
+    ep_files = _files_for_episode(files, episode)
+    if not ep_files:
+        return DeathDecision(False, None, "no_files"), {}
+    tail = ep_files[-tail_files:]
+    raw = read_death_series(
+        [f.path for f in tail], t0_unix=episode.start_h * _SECONDS_PER_HOUR
+    )
+    decision = detect_signal_death(
+        Series.of(raw.get("HR", [])),
+        spo2=Series.of(raw.get("SpO2", [])),
+        map_=Series.of(raw.get("MAP", [])),
+        amp_abp=Series.of(raw.get("ABP_amp", [])),
+        amp_ppg=Series.of(raw.get("PPG_amp", [])),
+    )
+    return decision, raw
 
 
 def simultaneous_shutdown(episode: Episode) -> bool:
@@ -322,6 +358,7 @@ def build_event_record(
     files: Sequence[SourceFile],
     t0_unix: float,
     signal_loss: bool = False,
+    death: Optional[DeathDecision] = None,
 ) -> dict:
     """Ficha de un evento lista para el índice JSON (D12)."""
     attempts = [
@@ -350,25 +387,37 @@ def build_event_record(
     # posible extubación anterior consolidada sigue ganando).
     pairs = [(a["vent_end_h"], a["reintubation_h"]) for a in attempts]
     label_pairs = pairs if confirmed else pairs[:-1]
-    censor_cause: Optional[str] = None
-    censor_time_h: Optional[float] = None
-    if signal_loss:
-        # D5: pérdida de constantes antes o en la desconexión → censura ahí.
-        dec = terminal_from_signal_loss(
-            asystole_or_hr_zero=True,
-            spo2_lost_without_recovery=True,
-            disconnect_abs=(episode.start_h + last_disconnect_h) * _SECONDS_PER_HOUR,
-            t0_abs=episode.start_h * _SECONDS_PER_HOUR,
+
+    died = bool(death is not None and death.is_death)
+    died_ventilated = bool(
+        died and death.death_time_h is not None
+        and death.death_time_h <= last_disconnect_h + _EPS
+    )
+    labels: dict[str, dict] = {}
+    d5_by_window: dict[str, dict] = {}
+    for w in FAILURE_WINDOWS_H:
+        if died:
+            # La muerte detectada por señales se usa EXACTAMENTE como DEATHTIME.
+            dd = d5_censor_for_window(
+                failure_window_h=float(w),
+                last_disconnect_h=last_disconnect_h,
+                death_time_h=death.death_time_h,
+                died_ventilated=died_ventilated,
+            )
+            cause, t_censor = dd.censor_cause, dd.censor_time_h
+        elif not confirmed:
+            cause, t_censor = "end_of_record", obs_end_h
+        else:
+            cause, t_censor = None, None
+        lab = assign_label(
+            attempts_from_pairs(label_pairs), obs_end_h=obs_end_h,
+            failure_window_h=float(w), censor_cause=cause, censor_time_h=t_censor,
         )
-        censor_cause, censor_time_h = dec.censor_cause, dec.censor_time_h
-    elif not confirmed:
-        censor_cause, censor_time_h = "end_of_record", obs_end_h
-    labels = labels_to_dict(assign_labels_all_windows(
-        attempts_from_pairs(label_pairs),
-        obs_end_h=obs_end_h,
-        censor_cause=censor_cause,
-        censor_time_h=censor_time_h,
-    ))
+        labels[f"{int(w)}h"] = lab
+        d5_by_window[f"{int(w)}h"] = {
+            "censor_cause": cause, "censor_time_h": t_censor,
+        }
+    labels_dict = labels_to_dict(labels)
 
     return {
         "event_id": "",  # se rellena en el orquestador
@@ -388,16 +437,54 @@ def build_event_record(
         "n_attempts": episode.n_attempts,
         "attempts": attempts,
         "end_reason": (
-            "death_or_transfer" if signal_loss else _end_reason(episode)
+            "death_signal" if died
+            else ("death_or_transfer" if signal_loss else _end_reason(episode))
         ),
-        "d5_censor_cause": censor_cause,
+        "d5": d5_by_window,
+        "death_signal": {
+            "detected": died,
+            "time_h": (death.death_time_h if died else None),
+            "reason": (death.reason if death is not None else None),
+            "detail": (death.detail if death is not None else {}),
+            "died_ventilated": died_ventilated,
+        },
         "signal_loss_at_end": bool(signal_loss),
         "simultaneous_shutdown": bool(simultaneous_shutdown(episode)),
         "ventilated_hours": round(episode.ventilated_hours, 4),
-        "labels": labels,       # Fase 1.6 (D3)
+        "labels": labels_dict,   # Fase 1.6 (D3) + D5       # Fase 1.6 (D3)
         "trach": None,         # Fase 1.5 (D5)
         "terminal": None,      # Fase 1.5 (D5)
         "file": None,          # se rellena al fusionar
+    }
+
+
+def _downsample_series(
+    pairs: Sequence[tuple[float, float]], step_min: float = 1.0
+) -> list[list[float]]:
+    """Reduce una serie a 1 punto por minuto (para el JSON/PNG de muertes)."""
+    out: list[list[float]] = []
+    last_t: Optional[float] = None
+    for t, v in pairs:
+        if last_t is None or (t - last_t) * 60.0 >= step_min - 1e-9:
+            out.append([round(float(t), 5), round(float(v), 3)])
+            last_t = t
+    return out
+
+
+def _death_record(rec: dict, episode: Episode,
+                  raw: dict[str, list[tuple[float, float]]]) -> dict:
+    """Ficha de una muerte detectada por señales (para el PNG de revisión)."""
+    return {
+        "event_id": rec["event_id"],
+        "cohort": rec["cohort"],
+        "box": rec["box"],
+        "death_time_h": rec["death_signal"]["time_h"],
+        "reason": rec["death_signal"]["reason"],
+        "died_ventilated": rec["death_signal"]["died_ventilated"],
+        "d5": rec["d5"],
+        "attempts": rec["attempts"],
+        "region_end_h": round(_region_end_h(episode) - episode.start_h, 4),
+        "series": {k: _downsample_series(v) for k, v in raw.items()},
     }
 
 
@@ -411,16 +498,21 @@ def build_cohort_index(
     """Construye el índice JSON completo de una cohorte."""
     events: list[dict] = []
     excluded_events: list[dict] = []
+    deaths: list[dict] = []
     for box, seg in results:
         for i, ep in enumerate(seg.episodes):
             t0_unix = ep.start_h * _SECONDS_PER_HOUR
+            death, raw = detect_death_for_episode(seg.files, ep)
             rec = build_event_record(
                 cohort=cohort, box=box, episode=ep,
                 files=_files_for_episode(seg.files, ep), t0_unix=t0_unix,
                 signal_loss=signal_loss_at_end(seg.files, seg.probes, ep),
+                death=death,
             )
             rec["event_id"] = f"{cohort}_{box}_event_{i + 1}"
             events.append(rec)
+            if death.is_death:
+                deaths.append(_death_record(rec, ep, raw))
         for i, ep in enumerate(seg.excluded_episodes):
             excluded_events.append({
                 "event_id": f"{cohort}_{box}_excluded_{i + 1}",
@@ -452,6 +544,8 @@ def build_cohort_index(
         "total_excluded_events": len(excluded_events),
         "n_signal_loss_at_end": sum(1 for e in events if e["signal_loss_at_end"]),
         "n_simultaneous_shutdown": sum(1 for e in events if e["simultaneous_shutdown"]),
+        "n_death_signal": len(deaths),
+        "_signal_deaths": deaths,
         "events": events,
         "excluded_events": excluded_events,
     }
@@ -528,6 +622,13 @@ def run_cohort(
                 rec["t0_unix"] = dt0
 
     out_dir.mkdir(parents=True, exist_ok=True)
+    deaths = index.pop("_signal_deaths", [])
+    if deaths:
+        deaths_path = out_dir / "signal_deaths.json"
+        with open(deaths_path, "w", encoding="utf-8") as fh:
+            json.dump({"cohort": cohort, "deaths": deaths}, fh,
+                      ensure_ascii=False, indent=1)
+        logger.info("[%s] %d muertes por senal -> %s", cohort, len(deaths), deaths_path)
     with open(index_path, "w", encoding="utf-8") as fh:
         json.dump(index, fh, ensure_ascii=False, indent=2)
 
