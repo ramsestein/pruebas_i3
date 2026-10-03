@@ -41,7 +41,13 @@ from src.common.d5_events import (
     d5_censor_for_window,
     is_trach_text,
 )
-from src.common.episodes import DISCONNECT_GAP_H, Span, build_episodes, spans_from_points
+from src.common.episodes import (
+    DISCONNECT_GAP_H,
+    Span,
+    build_episodes,
+    merge_spans,
+    spans_from_points,
+)
 from src.common.labels import (
     FAILURE_WINDOWS_H,
     assign_label,
@@ -52,6 +58,7 @@ from src.common.labels import (
 from src.common.paths import config_path, repo_root
 from src.common.timeutils import series_to_epoch_seconds, series_to_utc, to_epoch_utc
 from src.create_dataset.mimic_itemids import (
+    EXTUBATION_PROCEDURE_ITEMIDS,
     MIMIC_CHART_ITEMIDS,
     PROCEDURE_ITEMIDS,
     TRACH_PROCEDURE_ITEMIDS,
@@ -83,7 +90,7 @@ def load_icustays(clinical_dir: str | Path) -> pd.DataFrame:
 
 
 def load_vent_procedures(clinical_dir: str | Path) -> pd.DataFrame:
-    """Episodios de ventilación invasiva (itemid 225792) de PROCEDUREEVENTS_MV."""
+    """Intervalos de ventilación invasiva (itemid 225792) de PROCEDUREEVENTS_MV."""
     path = Path(clinical_dir) / "PROCEDUREEVENTS_MV.csv.gz"
     iid = PROCEDURE_ITEMIDS["invasive_ventilation"]
     df = pd.read_csv(
@@ -93,6 +100,29 @@ def load_vent_procedures(clinical_dir: str | Path) -> pd.DataFrame:
     df = df[df["ITEMID"] == iid].rename(columns=str.lower)
     df["start_unix"] = series_to_epoch_seconds(df["starttime"])
     df["end_unix"] = series_to_epoch_seconds(df["endtime"])
+    return df
+
+
+def load_metavision_stays(clinical_dir: str | Path) -> set[int]:
+    """Estancias presentes en PROCEDUREEVENTS_MV (MIMIC MetaVision).
+
+    La cohorte de MIMIC se restringe a MetaVision: las estancias de CareVue no
+    tienen estos procedimientos y se quedan fuera (se reporta cuántas).
+    """
+    path = Path(clinical_dir) / "PROCEDUREEVENTS_MV.csv.gz"
+    df = pd.read_csv(path, compression="gzip", usecols=["ICUSTAY_ID"])
+    return set(int(x) for x in df["ICUSTAY_ID"].dropna().unique())
+
+
+def load_extubation_procedures(clinical_dir: str | Path) -> pd.DataFrame:
+    """Eventos de extubación (227194/225468/225477) que cierran los intervalos."""
+    path = Path(clinical_dir) / "PROCEDUREEVENTS_MV.csv.gz"
+    df = pd.read_csv(
+        path, compression="gzip",
+        usecols=["SUBJECT_ID", "HADM_ID", "ICUSTAY_ID", "ITEMID", "STARTTIME"],
+    )
+    df = df[df["ITEMID"].isin(EXTUBATION_PROCEDURE_ITEMIDS)].rename(columns=str.lower)
+    df["start_unix"] = series_to_epoch_seconds(df["starttime"])
     return df
 
 
@@ -188,36 +218,78 @@ def stream_chartevents(
 
 # ── Tramos de ventilación con huecos REALES (D1) ─────────────────────────────
 
-def vent_spans_for_stay(
-    obs: pd.DataFrame,
+def vent_intervals_for_stay(
     proc_df: pd.DataFrame,
+    extub_df: pd.DataFrame,
     stay_id: int,
     *,
     gap_h: float = DISCONNECT_GAP_H,
 ) -> list[Span]:
-    """Tramos de ventilación invasiva de una estancia, en HORAS desde epoch.
+    """Intervalos de ventilación invasiva (225792) de una estancia, en HORAS.
 
-    Los tramos se construyen con los huecos reales entre observaciones de los
-    marcadores específicos de ventilador (D1: los huecos <= 2 h se fusionan),
-    más los episodios de PROCEDUREEVENTS_MV 225792. La FiO2 NO marca ventilación.
+    D1 sobre intervalos explícitos: los huecos <= 2 h entre intervalos se
+    fusionan. Los eventos de extubación (227194/225468/225477) CONFIRMAN el final
+    de cada intervalo (se recorta el fin a la hora del primero que cae dentro).
+    CHARTEVENTS NO crea ni parte tramos.
     """
-    spans: list[Span] = []
-    if not obs.empty:
-        sub = obs[(obs["ICUSTAY_ID"] == stay_id) & (obs["CONCEPT"].isin(VENT_MARKER_KEYS))]
-        times_h = sub["t_unix"].to_numpy(dtype=np.float64) / _SECONDS_PER_HOUR
-        spans.extend(spans_from_points(times_h, gap_h))
-    if not proc_df.empty:
-        proc = proc_df[proc_df["icustay_id"] == stay_id]
-        for _, row in proc.iterrows():
-            start_s = float(row["start_unix"])
-            end_s = float(row["end_unix"])
-            # Datos reales: hay filas con endtime <= starttime. Se descartan
-            # (se contabilizan en el índice) en vez de romper el build.
-            if not (np.isfinite(start_s) and np.isfinite(end_s)) or end_s <= start_s:
-                continue
-            spans.append(Span(start_s / _SECONDS_PER_HOUR,
-                              end_s / _SECONDS_PER_HOUR))
-    return sorted(spans, key=lambda s: s.start_h)
+    if proc_df.empty:
+        return []
+    proc = proc_df[proc_df["icustay_id"] == stay_id]
+    raw: list[Span] = []
+    for _, row in proc.iterrows():
+        start_s = float(row["start_unix"])
+        end_s = float(row["end_unix"])
+        if not (np.isfinite(start_s) and np.isfinite(end_s)) or end_s <= start_s:
+            continue
+        raw.append(Span(start_s / _SECONDS_PER_HOUR, end_s / _SECONDS_PER_HOUR))
+    merged = merge_spans(raw, gap_h)
+
+    if extub_df is not None and not extub_df.empty:
+        extub = extub_df[extub_df["icustay_id"] == stay_id]
+        extub_h = sorted(
+            float(t) / _SECONDS_PER_HOUR for t in extub["start_unix"]
+            if np.isfinite(t)
+        )
+    else:
+        extub_h = []
+
+    out: list[Span] = []
+    for sp in merged:
+        end = sp.end_h
+        for t in extub_h:
+            if sp.start_h < t < end:
+                end = t
+                break
+        if end > sp.start_h:
+            out.append(Span(sp.start_h, end))
+    return sorted(out, key=lambda s: s.start_h)
+
+
+def qc_intervals_vs_adjustments(
+    intervals: Sequence[Span],
+    obs_stay: pd.DataFrame,
+) -> tuple[int, int]:
+    """QC de intervalos 225792 frente a los ajustes anotados en CHARTEVENTS.
+
+    Devuelve ``(intervalos sin ningún ajuste dentro, ajustes fuera de todo
+    intervalo)``.
+    """
+    if obs_stay is None or obs_stay.empty:
+        return (len(intervals), 0)
+    times = (
+        obs_stay[obs_stay["CONCEPT"].isin(VENT_MARKER_KEYS)]["t_unix"]
+        .to_numpy(dtype=np.float64) / _SECONDS_PER_HOUR
+    )
+    if times.size == 0:
+        return (len(intervals), 0)
+    inside_any = np.zeros(times.shape, dtype=bool)
+    n_no_adj = 0
+    for sp in intervals:
+        inside = (times >= sp.start_h) & (times <= sp.end_h)
+        inside_any |= inside
+        if not inside.any():
+            n_no_adj += 1
+    return (n_no_adj, int((~inside_any).sum()))
 
 
 def monitor_spans_for_stay(
@@ -396,19 +468,29 @@ def build_mimic_index(
     obs: pd.DataFrame,
     proc_df: pd.DataFrame,
     *,
+    extub_df: Optional[pd.DataFrame] = None,
+    metavision_stays: Optional[set[int]] = None,
     trach_df: Optional[pd.DataFrame] = None,
     deaths: Optional[pd.DataFrame] = None,
     trach_icd9: Optional[set[int]] = None,
     limit_stays: Optional[int] = None,
 ) -> dict:
-    """Construye el índice completo de casos MIMIC (con D5, corrección 3)."""
-    stays_with_vent = obs["ICUSTAY_ID"].dropna().unique() if not obs.empty else []
-    proc_stays = proc_df["icustay_id"].dropna().unique() if not proc_df.empty else []
-    candidate_ids = set(int(x) for x in stays_with_vent) | set(int(x) for x in proc_stays)
+    """Construye el índice completo de casos MIMIC (D6 MetaVision, corrección 1)."""
+    chart_stays = set(
+        int(x) for x in obs["ICUSTAY_ID"].dropna().unique()
+    ) if not obs.empty else set()
+    metavision_stays = metavision_stays if metavision_stays is not None else set(
+        int(x) for x in proc_df["icustay_id"].dropna().unique()
+    ) if not proc_df.empty else set()
 
-    icu = icustays[icustays["icustay_id"].isin(candidate_ids)]
+    # Cohorte = estancias MetaVision (con PROCEDUREEVENTS_MV).
+    icu = icustays[icustays["icustay_id"].isin(metavision_stays)]
     if limit_stays:
         icu = icu.head(limit_stays)
+
+    # CareVue fuera: estancias con ajustes de ventilador anotados pero sin
+    # procedimientos MetaVision (se reporta cuántas).
+    n_carevue_excluded = len(chart_stays - metavision_stays)
 
     # Agrupar las observaciones UNA vez (evita O(n_estancias x n_observaciones)).
     obs_groups: dict[int, pd.DataFrame] = {}
@@ -430,19 +512,25 @@ def build_mimic_index(
     trach_icd9 = trach_icd9 or set()
 
     events: list[dict] = []
+    n_intervals_no_adj = 0
+    n_adj_outside = 0
     for _, row in icu.iterrows():
         sid = int(row["icustay_id"])
         hadm = int(row["hadm_id"])
         o = obs_groups.get(sid)
         if o is None:
             o = obs.iloc[0:0]
+        intervals = vent_intervals_for_stay(proc_df, extub_df, sid)
+        no_adj, outside = qc_intervals_vs_adjustments(intervals, o)
+        n_intervals_no_adj += no_adj
+        n_adj_outside += outside
         stay = StayInputs(
             stay_id=sid,
             subject_id=int(row["subject_id"]),
             hadm_id=hadm,
             intime_unix=float(row["intime_unix"]),
             outtime_unix=float(row["outtime_unix"]),
-            vent_spans=vent_spans_for_stay(o, proc_df, sid),
+            vent_spans=intervals,
             hr_spans=monitor_spans_for_stay(o, sid, ("HR",)),
             spo2_spans=monitor_spans_for_stay(o, sid, ("SpO2",)),
             trach_unix=trach_by_stay.get(sid, []),
@@ -471,6 +559,9 @@ def build_mimic_index(
         "total_stays_with_vent": int(len(icu)),
         "total_events": len(kept),
         "total_excluded_events": len(excluded),
+        "n_carevue_stays_excluded": int(n_carevue_excluded),
+        "n_intervals_without_adjustments": int(n_intervals_no_adj),
+        "n_adjustments_outside_intervals": int(n_adj_outside),
         "n_trach_time_unknown": int(n_trach_no_time),
         "n_invalid_vent_procedures": n_invalid_proc,
         "events": kept,
@@ -495,6 +586,8 @@ def run(config: dict, *, limit_stays: Optional[int] = None, force: bool = False)
 
     icustays = load_icustays(clinical_dir)
     proc_df = load_vent_procedures(clinical_dir)
+    extub_df = load_extubation_procedures(clinical_dir)
+    metavision_stays = load_metavision_stays(clinical_dir)
     trach_df = load_trach_procedures(clinical_dir)
     deaths = load_deaths(clinical_dir)
     trach_icd9 = load_trach_icd9(clinical_dir)
@@ -511,6 +604,7 @@ def run(config: dict, *, limit_stays: Optional[int] = None, force: bool = False)
 
     index = build_mimic_index(
         icustays, obs, proc_df,
+        extub_df=extub_df, metavision_stays=metavision_stays,
         trach_df=trach_df, deaths=deaths, trach_icd9=trach_icd9,
         limit_stays=limit_stays,
     )

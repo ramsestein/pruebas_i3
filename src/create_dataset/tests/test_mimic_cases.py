@@ -18,9 +18,11 @@ import pytest
 from src.common.episodes import Span
 from src.create_dataset.build_mimic_cases import (
     StayInputs,
+    build_mimic_index,
     build_stay_events,
     observations_from_chunk,
-    vent_spans_for_stay,
+    qc_intervals_vs_adjustments,
+    vent_intervals_for_stay,
 )
 from src.create_dataset.mimic_itemids import (
     MIMIC_CHART_ITEMIDS,
@@ -115,49 +117,92 @@ def _obs(rows) -> pd.DataFrame:
     ])
 
 
-class TestVentSpansFromObservations:
-    def _empty_proc(self) -> pd.DataFrame:
-        return pd.DataFrame(columns=["icustay_id", "start_unix", "end_unix"])
+class TestVentIntervals:
+    """D1 sobre intervalos explícitos 225792 (corrección 1)."""
 
-    def test_two_spans_6h_apart_two_attempts_failure_at_48h(self):
-        """Dos tramos separados 6 h → 2 intentos con fallo a 48 h."""
-        obs = _obs([
-            (100, "RR_V", 224690, 0.0), (100, "RR_V", 224690, 1.0),
-            (100, "PEEP", 224700, 0.5),
-            (100, "RR_V", 224690, 7.0), (100, "RR_V", 224690, 8.0),
-        ] + [(100, "HR", 220045, h) for h in range(0, 24)])
-        spans = vent_spans_for_stay(obs, self._empty_proc(), 100)
-        assert len(spans) == 2
-        events = build_stay_events(_stay(spans, [], []))
-        assert events[0]["n_attempts"] == 2
-        lab = events[0]["labels"]["48h"]
-        assert lab["n_failed_attempts"] == 1
-
-    def test_fio2_after_extubation_does_not_prolong_ventilation(self):
-        """La FiO2 anotada tras la extubación NO prolonga la ventilación."""
-        obs = _obs([
-            (100, "VentMode", 223849, 0.0), (100, "VentMode", 223849, 1.0),
-            (100, "FiO2", 223835, 3.0),     # oxigenoterapia, no VM
+    def _proc(self, rows) -> pd.DataFrame:
+        """rows: (stay, start_h, end_h)."""
+        return pd.DataFrame([
+            {"icustay_id": s, "start_unix": BASE + a * H, "end_unix": BASE + b * H}
+            for s, a, b in rows
         ])
-        spans = vent_spans_for_stay(obs, self._empty_proc(), 100)
-        assert len(spans) == 1
-        assert spans[0].end_h - BASE / H == pytest.approx(1.0, abs=1e-6)
 
-    def test_negative_control_gap_1h_is_one_span(self):
-        obs = _obs([(100, "PEEP", 224700, 0.0), (100, "PEEP", 224700, 1.0),
-                    (100, "PEEP", 224700, 2.0)])
-        assert len(vent_spans_for_stay(obs, self._empty_proc(), 100)) == 1
+    def _extub(self, rows) -> pd.DataFrame:
+        """rows: (stay, time_h)."""
+        return pd.DataFrame([
+            {"icustay_id": s, "start_unix": BASE + t * H} for s, t in rows
+        ])
 
-    def test_invalid_procedure_span_is_discarded(self):
+    def test_adjustments_inside_single_interval_one_attempt_no_failures(self):
+        """PEEP/volumen cada 4 h dentro de un único intervalo → 1 intento, 0 fallos."""
+        proc = self._proc([(100, 0.0, 24.0)])
+        intervals = vent_intervals_for_stay(proc, self._extub([]), 100)
+        assert len(intervals) == 1
+        # Ajustes anotados cada 4 h: NO crean ni parten tramos.
+        obs = _obs([(100, "PEEP", 224700, h) for h in range(0, 25, 4)]
+                   + [(100, "TV_set", 224684, h) for h in range(0, 25, 4)]
+                   + [(100, "HR", 220045, h) for h in range(0, 48)])
+        assert len(vent_intervals_for_stay(proc, self._extub([]), 100)) == 1
+        events = build_stay_events(_stay(intervals, [_h(0, 48)], []))
+        assert events[0]["n_attempts"] == 1
+        assert events[0]["labels"]["48h"]["n_failed_attempts"] == 0
+        assert events[0]["labels"]["48h"]["event_type"] == "successful_extubation"
+
+    def test_two_intervals_6h_apart_two_attempts_failure_at_48h(self):
+        proc = self._proc([(100, 0.0, 1.0), (100, 7.0, 8.0)])
+        intervals = vent_intervals_for_stay(proc, self._extub([]), 100)
+        assert len(intervals) == 2
+        events = build_stay_events(_stay(intervals, [_h(0, 48)], []))
+        assert events[0]["n_attempts"] == 2
+        assert events[0]["labels"]["48h"]["n_failed_attempts"] == 1
+
+    def test_two_intervals_90min_apart_one_attempt(self):
+        proc = self._proc([(100, 0.0, 1.0), (100, 2.5, 3.5)])  # hueco 1,5 h
+        intervals = vent_intervals_for_stay(proc, self._extub([]), 100)
+        assert len(intervals) == 1
+
+    def test_negative_control_gap_over_2h_splits(self):
+        proc = self._proc([(100, 0.0, 1.0), (100, 4.0, 5.0)])  # hueco 3 h
+        assert len(vent_intervals_for_stay(proc, self._extub([]), 100)) == 2
+
+    def test_extubation_event_confirms_interval_end(self):
+        proc = self._proc([(100, 0.0, 10.0)])
+        intervals = vent_intervals_for_stay(proc, self._extub([(100, 8.0)]), 100)
+        assert intervals[0].end_h - BASE / H == pytest.approx(8.0, abs=1e-6)
+
+    def test_invalid_interval_is_discarded(self):
         """Dato real: PROCEDUREEVENTS_MV con fin <= inicio no debe romper el build."""
         proc = pd.DataFrame({
             "icustay_id": [100, 100],
             "start_unix": [BASE + 10 * H, BASE + 20 * H],
             "end_unix": [BASE + 9 * H, BASE + 22 * H],   # el 1º es inválido
         })
-        obs = _obs([(100, "RR_V", 224690, 0.0), (100, "RR_V", 224690, 1.0)])
-        spans = vent_spans_for_stay(obs, proc, 100)
-        assert len(spans) == 2  # el inválido se descarta
+        assert len(vent_intervals_for_stay(proc, self._extub([]), 100)) == 1
+
+    def test_qc_counts_intervals_without_adjustments_and_outside(self):
+        intervals = vent_intervals_for_stay(
+            self._proc([(100, 0.0, 2.0), (100, 10.0, 12.0)]), self._extub([]), 100
+        )
+        obs = _obs([(100, "PEEP", 224700, 1.0), (100, "PEEP", 224700, 5.0)])
+        no_adj, outside = qc_intervals_vs_adjustments(intervals, obs)
+        assert no_adj == 1        # el 2º intervalo no tiene ningún ajuste
+        assert outside == 1       # el ajuste de 5 h cae fuera de todo intervalo
+
+
+class TestMetavisionCohort:
+    def test_carevue_stays_are_excluded(self):
+        icustays = pd.DataFrame({
+            "icustay_id": [100, 200],
+            "subject_id": [1, 2], "hadm_id": [10, 20],
+            "intime_unix": [BASE, BASE], "outtime_unix": [BASE + 48 * H, BASE + 48 * H],
+        })
+        proc = pd.DataFrame({"icustay_id": [100], "start_unix": [BASE],
+                             "end_unix": [BASE + 2 * H]})
+        obs = _obs([(100, "PEEP", 224700, 1.0), (200, "PEEP", 224700, 1.0)])
+        idx = build_mimic_index(icustays, obs, proc, metavision_stays={100})
+        assert idx["total_stays_with_vent"] == 1
+        assert idx["n_carevue_stays_excluded"] == 1
+        assert all(e["icustay_id"] == 100 for e in idx["events"])
 
 
 # ── Segmentación de una estancia ─────────────────────────────────────────────

@@ -58,6 +58,11 @@ PROCEDURE_ITEMIDS: dict[str, int] = {
 }
 TRACH_PROCEDURE_ITEMIDS: frozenset[int] = frozenset({225448, 226237})
 
+# Eventos que CONFIRMAN el final de un intervalo de ventilación invasiva:
+#   "Extubation", "Unplanned Extubation (patient-initiated)",
+#   "Unplanned Extubation (non-patient initiated)"  (LINKSTO=procedureevents_mv)
+EXTUBATION_PROCEDURE_ITEMIDS: frozenset[int] = frozenset({227194, 225468, 225477})
+
 # Marcadores ESPECÍFICOS de ventilación invasiva (D6). La FiO2 NO está aquí.
 VENT_MARKER_KEYS: tuple[str, ...] = (
     "VentMode", "PEEP", "TV_set", "TV_observed", "PIP", "RR_V",
