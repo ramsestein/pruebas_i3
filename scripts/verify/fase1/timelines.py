@@ -106,11 +106,15 @@ def main() -> None:
     if not args.long_only:
         rng = random.Random(SEED)
         selected += rng.sample(events, min(args.n_random, len(events)))
-    long_events = [
-        e for e in events
-        if e["duration_seconds"] >= LONG_EVENT_H * 3600
-        and e.get("end_reason") == "extubation_observed"
-    ]
+    long_events = (
+        [
+            e for e in events
+            if e["duration_seconds"] >= LONG_EVENT_H * 3600
+            and e.get("end_reason") == "extubation_observed"
+        ]
+        if args.cohort in ("clinic", "vitaldb")  # la lista >=7 d es solo para señal
+        else []
+    )
     selected += long_events
 
     seen: set[str] = set()

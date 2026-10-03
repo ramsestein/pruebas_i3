@@ -1,10 +1,8 @@
 # Fase 1 — Informe
 
-> **Estado:** Fase 1 ejecutada. Los seis puntos de código están implementados con
-> sus tests, se aplicaron las seis correcciones previas a los builds, y los
-> builds se han lanzado sobre los datos crudos. **MIMIC sigue procesando
-> `CHARTEVENTS` (≈ 330 M filas)**, por lo que sus cifras quedan pendientes en
-> las tablas (marcadas `_pendiente_`); Clínic, VitalDB y eICU están completos.
+> **Estado:** Fase 1 completada. Los seis puntos de código están implementados con
+> sus tests, se aplicaron las seis correcciones previas a los builds y los cuatro
+> builds se han ejecutado sobre los datos crudos (Clínic, VitalDB, MIMIC y eICU).
 
 ## 1. Entregables de código (commits)
 
@@ -119,13 +117,15 @@ python scripts/verify/fase1/timelines.py --cohort <cohort>
 | Clínic | 50 (v0.1.0_df652b7b) | **181** | 4 |
 | VitalDB | 83 (v0.1.0_df652b7b) | **94** | 20 |
 | eICU | 44 772 (v0.1.0_fbb5b280) | **44 042** estancias con VM | 0 (descartadas 0 por alta ≤ t0) |
-| MIMIC | 82 (v0.1.0_df652b7b) | _pendiente (build en curso)_ | — |
+| MIMIC | 82 (v0.1.0_df652b7b) | **24 039** (de 60 202 estancias con VM) | 87 |
 
 ### 5.2 Intentos por evento
 
 - Clínic: `{1: 172, 2: 6, 3: 2, 4: 1}`
 - VitalDB: `{1: 81, 2: 10, 3: 2, 4: 1}`
 - eICU: `{1: 43 683, 2: 340, 3: 10, 4: 3, 5: 2, 7: 2, 8: 1, 12: 1}`
+- MIMIC: `{1: 14 776, 2: 3 566, 3: 1 613, 4: 915, 5: 587, ...}` (máx 70 intentos;
+  es la cohorte con más reintubaciones dentro de la misma estancia)
 
 ### 5.3 Éxito / censura a 48 h y 72 h (desglose por causa)
 
@@ -137,19 +137,22 @@ python scripts/verify/fase1/timelines.py --cohort <cohort>
 | VitalDB | 72 h | 63 (67,0 %) | 31 | `end_of_record`: 18; `terminal_extubation`: 13 |
 | eICU | 48 h | 37 414 (85,0 %) | 6 628 | `terminal_extubation`: 4 547; `death_at_vent`: 1 074; `trach`: 1 007 |
 | eICU | 72 h | 37 249 (84,6 %) | 6 793 | `terminal_extubation`: 4 710; `death_at_vent`: 1 074; `trach`: 1 009 |
-| MIMIC | 48/72 h | _pendiente_ | _pendiente_ | _pendiente_ |
+| MIMIC | 48 h | 21 334 (88,7 %) | 2 705 | `terminal_extubation`: 1 166; `trach`: 822; `death_at_vent`: 717 |
+| MIMIC | 72 h | 20 877 (86,8 %) | 3 162 | `terminal_extubation`: 1 434; `trach`: 978; `death_at_vent`: 750 |
 
 Intentos fallidos por evento (≥ 1 fallo): Clínic 7 (48 h) / 8 (72 h);
-VitalDB 5 (48 h) / 7 (72 h).
+VitalDB 5 (48 h) / 7 (72 h); MIMIC 7 869 (48 h) / 8 497 (72 h).
 
 ### 5.4 Traqueostomías y extubaciones terminales
 
 - **eICU**: `trach` 1 007 (48 h) / 1 009 (72 h) eventos; `terminal_extubation`
   4 547 (48 h) / 4 710 (72 h); `death_at_vent` 1 074 (idéntico en ambas
   ventanas, como corresponde a una muerte ventilado).
-- **MIMIC**: _pendiente_ (el índice incluirá `n_trach_time_unknown` para las
-  traqueostomías marcadas solo por ICD-9 sin hora, censuradas en el último fin
-  de ventilación).
+- **MIMIC**: `trach` 822 (48 h) / 978 (72 h); `terminal_extubation` 1 166 (48 h) /
+  1 434 (72 h); `death_at_vent` 717 (48 h) / 750 (72 h). Traqueostomías
+  detectadas por `PROCEDUREEVENTS_MV` (225448/226237) y por tipo de vía aérea;
+  por ICD-9 sin hora: **0** (todas tuvieron hora en las tablas con tiempo).
+  `end_reason`: `death` 2 960, `tracheostomy` 1 812.
 - **Clínic/VitalDB**: la traqueostomía **no es detectable con señales**
   (limitación documentada, sin estimarla con tasas de otras cohortes).
 - **Sensibilidad `exclude`** (cuántos casos/horas se perderían): pendiente de
@@ -162,13 +165,18 @@ VitalDB 5 (48 h) / 7 (72 h).
 | Clínic | 0,0 | 7,0 | 19,0 | 45,3 | 405,0 |
 | VitalDB | 0,0 | 5,5 | 19,3 | 85,7 | 450,1 |
 | eICU | 0,0 | 10,6 | 32,9 | 91,5 | 2 395,2 |
+| MIMIC | 0,0 | 4,0 | 20,0 | 100,5 | 4 082,0 |
 
 ### 5.6 Desconexión → muerte (eICU/MIMIC)
 
 - **eICU**: n = 5 194 muertes no ventiladas tras una desconexión →
   min 0,02 h | Q1 1,48 h | **mediana 4,17 h** | Q3 12,68 h | máx 3 960,65 h.
   De ellas, 4 547 caen dentro de las 48 h posteriores a la desconexión.
-- **MIMIC**: _pendiente_ (misma regla, `ADMISSIONS.DEATHTIME`).
+- **MIMIC**: 3 262 muertes no ventiladas tras una desconexión → min 0,0 h |
+  Q1 7,4 h | mediana 27,0 h | Q3 87,9 h | máx 2 928,8 h. De ellas, **2 039 caen
+  dentro de las 48 h** (min 0,0 | Q1 3,3 | mediana 11,2 | Q3 23,6 h); las que
+  además ocurren antes de un éxito consolidado son 1 166 (censura
+  `terminal_extubation`).
 
 ### 5.7 Ventilador y monitor apagándose a la vez (≤ 15 min)
 
@@ -176,6 +184,9 @@ VitalDB 5 (48 h) / 7 (72 h).
 - VitalDB: **23** eventos.
 - Pérdida de constantes (HR 0 / SpO2 perdida sin recuperación) antes o en la
   desconexión: Clínic **0**, VitalDB **26**.
+- MIMIC y eICU: **no aplica** — su frontera de paciente es el identificador de
+  estancia (D2) y la muerte/traslado se leen de las tablas (D5), no de la
+  desaparición del monitor.
 
 ### 5.8 Eventos excluidos como actividad sin paciente (D4)
 
@@ -183,6 +194,7 @@ VitalDB 5 (48 h) / 7 (72 h).
 - VitalDB: 20 (todos `ventilator_without_patient`).
 - eICU: 0 estancias descartadas por este motivo con el criterio usado
   (HR/SpO2 de CHARTEVENTS/vitalPeriodic disponibles).
+- MIMIC: 87 (todos `ventilator_without_patient`).
 
 ### 5.9 Revisión clínica (PNG, semilla fija 20261002)
 
@@ -191,7 +203,8 @@ Generados con `scripts/verify/fase1/timelines.py` en
 generan en local):
 
 - 10 eventos al azar por cohorte: Clínic 12 PNG (10 + 2 largos), VitalDB 15 PNG
-  (10 + 5 largos); eICU/MIMIC pendientes de terminar su índice.
+  (10 + 5 largos), MIMIC 10 PNG. eICU no genera PNG (no tiene índice de casos:
+  su ruta es el adaptador de la Etapa 0).
 - Eventos ≥ 7 días que terminan en "extubación":
   - **Clínic** (2): `clinic_box12_event_2` (260,6 h), `clinic_box6_event_12`
     (201,6 h, 2 intentos).
@@ -210,6 +223,9 @@ generan en local):
 - **VitalDB**: 40 eventos ≥ 7 días que terminan en "extubación" son candidatos a
   traqueostomía no detectable; los 7 con `end_reason = extubation_observed` se
   listan arriba para revisión manual.
+- **MIMIC**: 1 188 de 24 039 eventos duran < 1 h; hay eventos con hasta 70
+  intentos; 4 filas de `PROCEDUREEVENTS_MV` (225792) con `endtime <= starttime`
+  (descartadas y contadas en el índice como `n_invalid_vent_procedures`).
 - **eICU**: 235 102 registros con `ventendoffset` posterior al alta (recortados),
   119 611 con inicio antes del ingreso (recortados a 0), 16 729 con duración
   imposible (> 60 días, descartados) y 4 249 de duración ≤ 0. Todos registrados
@@ -247,9 +263,11 @@ ficheros muestreados no fueron legibles con el parser (se registran y excluyen).
 - `obs_end_h` en Clínic/VitalDB es el fin del monitor de la región (no hay
   tabla de estancia); es la mejor cota disponible.
 - La fusión de los `.vital` por evento (Fase 1.2) está implementada pero **no
-  ejecutada** en este build (solo índice), por coste de reescritura.
-- Las reintubaciones tras un reingreso en MIMIC (sensibilidad) aún no se
-  calculan.
+  ejecutada** en este build (solo índice), por coste de reescritura; MIMIC sí
+  guarda sus observaciones con hora (`mimic_observations.parquet`, 136 MB).
+- En MIMIC la única frontera de paciente es el `ICUSTAY` (D2): dos estancias del
+  mismo paciente son eventos distintos, y una reintubación tras un reingreso
+  solo se contará como sensibilidad (pendiente).
 - eICU no genera índice de casos propio en esta fase: sus cifras se calculan
   con las reglas compartidas sobre `respiratoryCare`/`patient` (el adaptador de
   la Etapa 0 sigue siendo la ruta de consumo).
