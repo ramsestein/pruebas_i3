@@ -96,7 +96,18 @@ def main() -> None:
 
     files = glob.glob(str(ROOT / "datasets" / args.cohort / "cases_*" / "signal_deaths.json"))
     if not files:
-        print(f"[plot_deaths] sin signal_deaths.json para {args.cohort}")
+        # Sin signal_deaths.json puede ser "0 muertes" o "no hay índice": hay
+        # que distinguirlo para que el informe sea verificable.
+        idx = glob.glob(str(
+            ROOT / "datasets" / args.cohort / "cases_*" /
+            f"{args.cohort}_cases_index.json"))
+        if idx:
+            n = json.load(open(sorted(idx)[-1], encoding="utf-8")).get(
+                "n_death_signal", "?")
+            print(f"[plot_deaths] {args.cohort}: 0 muertes por senal "
+                  f"(n_death_signal={n}) -> ningun PNG que generar")
+        else:
+            print(f"[plot_deaths] sin indice de casos para {args.cohort}")
         return
     out_dir = Path(args.out_dir) if args.out_dir else (
         ROOT / "reports" / "fase1" / "muertes_senal"
