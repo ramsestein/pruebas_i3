@@ -49,6 +49,7 @@ from src.common.episodes import (
     merge_spans,
     spans_from_points,
 )
+from src.common.extubation import ExtubationDecision, resolve_extubation
 from src.common.labels import (
     FAILURE_WINDOWS_H,
     assign_label,
@@ -350,7 +351,13 @@ def _mimic_d5_censor(stay: StayInputs, ep, failure_window_h: float) -> CensorDec
     )
 
 
-def _mimic_end_reason(stay: StayInputs, ep, d5_by_window: dict) -> str:
+def _mimic_end_reason(d5_by_window: dict, ext: ExtubationDecision) -> str:
+    """Motivo de fin del evento (regla común de extubación + D5).
+
+    Ya NO existe la tolerancia de 30 s frente al ``OUTTIME``: un fin de
+    ventilación a menos de 1 h del alta se censura como
+    ``transfer_ventilated`` (punto 0 de la Fase 1.5).
+    """
     causes = {v.get("censor_cause") for v in d5_by_window.values()}
     if "trach_preexisting" in causes:
         return "excluded_trach_preexisting"
@@ -358,9 +365,8 @@ def _mimic_end_reason(stay: StayInputs, ep, d5_by_window: dict) -> str:
         return "death"
     if any(c in ("trach", "trach_time_unknown") for c in causes):
         return "tracheostomy"
-    out_h = stay.outtime_unix / _SECONDS_PER_HOUR
-    if ep.end_h >= out_h - 30.0 / 3600.0:
-        return "end_of_icu_stay"
+    if not ext.is_extubation:
+        return ext.censor_cause or "end_of_record"
     return "extubation_observed"
 
 
@@ -393,10 +399,32 @@ def build_stay_events(stay: StayInputs) -> list[dict]:
             for j, a in enumerate(ep.attempts)
         ]
         arrived = abs(ep.start_h - stay.intime_unix / _SECONDS_PER_HOUR) < (1.0 / 60.0)
-        obs_end_h = max(
-            (stay.outtime_unix - t0_unix) / _SECONDS_PER_HOUR, ep.duration_h
-        )
+        outtime_rel_h = (stay.outtime_unix - t0_unix) / _SECONDS_PER_HOUR
+        obs_end_h = max(outtime_rel_h, ep.duration_h)
         pairs = [(a["vent_end_h"], a["reintubation_h"]) for a in attempts]
+        last_vent_end_h = ep.attempts[-1].end_h - ep.start_h
+
+        # Regla común (punto 0): un fin de ventilación solo es extubación si va
+        # seguido de >= 1 h de observación sin ventilador (la estancia en MIMIC).
+        # Si no, el evento se censura con su causa: transfer_ventilated (alta o
+        # traslado ventilado), death_at_vent o end_of_record.
+        death_h_rel = None
+        died_ventilated = False
+        if stay.death_unix is not None and np.isfinite(stay.death_unix):
+            death_h_rel = (stay.death_unix / _SECONDS_PER_HOUR) - ep.start_h
+            died_ventilated = death_h_rel <= last_vent_end_h + 1e-6
+        ext = resolve_extubation(
+            last_vent_end_h=last_vent_end_h,
+            observation_end_h=obs_end_h,
+            stay_end_h=outtime_rel_h,
+            death_h=death_h_rel,
+            died_ventilated=died_ventilated,
+        )
+        # Si la última desconexión no está confirmada, no puede ganar como
+        # extubación: se excluye del etiquetado (una extubación anterior ya
+        # consolidada seguiría contando).
+        label_pairs = pairs if ext.is_extubation else pairs[:-1]
+
         labels: dict[str, dict] = {}
         d5_by_window: dict[str, dict] = {}
         excluded = bool(ep.excluded)
@@ -407,17 +435,25 @@ def build_stay_events(stay: StayInputs) -> list[dict]:
                 # Traqueostomía previa a t0: criterio de inclusión → exclusión.
                 excluded = True
                 exclusion_reason = dec.censor_cause
+            # Prioridad: traqueostomía/muerte (D5) > regla común de extubación.
+            if dec.censor_cause is not None:
+                cause, t_censor = dec.censor_cause, dec.censor_time_h
+            elif not ext.is_extubation:
+                cause, t_censor = ext.censor_cause, ext.censor_time_h
+            else:
+                cause, t_censor = None, None
             lab = assign_label(
-                attempts_from_pairs(pairs), obs_end_h=obs_end_h,
+                attempts_from_pairs(label_pairs), obs_end_h=obs_end_h,
                 failure_window_h=float(w),
-                censor_cause=(None if dec.excluded else dec.censor_cause),
-                censor_time_h=(None if dec.excluded else dec.censor_time_h),
+                censor_cause=(None if dec.excluded else cause),
+                censor_time_h=(None if dec.excluded else t_censor),
             )
             labels[f"{int(w)}h"] = lab
             d5_by_window[f"{int(w)}h"] = {
-                "censor_cause": dec.censor_cause,
-                "censor_time_h": dec.censor_time_h,
+                "censor_cause": (dec.censor_cause if dec.excluded else cause),
+                "censor_time_h": (dec.censor_time_h if dec.excluded else t_censor),
                 "excluded": bool(dec.excluded),
+                "extubation_rule": ext.reason,
             }
         labels_dict = labels_to_dict(labels)
         out.append({
@@ -435,7 +471,8 @@ def build_stay_events(stay: StayInputs) -> list[dict]:
             "duration_seconds": int(round(ep.duration_h * _SECONDS_PER_HOUR)),
             "n_attempts": ep.n_attempts,
             "attempts": attempts,
-            "end_reason": _mimic_end_reason(stay, ep, d5_by_window),
+            "end_reason": _mimic_end_reason(d5_by_window, ext),
+            "extubation_rule": ext.reason,
             "ventilated_hours": round(ep.ventilated_hours, 4),
             "excluded": excluded,
             "exclusion_reason": exclusion_reason,

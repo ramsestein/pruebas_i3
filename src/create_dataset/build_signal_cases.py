@@ -46,6 +46,7 @@ from src.common.d5_events import (
     threshold_simultaneous_shutdown,
 )
 from src.common.episodes import Episode, Span, build_episodes, segment_attempts
+from src.common.extubation import ExtubationDecision, resolve_extubation
 from src.common.labels import (
     FAILURE_WINDOWS_H,
     assign_label,
@@ -258,7 +259,22 @@ def monitor_tail_h(episode: Episode) -> float:
 
 def is_confirmed_extubation(episode: Episode) -> bool:
     """D3: la última desconexión es extubación si hay >= 1 h de monitor sin VM."""
-    return monitor_tail_h(episode) >= MIN_EXTUBATION_MONITOR_TAIL_H - _EPS
+    return extubation_decision(episode).is_extubation
+
+
+def extubation_decision(episode: Episode) -> ExtubationDecision:
+    """Regla común de extubación confirmada (Fase 1.5, punto 0).
+
+    En Clínic/VitalDB la observación es el MONITOR de la región de paciente y
+    no existe frontera de estancia (``stay_end_h=None``): si no hay la hora de
+    monitor sin ventilador, la censura es ``end_of_record`` (o ``death_at_vent``
+    si la detección de muerte por señales la confirma, que se aplica aparte).
+    """
+    return resolve_extubation(
+        last_vent_end_h=float(episode.attempts[-1].end_h),
+        observation_end_h=float(_region_end_h(episode)),
+        stay_end_h=None,
+    )
 
 
 def _files_for_episode(files: Sequence[SourceFile], episode: Episode) -> list[SourceFile]:
@@ -381,7 +397,8 @@ def build_event_record(
     obs_end_h = _region_end_h(episode) - episode.start_h
     tail_h = monitor_tail_h(episode)
     last_disconnect_h = episode.attempts[-1].end_h - episode.start_h
-    confirmed = is_confirmed_extubation(episode)
+    ext_dec = extubation_decision(episode)
+    confirmed = ext_dec.is_extubation
     # Si la última desconexión NO está confirmada (sin >= 1 h de monitor sin
     # ventilador) no es una extubación: se excluye del etiquetado (así una
     # posible extubación anterior consolidada sigue ganando).
@@ -406,7 +423,7 @@ def build_event_record(
             )
             cause, t_censor = dd.censor_cause, dd.censor_time_h
         elif not confirmed:
-            cause, t_censor = "end_of_record", obs_end_h
+            cause, t_censor = ext_dec.censor_cause, ext_dec.censor_time_h
         else:
             cause, t_censor = None, None
         lab = assign_label(
@@ -436,6 +453,7 @@ def build_event_record(
         "monitor_tail_h": round(tail_h, 4),
         "n_attempts": episode.n_attempts,
         "attempts": attempts,
+        "extubation_rule": ext_dec.reason,
         "end_reason": (
             "death_signal" if died
             else ("death_or_transfer" if signal_loss else _end_reason(episode))

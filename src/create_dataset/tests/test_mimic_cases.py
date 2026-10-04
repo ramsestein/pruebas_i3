@@ -308,6 +308,42 @@ class TestMimicD5:
         assert ev["end_reason"] == "excluded_trach_preexisting"
 
 
+class TestCommonExtubationRule:
+    """Fase 1.5, punto 0: extubación confirmada en MIMIC (fin de VM vs OUTTIME)."""
+
+    def _stay(self, vent, hr, **kw) -> StayInputs:
+        base = _stay(vent, hr, [])
+        for k, v in kw.items():
+            setattr(base, k, v)
+        return base
+
+    def test_vent_end_20min_before_discharge_is_transfer_ventilated(self):
+        """Caso exigido: fin de VM 20 min antes del alta → transfer_ventilated."""
+        vent = [_h(0, 47.0 + 40.0 / 60.0)]
+        hr = [_h(0, 48)]
+        ev = build_stay_events(self._stay(vent, hr))[0]
+        assert ev["end_reason"] == "transfer_ventilated"
+        assert ev["labels"]["48h"]["event_type"] == "censored_transfer_ventilated"
+        assert ev["labels"]["48h"]["censor_time_h"] == pytest.approx(
+            47.0 + 40.0 / 60.0
+        )
+
+    def test_negative_control_vent_end_2h_before_discharge_is_success(self):
+        vent = [_h(0, 46.0)]
+        hr = [_h(0, 48)]
+        ev = build_stay_events(self._stay(vent, hr))[0]
+        assert ev["end_reason"] == "extubation_observed"
+        assert ev["labels"]["48h"]["event_type"] == "successful_extubation"
+
+    def test_vent_end_at_outtime_is_transfer_ventilated(self):
+        """Los eventos que terminaban en ``end_of_icu_stay`` pasan a censura."""
+        vent = [_h(0, 48.0)]
+        hr = [_h(0, 48)]
+        ev = build_stay_events(self._stay(vent, hr))[0]
+        assert ev["end_reason"] == "transfer_ventilated"
+        assert ev["labels"]["48h"]["event_type"] == "censored_transfer_ventilated"
+
+
 # ── Robusteza ante ICUSTAY_ID nulo (fallo real del build) ───────────────────
 
 class TestNullableStayIds:
