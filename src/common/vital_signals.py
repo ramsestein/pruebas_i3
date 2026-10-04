@@ -191,6 +191,53 @@ def probe_vital_file_detail(
 
 # ── Derivación de intervalos (segundos epoch) ────────────────────────────────
 
+# ── Serialización de sondas (caché del escaneo; Fase 1.5 punto 2) ─────────────
+
+def probe_to_dict(probe: Optional[VitalProbe]) -> Optional[dict]:
+    """Serializa un ``VitalProbe`` (o ``None`` si el fichero es ilegible)."""
+    if probe is None:
+        return None
+    return {
+        "dtstart": probe.dtstart,
+        "dtend": probe.dtend,
+        "tracks": {
+            name: [t.dt_min, t.dt_max, t.n_recs, t.srate, t.is_wave]
+            for name, t in probe.tracks.items()
+        },
+    }
+
+
+def probe_from_dict(path: str | Path, data: Optional[dict]) -> Optional[VitalProbe]:
+    """Reconstruye un ``VitalProbe`` desde ``probe_to_dict`` (``None``→ilegible)."""
+    if data is None:
+        return None
+    probe = VitalProbe(path=Path(path), dtstart=float(data["dtstart"]),
+                       dtend=float(data["dtend"]))
+    for name, (dt_min, dt_max, n_recs, srate, is_wave) in data["tracks"].items():
+        probe.tracks[name] = TrackProbe(
+            name=name, dt_min=float(dt_min), dt_max=float(dt_max),
+            n_recs=int(n_recs), srate=float(srate), is_wave=bool(is_wave),
+        )
+    return probe
+
+
+def probe_fn_from_cache(cache: dict[str, Optional[dict]]):
+    """Devuelve un ``probe_fn`` que sirve sondas desde la caché (sin leer disco)."""
+    norm: dict[str, Optional[dict]] = {}
+    for k, v in cache.items():
+        try:
+            norm[str(Path(k))] = v
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _fn(path: str | Path):
+        key = str(Path(path))
+        if key in norm:
+            return probe_from_dict(path, norm[key])
+        return probe_vital_file(path)
+    return _fn
+
+
 def _union_extent(probe: VitalProbe, names: Iterable[str]) -> Optional[Span]:
     present = [probe.tracks[n] for n in names if n in probe.tracks]
     if not present:

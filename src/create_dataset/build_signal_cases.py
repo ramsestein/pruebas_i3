@@ -701,6 +701,7 @@ def run_cohort(
     limit_boxes: Optional[int] = None,
     workers: int = 1,
     coverage: bool = False,
+    probe_fn: Optional[Callable[[Path], Optional[VitalProbe]]] = None,
 ) -> dict:
     """Ejecuta el pipeline completo de una cohorte con señal."""
     spec = SPECS[cohort]
@@ -714,7 +715,11 @@ def run_cohort(
         boxes = dict(list(boxes.items())[:limit_boxes])
 
     results: list[tuple[str, BoxSegmentation]] = []
-    if workers and workers > 1:
+    if probe_fn is not None:
+        # Reutiliza una caché de sondas (escaneo previo): no se re-parsea nada.
+        for box, files in boxes.items():
+            results.append((box, segment_box(box, files, probe_fn=probe_fn)))
+    elif workers and workers > 1:
         from concurrent.futures import ProcessPoolExecutor
         with ProcessPoolExecutor(max_workers=workers) as ex:
             for box, seg in ex.map(_segment_box_task, list(boxes.items())):
@@ -777,6 +782,8 @@ def main() -> None:
                    help="Procesos en paralelo (un box por tarea)")
     p.add_argument("--coverage", action="store_true",
                    help="Medir cobertura de variables por evento (LOCF 4 h)")
+    p.add_argument("--probe-cache", default=None,
+                   help="Caché de sondas (JSON del escaneo) para no re-parsear")
     p.add_argument("-v", "--verbose", action="store_true")
     args = p.parse_args()
 
@@ -785,12 +792,18 @@ def main() -> None:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     config = load_config(args.config)
+    probe_fn = None
+    if args.probe_cache:
+        from src.common.vital_signals import probe_fn_from_cache
+        cache = json.loads(Path(args.probe_cache).read_text(encoding="utf-8"))
+        probe_fn = probe_fn_from_cache(cache)
     result = run_cohort(
         config, args.cohort,
         do_merge=not args.no_merge,
         limit_boxes=args.limit_boxes,
         workers=args.workers,
         coverage=args.coverage,
+        probe_fn=probe_fn,
     )
     print(json.dumps(
         {
