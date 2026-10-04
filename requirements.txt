@@ -3,7 +3,9 @@
 pandas==2.2.3
 numpy==2.3.5
 pyarrow==23.0.1
-vitaldb==1.6.0
+# Pin actualizado en Fase 1.5 (punto 2): 1.6.0 no podía leer algunos .vital de
+# VitalDB que sí se leen con >= 1.7. Se fija 1.7.2.
+vitaldb==1.7.2
 scipy==1.16.2
 duckdb==1.5.4
 
