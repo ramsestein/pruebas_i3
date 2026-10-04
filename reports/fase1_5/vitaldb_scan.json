@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-10-04T14:20:24.370815+00:00",
+  "vitaldb_version": "1.7.2",
+  "raw_dir": "D:\\data\\vitaldb_sicu",
+  "total_files": 1,
+  "readable": 1,
+  "unreadable": [],
+  "n_unreadable": 0,
+  "errors": {},
+  "cache": "reports/fase1_5/vitaldb_probe.json"
+}

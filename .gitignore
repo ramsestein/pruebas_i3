@@ -43,3 +43,7 @@ src/vitalfileAPI_test.py
 .idea/
 .DS_Store
 Thumbs.db
+
+# Cache de sondas del escaneo de VitalDB (derivada y grande)
+reports/fase1_5/vitaldb_probe*.json
+

@@ -1,0 +1,280 @@
+{
+  "index": "C:\\Users\\Ramsés\\Desktop\\Proyectos\\iprove3\\datasets\\clinic\\cases_v0.1.0_a225d21b\\clinic_cases_index.json",
+  "n_short_events": 16,
+  "n_plausible": 0,
+  "n_artifact": 16,
+  "events": [
+    {
+      "event_id": "clinic_box10_event_2",
+      "box": "box10",
+      "duration_min": 14.55,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box13_event_4",
+      "box": "box13",
+      "duration_min": 19.42,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box13_event_5",
+      "box": "box13",
+      "duration_min": 0.93,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_1",
+      "box": "box14",
+      "duration_min": 9.27,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_2",
+      "box": "box14",
+      "duration_min": 8.57,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_3",
+      "box": "box14",
+      "duration_min": 0.38,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_7",
+      "box": "box14",
+      "duration_min": 50.8,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_25",
+      "box": "box14",
+      "duration_min": 18.93,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_30",
+      "box": "box14",
+      "duration_min": 18.95,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_35",
+      "box": "box14",
+      "duration_min": 0.25,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_37",
+      "box": "box14",
+      "duration_min": 59.42,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box2_event_6",
+      "box": "box2",
+      "duration_min": 13.7,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box4_event_1",
+      "box": "box4",
+      "duration_min": 3.73,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box5_event_6",
+      "box": "box5",
+      "duration_min": 4.1,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box5_event_7",
+      "box": "box5",
+      "duration_min": 47.95,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    },
+    {
+      "event_id": "clinic_box8_event_2",
+      "box": "box8",
+      "duration_min": 59.23,
+      "n_attempts": 1,
+      "end_reason": "extubation_observed",
+      "classification": "artefacto",
+      "metrics": {
+        "awp_n": 0,
+        "awp_ptp": null,
+        "awp_cycles": 0,
+        "tv_median": null
+      },
+      "reasons": [
+        "sin_awp"
+      ]
+    }
+  ]
+}

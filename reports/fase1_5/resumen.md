@@ -1,9 +1,10 @@
 # Fase 1.5 — Recuento de eventos completos (eICU) y reconstrucción de VitalDB
 
 > **Estado:** puntos 0–3 implementados, cada uno con su test (que falla antes y
-> pasa después) en su propio commit (ver §0). Los builds de MIMIC y eICU se han
-> re-ejecutado sobre los datos crudos; el de VitalDB está en curso (ver §2).
-> Ninguna cifra procede de salidas antiguas.
+> pasa después) en su propio commit (ver §0). Los builds de MIMIC, eICU y
+> VitalDB se han re-ejecutado sobre los datos crudos; Clínic no cambia con la
+> regla 0 (no tiene frontera de estancia) y se reutiliza su índice de Fase 1.
+> Ninguna cifra procede de salidas antiguas salvo Clínic (indicado).
 
 ---
 
@@ -41,6 +42,11 @@ Test exigido: fin de ventilación 20 min antes del alta → `transfer_ventilated
 | `transfer_ventilated` | — | **459** |
 | `death` | 1 297 | 1 297 |
 | `tracheostomy` | 310 | 310 |
+
+Los **459** `transfer_ventilated` incluyen los **237** que antes terminaban en
+`end_of_icu_stay` (tolerancia de 30 s) **más** ~222 eventos cuyo fin de
+ventilación está entre 30 s y 1 h antes del `OUTTIME` y que la regla antigua
+daba por extubados.
 
 Etiquetas a 48 h en MIMIC: éxito **7 455** (antes 7 905), censura **1 638**
 (`death_at_vent` 556, `trach` 226, `terminal_extubation` 418,
@@ -94,24 +100,90 @@ Causas de censura en A+B+C: `terminal_extubation` 2 736,
 
 ---
 
-## 2. VitalDB — reconstrucción — commit `ee6931b` (mismo commit del punto 2)
+## 2. VitalDB — reconstrucción — commits `ee6931b`, `4ee5947`
 
-_(Sección en curso: escaneo de los 15 327 ficheros de origen y rebuild en
-`cases_v0.2.0_*`. Se completará con las cifras definitivas.)_
+### 2.1 Escaneo de TODOS los ficheros de origen
 
-1. Recorrido de **todos** los ficheros de origen: nº ilegibles y error.
-2. Reintento de los ilegibles con `vitaldb >= 1.7`; el pin pasa de 1.6.0 a
-   **1.7.2** (los ficheros que sigan fallando se listan como corruptos).
-3. Un fichero ilegible es **"sin dato"**, no "sin señal": sus horas **no**
-   crean huecos de ventilador (D1) ni cortes de paciente (D2). Los eventos que
-   los atraviesan se marcan con `has_missing_files` y `missing_hours`.
-   Test: dos ficheros ilegibles en mitad de una ventilación → **1 intento**
-   (`src/create_dataset/tests/test_missing_files.py`).
-4. Rebuild en carpeta de versión nueva + regla 0.
-5. Niveles: **A** (etiqueta confirmada y sin horas perdidas en la ventilación ni
-   en la hora posterior a la desconexión), **B** (horas perdidas que no afectan
-   a la etiqueta), **D** (la etiqueta depende de horas perdidas).
-6. Cobertura `vars_ok` al 50 % y 80 % (con FiO2 y PEEP aparte).
+`scripts/verify/fase1_5/scan_vitaldb.py` recorre los **15 327** `.vital` de
+`D:/data/vitaldb_sicu` (no una muestra) y guarda una **caché de sondas** para
+que el rebuild no vuelva a parsearlos.
+
+| Versión de `vitaldb` | Legibles | Ilegibles | Error |
+|---|---|---|---|
+| **1.6.0** (pin anterior) | 15 326 | **1** | `SICU2_02_250203_130000.vital` → `PermissionError [Errno 13]` |
+| **1.7.2** (pin nuevo) | **15 327** | **0** | — |
+
+El único fichero ilegible con 1.6.0 **se lee con 1.7.2** (pistas:
+`Intellivue/PLETH`), así que la causa era la versión fijada. **El pin se
+actualiza a `vitaldb==1.7.2`** en `requirements.txt`. Ficheros corruptos
+(ilegibles incluso con 1.7.2): **0**.
+
+> **Corrección de un diagnóstico previo:** la muestra de 300 ficheros de la
+> Fase 1 ("100 sin pistas legibles") confundía *"sin pistas"* con *"ilegible"*.
+> Aquí se distinguen: un fichero legible **sin** pistas de interés es "sin
+> señal" (no "sin dato"); solo un fallo del parser es "sin dato". Con esa
+> distinción, **solo 1 fichero** era ilegible, y no por "sin pistas".
+
+### 2.2 Ficheros ilegibles = "sin dato" (no "sin señal")
+
+`segment_box` puentea los huecos cubiertos por ficheros ilegibles
+(`merge_spans_ignoring_missing`): sus horas **no** crean huecos de ventilador
+(D1) ni cortes de paciente (D2). Los eventos que los atraviesan se marcan con
+`has_missing_files` y `missing_hours`.
+Test: dos ficheros ilegibles en mitad de una ventilación → **1 intento**
+(`src/create_dataset/tests/test_missing_files.py`).
+
+### 2.3 Rebuild + niveles + cobertura
+
+Rebuild en `datasets/vitaldb/cases_v0.2.0_a805771c` con regla 0, clasificación
+A/B/D y cobertura (LOCF 4 h):
+
+- **96 eventos** (18 excluidos por ventilador sin paciente). Como **0 ficheros
+  son ilegibles** con 1.7.2, **`has_missing_files` = 0** y **los 96 eventos son
+  nivel A** (ninguna hora perdida en la ventilación ni tras la desconexión).
+- Intentos por evento: `{1: 83, 2: 10, 3: 2, 4: 1}`.
+- `end_reason`: `extubation_observed` 51, `death_or_transfer` 26,
+  `end_of_record` 19.
+- Etiquetas a 48 h: éxito **75**, censura **21** (`end_of_record`), eventos con
+  ≥ 1 fallo **5**.
+
+**Cobertura de variables** (96 eventos A; fracción de horas ventiladas con
+valor útil, LOCF 4 h):
+
+| Variable | Media | Mediana | % eventos > 0 | % eventos > 0,5 | % eventos > 0,8 |
+|---|---|---|---|---|---|
+| HR | 0,65 | 1,00 | 76 % | 58 % | 52 % |
+| SpO2 | 0,68 | 1,00 | 78 % | 60 % | 55 % |
+| MAP | 0,65 | 1,00 | 76 % | 58 % | 52 % |
+| RR | 0,65 | 1,00 | 73 % | 59 % | 54 % |
+| **FiO2** | **0,24** | 0,00 | 28 % | 21 % | 18 % |
+| **PEEP** | **0,08** | 0,00 | 12 % | 5 % | 2 % |
+
+- `vars_ok` al **50 %** en A: **5 / 96**.
+- `vars_ok` al **80 %** en A: **2 / 96**.
+
+FiO2 y PEEP aparte: la cobertura es **muy baja** (medias 0,24 y 0,08; solo
+28 % y 12 % de los eventos tienen algún valor). Confirma el límite de la Fase 1:
+VitalDB sirve como validación externa con **modelo reducido** (HR, SpO2, MAP,
+RR), no con las 6 variables obligatorias.
+
+### 2.4 Antes / después de VitalDB
+
+| | Antes (Fase 1, v0.1.0) | Después (Fase 1.5, v0.2.0) |
+|---|---|---|
+| Eventos | 94 | **96** |
+| Excluidos | 20 | **18** |
+| Ficheros ilegibles | no medido (muestra ~1/3 "sin pistas") | **0** (1 con 1.6.0, legible con 1.7.2) |
+| Pin `vitaldb` | 1.6.0 | **1.7.2** |
+| Niveles A/B/D | no existía | **96 / 0 / 0** |
+| `has_missing_files` | no existía | **0** |
+| Cobertura FiO2 / PEEP | muestra: 22 % / 18 % (presencia de pista) | **24 % / 8 %** (cobertura horaria real, LOCF 4 h) |
+
+El cambio 94→96 eventos viene de tratar los ficheros sin pistas como "sin
+señal" (no "sin dato") de forma consistente y del puenteo de huecos por
+ficheros ilegibles (aquí sin efecto, al no haber ninguno con 1.7.2).
+
+
 
 ---
 
@@ -160,11 +232,16 @@ detalle está en `reports/fase1_5/clinic_short_events.json`.
 |---|---|---|---|---|---|---|
 | **MIMIC** | 9 093 (25 excl.) | 9 093 | 9 093 | 7 455 / 471 / 1 638 | n/d | n/d |
 | **Clínic** | 181 (4 excl.) | 181 | 181 | 140 / 9 / 41 | n/d | n/d |
+| **VitalDB** | 96 (18 excl.) | **96** | **96** | 75 / 5 / 21 | **5** | **2** |
 | **eICU** | 43 987 (55 excl.) | **0** | **0** | — | — | — |
-| **VitalDB** | _pendiente_ | _pendiente_ | _pendiente_ | _pendiente_ | _pendiente_ | _pendiente_ |
 
 - **MIMIC / Clínic**: nivel A = todos los eventos válidos tras la regla 0. En
   Clínic, de los 16 eventos < 1 h, **16 son artefactos** por señal (§3).
+  `vars_ok` para MIMIC/Clínic no se ha medido en esta fase (no lo pedía el punto
+  1/2; en la Fase 1, Clínic/VitalDB era la ruta señal).
+- **VitalDB**: A = sin horas perdidas en la ventilación ni tras la desconexión
+  (96/96, al no haber ficheros ilegibles con 1.7.2). Fallo = eventos con ≥ 1
+  intento fallido a 48 h.
 - **eICU**: A = 0 porque `ventendoffset` no está documentado; los 36 285
   eventos rescatables son de nivel C (fin reconstruido con el último ajuste
   invasivo). Desglose por nivel y por hospital en
@@ -178,4 +255,50 @@ El desglose completo A/B/C/D por hospital está en `levels_by_hospital` de
 
 ### Antes / después de VitalDB
 
-_Pendiente del rebuild._
+Ver §2.4: 94 → **96** eventos; 20 → **18** excluidos; **0** ficheros ilegibles
+(1 con 1.6.0, legible con 1.7.2 → pin a **1.7.2**); niveles **A/B/D = 96/0/0**;
+`has_missing_files` = 0; cobertura FiO2/PEEP **24 % / 8 %**.
+
+---
+
+## 5. Comandos de reproducción
+
+```powershell
+# Punto 0 (MIMIC con regla 0)
+python -m src.create_dataset.build_mimic_cases
+
+# Punto 1 (eICU)
+python -m src.create_dataset.build_eicu_index
+
+# Punto 2 (VitalDB): escaneo completo + reintento + rebuild con caché
+python scripts/verify/fase1_5/scan_vitaldb.py --workers 16 `
+  --cache reports/fase1_5/vitaldb_probe_160.json `
+  --out   reports/fase1_5/vitaldb_scan_160.json
+#   (instalar vitaldb==1.7.2)
+python scripts/verify/fase1_5/scan_vitaldb.py --retry `
+  --previous reports/fase1_5/vitaldb_scan_160.json `
+  --cache-in reports/fase1_5/vitaldb_probe_160.json `
+  --cache    reports/fase1_5/vitaldb_probe.json `
+  --out      reports/fase1_5/vitaldb_scan.json --workers 1
+python -m src.create_dataset.build_signal_cases --cohort vitaldb --no-merge `
+  --coverage --probe-cache reports/fase1_5/vitaldb_probe.json
+
+# Punto 3 (Clínic < 1 h)
+python scripts/verify/fase1_5/plot_short_events.py
+
+# Tests
+python -m pytest src/stage0/tests src/common/tests src/create_dataset/tests -q   # 287 verde, 1 saltado
+```
+
+## 6. Limitaciones
+
+- **eICU**: `ventendoffset` no documentado ⇒ A/B = 0. La reconstrucción de C
+  (último ajuste invasivo ≥ 1 h antes del alta) es una **propuesta**; el
+  `proposed_shift_h` reporta cuánto se desplaza el fin imputado.
+- **Clínic (punto 3)**: los ficheros crudos de los eventos < 1 h **no tienen
+  pistas de ventilador**, pero el índice los dio por ventilación: posible
+  inconsistencia índice↔datos crudos que hay que aclarar.
+- **VitalDB**: FiO2/PEEP insuficientes ⇒ modelo reducido para validación
+  externa.
+- La cobertura de eICU para A/A+B es N/A (A+B = 0); no se calculó la de C.
+
