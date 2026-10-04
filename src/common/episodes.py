@@ -176,6 +176,36 @@ def merge_spans(
     return merged
 
 
+def merge_spans_ignoring_missing(
+    spans: Iterable[Span | Sequence[float]],
+    missing_spans: Iterable[Span | Sequence[float]],
+    max_gap_h: float,
+) -> list[Span]:
+    """Fusiona intervalos ignorando los huecos cubiertos por ``missing_spans``.
+
+    Un fichero **ilegible** es "sin dato", no "sin señal": sus horas no deben
+    crear un hueco de ventilador (D1) ni un corte de paciente (D2). El hueco
+    efectivo entre dos tramos es ``gap - tiempo_cubierto_por_missing`` y se
+    fusionan si ese hueco efectivo es ``<= max_gap_h``.
+    """
+    merged = merge_spans(spans, 0.0)
+    if not merged:
+        return []
+    missing = merge_spans(missing_spans, 0.0)
+    out: list[Span] = [merged[0]]
+    for s in merged[1:]:
+        gap = s.start_h - out[-1].end_h
+        covered = (
+            _measure_within(Span(out[-1].end_h, s.start_h), missing)
+            if gap > 0 else 0.0
+        )
+        if gap - covered <= max_gap_h + _EPS:
+            out[-1] = Span(out[-1].start_h, max(out[-1].end_h, s.end_h))
+        else:
+            out.append(s)
+    return out
+
+
 def invert_spans(spans: Iterable[Span], start_h: float, end_h: float) -> list[Span]:
     """Complemento de ``spans`` dentro de [start_h, end_h]."""
     clipped = clip_spans(spans, start_h, end_h)

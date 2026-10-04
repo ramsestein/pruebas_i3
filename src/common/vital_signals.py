@@ -136,23 +136,39 @@ class VitalProbe:
 def probe_vital_file(path: str | Path, track_names: Sequence[str] = _PROBE_TRACKS) -> Optional[VitalProbe]:
     """Abre un .vital y resume las pistas de interés sin conservar sus valores.
 
-    Devuelve ``None`` si el fichero no se puede leer. Cada pista se reduce
-    inmediatamente a (dt_min, dt_max, n_recs), de modo que las ondas de alta
-    frecuencia no se mantienen en memoria.
+    Devuelve ``None`` SOLO si el fichero no se puede leer (corrupto/ilegible).
+    Un fichero legible sin ninguna pista reconocida devuelve un ``VitalProbe``
+    con ``tracks`` vacío: eso es "sin señal", no "sin dato".
+
+    Usa ``probe_vital_file_detail`` si además se necesita el mensaje de error.
+    """
+    probe, err = probe_vital_file_detail(path, track_names)
+    if probe is None:
+        logger.warning("[vital_signals] no se pudo leer %s: %s",
+                       Path(path).name, err)
+    return probe
+
+
+def probe_vital_file_detail(
+    path: str | Path,
+    track_names: Sequence[str] = _PROBE_TRACKS,
+) -> tuple[Optional[VitalProbe], Optional[str]]:
+    """Igual que ``probe_vital_file`` pero devuelve ``(probe, error)``.
+
+    ``error`` es ``None`` si el fichero se abrió (aunque no tuviera pistas).
     """
     path = Path(path)
     try:
         vf = vitaldb.VitalFile(str(path), track_names=list(track_names))
     except Exception as exc:  # noqa: BLE001
-        logger.warning("[vital_signals] no se pudo leer %s: %s", path.name, exc)
-        return None
+        return None, f"{type(exc).__name__}: {exc}"
 
-    if vf is None or not getattr(vf, "trks", None):
-        return None
+    if vf is None:
+        return None, "VitalFile devolvió None"
 
     probe = VitalProbe(path=path, dtstart=float(vf.dtstart), dtend=float(vf.dtend))
 
-    for name, trk in vf.trks.items():
+    for name, trk in (getattr(vf, "trks", None) or {}).items():
         recs = getattr(trk, "recs", None)
         if not recs:
             continue
@@ -170,7 +186,7 @@ def probe_vital_file(path: str | Path, track_names: Sequence[str] = _PROBE_TRACK
         # Liberar memoria de la pista cuanto antes.
         trk.recs = None
 
-    return probe
+    return probe, None
 
 
 # ── Derivación de intervalos (segundos epoch) ────────────────────────────────
@@ -244,6 +260,54 @@ def read_death_series(
                         if np.isfinite(v):
                             out[canonical].append((t_h, v))
                 break  # primera pista disponible de ese canal
+    return out
+
+
+# Pistas para la cobertura de variables (Fase 1.5, punto 2).
+COVERAGE_TRACKS: dict[str, tuple[str, ...]] = {
+    "HR": ("Intellivue/ECG_HR", "Intellivue/HR", "Intellivue/PLETH_HR"),
+    "SpO2": ("Intellivue/PLETH_SAT_O2",),
+    "MAP": ("Intellivue/ART_MEAN", "Intellivue/ABP_MEAN", "Intellivue/NIBP_MEAN"),
+    "RR": ("Intellivue/VENT_RR",),
+    "FiO2": ("Intellivue/FIO2",),
+    "PEEP": ("Intellivue/PEEP_CMH2O",),
+}
+
+
+def read_coverage_series(
+    paths: Sequence[str | Path],
+    t0_unix: float,
+) -> dict[str, tuple[list[float], list[float]]]:
+    """Series numéricas (horas desde t0) de las variables obligatorias.
+
+    Lee SOLO pistas numéricas (no ondas), por lo que es barato frente a la
+    fusión completa. Devuelve ``{var: (times_h, values)}``; de cada variable se
+    usa la primera pista disponible.
+    """
+    track_names = [n for names in COVERAGE_TRACKS.values() for n in names]
+    out: dict[str, tuple[list[float], list[float]]] = {
+        k: ([], []) for k in COVERAGE_TRACKS
+    }
+    for p in paths:
+        try:
+            vf = vitaldb.VitalFile(str(p), track_names=track_names)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("[vital_signals] cobertura: no se pudo leer %s: %s", p, exc)
+            continue
+        if vf is None:
+            continue
+        for var, names in COVERAGE_TRACKS.items():
+            for n in names:
+                trk = (getattr(vf, "trks", None) or {}).get(n)
+                if not trk or not trk.recs:
+                    continue
+                times, vals = out[var]
+                for r in trk.recs:
+                    v = float(r["val"])
+                    if np.isfinite(v):
+                        times.append((float(r["dt"]) - t0_unix) / 3600.0)
+                        vals.append(v)
+                break
     return out
 
 

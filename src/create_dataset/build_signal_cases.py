@@ -45,7 +45,15 @@ from src.common.d5_events import (
     terminal_from_signal_loss,
     threshold_simultaneous_shutdown,
 )
-from src.common.episodes import Episode, Span, build_episodes, segment_attempts
+from src.common.eicu_levels import hourly_coverage
+from src.common.episodes import (
+    Episode,
+    Span,
+    build_episodes,
+    merge_spans,
+    merge_spans_ignoring_missing,
+    segment_attempts,
+)
 from src.common.extubation import ExtubationDecision, resolve_extubation
 from src.common.labels import (
     FAILURE_WINDOWS_H,
@@ -57,12 +65,14 @@ from src.common.labels import (
 from src.common.signal_death import DeathDecision, Series, detect_signal_death
 from src.common.paths import config_path, repo_root, resolve_path
 from src.common.vital_signals import (
+    COVERAGE_TRACKS,
     MERGE_TRACK_NAMES,
     VitalProbe,
     hr_span_from_probe,
     merge_event_files,
     monitor_span_from_probe,
     probe_vital_file,
+    read_coverage_series,
     read_death_series,
     spo2_span_from_probe,
     vent_span_from_probe,
@@ -185,6 +195,8 @@ class BoxSegmentation:
     excluded_episodes: list[Episode] = field(default_factory=list)
     # Prueba de cada fichero de origen (para D5: pérdida de constantes).
     probes: dict[str, Optional[VitalProbe]] = field(default_factory=dict)
+    # Horas cubiertas por ficheros ILEGIBLES ("sin dato", no "sin señal").
+    missing_spans: list[Span] = field(default_factory=list)
 
 
 def _to_hours(span: Optional[Span]) -> Optional[Span]:
@@ -208,11 +220,16 @@ def segment_box(
     hr_spans: list[Span] = []
     spo2_spans: list[Span] = []
     probes: dict[str, Optional[VitalProbe]] = {}
+    missing_spans: list[Span] = []
 
     for sf in files:
         probe = probe_fn(sf.path)
         probes[str(sf.path)] = probe
         if probe is None:
+            # Fichero ILEGIBLE: es "sin dato", no "sin señal". Sus horas no
+            # deben crear huecos de ventilador (D1) ni cortes de paciente (D2).
+            f_start = sf.dt_unix / _SECONDS_PER_HOUR
+            missing_spans.append(Span(f_start, f_start + 1.0))
             continue
         v = _to_hours(vent_span_from_probe(probe))
         m = _to_hours(monitor_span_from_probe(probe))
@@ -227,6 +244,18 @@ def segment_box(
         if s is not None:
             spo2_spans.append(s)
 
+    # Puentear los huecos causados por ficheros ilegibles antes de segmentar:
+    # un fin de ventilación solo es real si el hueco NO está cubierto por
+    # ficheros "sin dato".
+    vent_spans = merge_spans_ignoring_missing(
+        vent_spans, missing_spans, disconnect_gap_h
+    )
+    monitor_spans = merge_spans_ignoring_missing(
+        monitor_spans, missing_spans, patient_gap_h
+    )
+    hr_spans = merge_spans_ignoring_missing(hr_spans, missing_spans, patient_gap_h)
+    spo2_spans = merge_spans_ignoring_missing(spo2_spans, missing_spans, patient_gap_h)
+
     episodes = build_episodes(
         vent_spans,
         hr_spans=hr_spans,
@@ -239,8 +268,10 @@ def segment_box(
     )
     kept = [e for e in episodes if not e.excluded]
     excluded = [e for e in episodes if e.excluded]
-    return BoxSegmentation(box=box, files=list(files), episodes=kept,
-                           excluded_episodes=excluded, probes=probes)
+    return BoxSegmentation(
+        box=box, files=list(files), episodes=kept, excluded_episodes=excluded,
+        probes=probes, missing_spans=merge_spans(missing_spans, 0.0),
+    )
 
 
 # ── Materialización de eventos (fusión + índice) ─────────────────────────────
@@ -366,6 +397,33 @@ def simultaneous_shutdown(episode: Episode) -> bool:
     )
 
 
+def classify_vitaldb_event(
+    episode: Episode,
+    missing_spans: Sequence[Span],
+    *,
+    min_tail_h: float = MIN_EXTUBATION_MONITOR_TAIL_H,
+) -> tuple[str, list[float]]:
+    """Nivel A/B/D de un evento según las horas perdidas (ficheros ilegibles).
+
+    - **A**: sin horas perdidas dentro del evento (etiqueta fiable).
+    - **B**: horas perdidas que NO tocan la ventilación ni la hora posterior a
+      la última desconexión (la etiqueta no depende de ellas).
+    - **D**: horas perdidas dentro de la ventilación o en la hora posterior a la
+      última desconexión (la etiqueta SÍ depende de ellas).
+    """
+    start = episode.start_h
+    region_end = _region_end_h(episode)
+    last_disconn = episode.attempts[-1].end_h
+    label_end = last_disconn + min_tail_h
+    missing = merge_spans(missing_spans, 0.0)
+    in_event = [m for m in missing if m.end_h > start and m.start_h < region_end]
+    if not in_event:
+        return "A", []
+    in_label = [m for m in in_event if m.end_h > start and m.start_h < label_end]
+    hours = [round(m.start_h - start, 4) for m in in_event]
+    return ("D" if in_label else "B"), hours
+
+
 def build_event_record(
     *,
     cohort: str,
@@ -375,6 +433,7 @@ def build_event_record(
     t0_unix: float,
     signal_loss: bool = False,
     death: Optional[DeathDecision] = None,
+    missing_spans: Sequence[Span] = (),
 ) -> dict:
     """Ficha de un evento lista para el índice JSON (D12)."""
     attempts = [
@@ -436,6 +495,9 @@ def build_event_record(
         }
     labels_dict = labels_to_dict(labels)
 
+    # Fase 1.5, punto 2: horas perdidas por ficheros ilegibles ("sin dato").
+    level, missing_hours = classify_vitaldb_event(episode, missing_spans)
+
     return {
         "event_id": "",  # se rellena en el orquestador
         "cohort": cohort,
@@ -468,6 +530,9 @@ def build_event_record(
         },
         "signal_loss_at_end": bool(signal_loss),
         "simultaneous_shutdown": bool(simultaneous_shutdown(episode)),
+        "has_missing_files": bool(missing_hours),
+        "missing_hours": missing_hours,
+        "level": level,
         "ventilated_hours": round(episode.ventilated_hours, 4),
         "labels": labels_dict,   # Fase 1.6 (D3) + D5       # Fase 1.6 (D3)
         "trach": None,         # Fase 1.5 (D5)
@@ -512,22 +577,56 @@ def build_cohort_index(
     cohort: str,
     spec: CohortSpec,
     merged: bool,
+    coverage: bool = False,
 ) -> dict:
-    """Construye el índice JSON completo de una cohorte."""
+    """Construye el índice JSON completo de una cohorte.
+
+    ``coverage=True`` mide, por evento, la fracción de horas ventiladas con
+    valor útil (LOCF 4 h) de las variables obligatorias (punto 2).
+    """
     events: list[dict] = []
     excluded_events: list[dict] = []
     deaths: list[dict] = []
+    n_missing_files = 0
+    levels: dict[str, int] = {"A": 0, "B": 0, "D": 0}
+    vars_ok_50 = vars_ok_80 = 0
+    n_covered = 0
     for box, seg in results:
+        n_missing_files += sum(1 for p in seg.probes.values() if p is None)
         for i, ep in enumerate(seg.episodes):
             t0_unix = ep.start_h * _SECONDS_PER_HOUR
             death, raw = detect_death_for_episode(seg.files, ep)
+            ep_files = _files_for_episode(seg.files, ep)
             rec = build_event_record(
                 cohort=cohort, box=box, episode=ep,
-                files=_files_for_episode(seg.files, ep), t0_unix=t0_unix,
+                files=ep_files, t0_unix=t0_unix,
                 signal_loss=signal_loss_at_end(seg.files, seg.probes, ep),
                 death=death,
+                missing_spans=seg.missing_spans,
             )
             rec["event_id"] = f"{cohort}_{box}_event_{i + 1}"
+            levels[rec["level"]] = levels.get(rec["level"], 0) + 1
+            if coverage:
+                series = read_coverage_series(
+                    [f.path for f in ep_files], t0_unix
+                )
+                vent_spans_h = [
+                    (a["vent_start_h"], a["vent_end_h"]) for a in rec["attempts"]
+                ]
+                fracs = {
+                    var: hourly_coverage(times, vals, vent_spans_h)
+                    for var, (times, vals) in series.items()
+                }
+                rec["coverage"] = {k: round(v, 4) for k, v in fracs.items()}
+                rec["vars_ok_50"] = bool(fracs) and all(
+                    v > 0.5 for v in fracs.values()
+                )
+                rec["vars_ok_80"] = bool(fracs) and all(
+                    v > 0.8 for v in fracs.values()
+                )
+                n_covered += 1
+                vars_ok_50 += int(rec["vars_ok_50"])
+                vars_ok_80 += int(rec["vars_ok_80"])
             events.append(rec)
             if death.is_death:
                 deaths.append(_death_record(rec, ep, raw))
@@ -548,7 +647,9 @@ def build_cohort_index(
         "description": (
             "Eventos de ventilación segmentados con señales (D1/D2/D4). "
             "Sin duración mínima ni límite de 7 días. D5 conectado "
-            "(pérdida de constantes tras la desconexión)."
+            "(pérdida de constantes tras la desconexión). Fase 1.5: los "
+            "ficheros ilegibles son 'sin dato' (no crean huecos) y se "
+            "clasifican A/B/D."
         ),
         "method": (
             "Se procesa cada .vital de origen con el parser de vitaldb; la "
@@ -560,6 +661,11 @@ def build_cohort_index(
         "total_boxes": len(results),
         "total_events": len(events),
         "total_excluded_events": len(excluded_events),
+        "n_missing_files": n_missing_files,
+        "levels": levels,
+        "levels_coverage_measured": n_covered,
+        "vars_ok_50": vars_ok_50,
+        "vars_ok_80": vars_ok_80,
         "n_signal_loss_at_end": sum(1 for e in events if e["signal_loss_at_end"]),
         "n_simultaneous_shutdown": sum(1 for e in events if e["simultaneous_shutdown"]),
         "n_death_signal": len(deaths),
@@ -594,6 +700,7 @@ def run_cohort(
     do_merge: bool = True,
     limit_boxes: Optional[int] = None,
     workers: int = 1,
+    coverage: bool = False,
 ) -> dict:
     """Ejecuta el pipeline completo de una cohorte con señal."""
     spec = SPECS[cohort]
@@ -621,7 +728,9 @@ def run_cohort(
             f"La versión ya existe y no se sobrescribe: {out_dir}"
         )
 
-    index = build_cohort_index(results, cohort=cohort, spec=spec, merged=do_merge)
+    index = build_cohort_index(
+        results, cohort=cohort, spec=spec, merged=do_merge, coverage=coverage
+    )
 
     if do_merge:
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -666,6 +775,8 @@ def main() -> None:
     p.add_argument("--limit-boxes", type=int, default=None)
     p.add_argument("--workers", type=int, default=1,
                    help="Procesos en paralelo (un box por tarea)")
+    p.add_argument("--coverage", action="store_true",
+                   help="Medir cobertura de variables por evento (LOCF 4 h)")
     p.add_argument("-v", "--verbose", action="store_true")
     args = p.parse_args()
 
@@ -679,6 +790,7 @@ def main() -> None:
         do_merge=not args.no_merge,
         limit_boxes=args.limit_boxes,
         workers=args.workers,
+        coverage=args.coverage,
     )
     print(json.dumps(
         {
