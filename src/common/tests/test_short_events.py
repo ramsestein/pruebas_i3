@@ -41,3 +41,43 @@ class TestClassifyShortEvent:
         """TV de 5000 mL es fisiológicamente imposible → no cuenta como señal."""
         res = classify_short_event(np.zeros(100), np.full(4, 5000.0))
         assert res["classification"] == "artefacto"
+
+
+class TestMarkersWithoutAwp:
+    """Fase 1.6b (punto 3): sin onda AWP, los AJUSTES (D6) bastan."""
+
+    def test_solo_ajustes_es_plausible(self):
+        # Caso real de Clínic: PEEP + PIP + VENT_RR + TV sin onda de presión.
+        markers = {
+            "Intellivue/PEEP_CMH2O": 120,
+            "Intellivue/PIP_CMH2O": 90,
+            "Intellivue/VENT_RR": 120,
+            "Intellivue/TV_EXP": 118,
+        }
+        res = classify_short_event(np.array([]), np.array([]),
+                                   marker_tracks=markers)
+        assert res["classification"] == "ventilacion_invasiva_plausible"
+        assert "ajustes_presentes" in res["reasons"]
+        assert res["metrics"]["n_marker_tracks"] == 4
+
+    def test_un_solo_marcador_no_basta(self):
+        res = classify_short_event(np.array([]), np.array([]), marker_tracks={
+            "Intellivue/PEEP_CMH2O": 50})
+        assert res["classification"] == "artefacto"
+        assert res["metrics"]["n_marker_tracks"] == 1
+
+    def test_la_fio2_no_es_marcador(self):
+        # FiO2 se anota también con oxigenoterapia: NO marca ventilación (D6).
+        res = classify_short_event(np.array([]), np.array([]), marker_tracks={
+            "Intellivue/FIO2": 200, "Intellivue/MV_EXP": 200})
+        assert res["classification"] == "artefacto"
+
+    def test_marcadores_sin_registros_no_cuentan(self):
+        res = classify_short_event(np.array([]), np.array([]), marker_tracks={
+            "Intellivue/PEEP_CMH2O": 0, "Intellivue/PIP_CMH2O": 0})
+        assert res["classification"] == "artefacto"
+
+    def test_onda_plana_con_ajustes_sigue_siendo_plausible(self):
+        res = classify_short_event(np.zeros(100), np.array([]), marker_tracks={
+            "Intellivue/PEEP_CMH2O": 10, "Intellivue/VENT_RR": 10})
+        assert res["classification"] == "ventilacion_invasiva_plausible"

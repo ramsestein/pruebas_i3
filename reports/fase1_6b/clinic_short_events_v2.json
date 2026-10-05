@@ -1,0 +1,925 @@
+{
+  "index": "datasets\\clinic\\cases_v0.1.0_a225d21b\\clinic_cases_index.json",
+  "n_raw_files": 15291,
+  "n_raw_in_boxes": 5471,
+  "read_cost": {
+    "n_files": 5471,
+    "total_gb": 101.51,
+    "median_size_mb": 4.23,
+    "p90_size_mb": 53.83,
+    "max_size_mb": 476.42,
+    "n_ge_50mb": 595,
+    "n_ge_200mb": 52,
+    "largest": [
+      {
+        "file": "rm4aaacre_250502_112039.vital",
+        "dir": "250502",
+        "size_mb": 476.42
+      },
+      {
+        "file": "rm4aaacre_250428_210405.vital",
+        "dir": "250428",
+        "size_mb": 366.51
+      },
+      {
+        "file": "7gibrwfgp_250514_152343.vital",
+        "dir": "250514",
+        "size_mb": 337.74
+      },
+      {
+        "file": "7gibrwfgp_250514_152343.vital",
+        "dir": "14_2",
+        "size_mb": 337.74
+      },
+      {
+        "file": "xxycag2xd_250716_232824.vital",
+        "dir": "250716",
+        "size_mb": 305.45
+      },
+      {
+        "file": "7gibrwfgp_241110_190902.vital",
+        "dir": "241124",
+        "size_mb": 292.07
+      },
+      {
+        "file": "7gibrwfgp_241110_190902.vital",
+        "dir": "14_2",
+        "size_mb": 292.07
+      },
+      {
+        "file": "kuigebjtu_260119_161650.vital",
+        "dir": "250705",
+        "size_mb": 288.26
+      },
+      {
+        "file": "7gibrwfgp_250714_201432.vital",
+        "dir": "14_2",
+        "size_mb": 288.23
+      },
+      {
+        "file": "n7tdnucwu_241229_045701.vital",
+        "dir": "241229",
+        "size_mb": 286.53
+      },
+      {
+        "file": "khzwppuuh_250517_184354.vital",
+        "dir": "250517",
+        "size_mb": 285.84
+      },
+      {
+        "file": "n5j8vrrsb_250325_163709.vital",
+        "dir": "250325",
+        "size_mb": 280.73
+      }
+    ]
+  },
+  "n_short_events": 16,
+  "n_with_vent_tracks": 13,
+  "n_with_awp_or_tv": 12,
+  "vent_tracks_seen": [
+    "Intellivue/AWP_WAV",
+    "Intellivue/FIO2",
+    "Intellivue/FLOW_WAV",
+    "Intellivue/MV_EXP",
+    "Intellivue/PEEP_CMH2O",
+    "Intellivue/PIP_CMH2O",
+    "Intellivue/TV_EXP",
+    "Intellivue/VENT_RR"
+  ],
+  "events": [
+    {
+      "event_id": "clinic_box10_event_2",
+      "box": "box10",
+      "duration_min": 14.55,
+      "location": "nombre_en_caja",
+      "n_files_found": 2,
+      "n_missing": 0,
+      "vent_tracks_present": [],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "tvpir4b4i_250426_185713.vital",
+          "read_s": 0.68,
+          "size_mb": 14.3,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 13569,
+            "Intellivue/PLETH_HR": 13569,
+            "Intellivue/ECG_HR": 13951
+          }
+        },
+        {
+          "file": "tvpir4b4i_250426_230255.vital",
+          "read_s": 0.24,
+          "size_mb": 4.89,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 4042,
+            "Intellivue/PLETH_HR": 4042,
+            "Intellivue/ECG_HR": 4620
+          }
+        }
+      ]
+    },
+    {
+      "event_id": "clinic_box13_event_4",
+      "box": "box13",
+      "duration_min": 19.42,
+      "location": "nombre_en_caja",
+      "n_files_found": 1,
+      "n_missing": 0,
+      "vent_tracks_present": [
+        "Intellivue/FIO2",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "n7tdnucwu_250322_103440.vital",
+          "read_s": 0.07,
+          "size_mb": 0.83,
+          "tracks": {
+            "Intellivue/FIO2": 1139,
+            "Intellivue/VENT_RR": 1139,
+            "Intellivue/TV_EXP": 1139,
+            "Intellivue/MV_EXP": 1139,
+            "Intellivue/PIP_CMH2O": 1139,
+            "Intellivue/PEEP_CMH2O": 1139,
+            "Intellivue/PLETH_SAT_O2": 846,
+            "Intellivue/PLETH_HR": 846,
+            "Intellivue/ECG_HR": 1136
+          }
+        }
+      ]
+    },
+    {
+      "event_id": "clinic_box13_event_5",
+      "box": "box13",
+      "duration_min": 0.93,
+      "location": "nombre_en_caja",
+      "n_files_found": 11,
+      "n_missing": 0,
+      "vent_tracks_present": [
+        "Intellivue/FIO2",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "n7tdnucwu_250322_130436.vital",
+          "read_s": 0.05,
+          "size_mb": 1.12,
+          "tracks": {
+            "Intellivue/FIO2": 56,
+            "Intellivue/VENT_RR": 56,
+            "Intellivue/TV_EXP": 56,
+            "Intellivue/MV_EXP": 56,
+            "Intellivue/PIP_CMH2O": 56,
+            "Intellivue/PEEP_CMH2O": 56,
+            "Intellivue/PLETH_SAT_O2": 741,
+            "Intellivue/PLETH_HR": 741,
+            "Intellivue/ECG_HR": 1048
+          }
+        },
+        {
+          "file": "n7tdnucwu_250322_133617.vital",
+          "read_s": 0.03,
+          "size_mb": 0.57,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 332,
+            "Intellivue/PLETH_HR": 332,
+            "Intellivue/ECG_HR": 625
+          }
+        },
+        {
+          "file": "n7tdnucwu_250322_134742.vital",
+          "read_s": 0.31,
+          "size_mb": 5.02,
+          "tracks": {
+            "Intellivue/ECG_HR": 4423,
+            "Intellivue/PLETH_SAT_O2": 4032,
+            "Intellivue/PLETH_HR": 4032
+          }
+        },
+        {
+          "file": "n7tdnucwu_250322_153340.vital",
+          "read_s": 0.32,
+          "size_mb": 5.23,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 4637,
+            "Intellivue/PLETH_HR": 4637,
+            "Intellivue/ECG_HR": 5017
+          }
+        },
+        {
+          "file": "n7tdnucwu_250322_171507.vital",
+          "read_s": 3.09,
+          "size_mb": 52.61,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 62264,
+            "Intellivue/PLETH_HR": 62264,
+            "Intellivue/ECG_HR": 64232
+          }
+        },
+        {
+          "file": "n7tdnucwu_250323_114357.vital",
+          "read_s": 0.33,
+          "size_mb": 6.59,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 7104,
+            "Intellivue/PLETH_HR": 7104,
+            "Intellivue/ECG_HR": 8369
+          }
+        },
+        {
+          "file": "n7tdnucwu_250323_142916.vital",
+          "read_s": 0.14,
+          "size_mb": 3.28,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 2315,
+            "Intellivue/PLETH_HR": 2315,
+            "Intellivue/ECG_HR": 3504
+          }
+        },
+        {
+          "file": "n7tdnucwu_250323_154945.vital",
+          "read_s": 0.09,
+          "size_mb": 2.35,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 1770,
+            "Intellivue/PLETH_HR": 1770,
+            "Intellivue/ECG_HR": 2430
+          }
+        },
+        {
+          "file": "n7tdnucwu_250323_163313.vital",
+          "read_s": 0.34,
+          "size_mb": 8.14,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 6809,
+            "Intellivue/PLETH_HR": 6809,
+            "Intellivue/ECG_HR": 7302
+          }
+        },
+        {
+          "file": "n7tdnucwu_250323_190452.vital",
+          "read_s": 0.45,
+          "size_mb": 10.35,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 10696,
+            "Intellivue/PLETH_HR": 10696,
+            "Intellivue/ECG_HR": 13875
+          }
+        },
+        {
+          "file": "n7tdnucwu_250323_230408.vital",
+          "read_s": 0.29,
+          "size_mb": 6.95,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 5956,
+            "Intellivue/PLETH_HR": 5956,
+            "Intellivue/ECG_HR": 9759
+          }
+        }
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_1",
+      "box": "box14",
+      "duration_min": 9.27,
+      "location": "nombre_en_caja",
+      "n_files_found": 0,
+      "n_missing": 0,
+      "vent_tracks_present": [],
+      "monitor_tracks_present": [],
+      "reads": []
+    },
+    {
+      "event_id": "clinic_box14_event_2",
+      "box": "box14",
+      "duration_min": 8.57,
+      "location": "nombre_en_caja",
+      "n_files_found": 8,
+      "n_missing": 0,
+      "vent_tracks_present": [
+        "Intellivue/AWP_WAV",
+        "Intellivue/FIO2",
+        "Intellivue/FLOW_WAV",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "mj6uua9n3_241011_125940.vital",
+          "read_s": 0.01,
+          "size_mb": 0.15,
+          "tracks": {
+            "Intellivue/FIO2": 6,
+            "Intellivue/VENT_RR": 6,
+            "Intellivue/TV_EXP": 6,
+            "Intellivue/MV_EXP": 6,
+            "Intellivue/PIP_CMH2O": 6,
+            "Intellivue/PEEP_CMH2O": 6,
+            "Intellivue/PLETH_SAT_O2": 6,
+            "Intellivue/PLETH_HR": 6,
+            "Intellivue/ECG_HR": 6,
+            "Intellivue/FLOW_WAV": 8,
+            "Intellivue/AWP_WAV": 8,
+            "Intellivue/HR": 6
+          }
+        },
+        {
+          "file": "mj6uua9n3_241011_125940.vital",
+          "read_s": 0.01,
+          "size_mb": 0.15,
+          "tracks": {
+            "Intellivue/FIO2": 6,
+            "Intellivue/VENT_RR": 6,
+            "Intellivue/TV_EXP": 6,
+            "Intellivue/MV_EXP": 6,
+            "Intellivue/PIP_CMH2O": 6,
+            "Intellivue/PEEP_CMH2O": 6,
+            "Intellivue/PLETH_SAT_O2": 6,
+            "Intellivue/PLETH_HR": 6,
+            "Intellivue/ECG_HR": 6,
+            "Intellivue/FLOW_WAV": 8,
+            "Intellivue/AWP_WAV": 8,
+            "Intellivue/HR": 6
+          }
+        },
+        {
+          "file": "mj6uua9n3_241011_130244.vital",
+          "read_s": 0.0,
+          "size_mb": 0.03,
+          "tracks": {
+            "Intellivue/FIO2": 5,
+            "Intellivue/VENT_RR": 5,
+            "Intellivue/TV_EXP": 5,
+            "Intellivue/MV_EXP": 5,
+            "Intellivue/PIP_CMH2O": 5,
+            "Intellivue/PEEP_CMH2O": 5,
+            "Intellivue/PLETH_SAT_O2": 5,
+            "Intellivue/PLETH_HR": 5,
+            "Intellivue/ECG_HR": 5,
+            "Intellivue/HR": 5
+          }
+        },
+        {
+          "file": "mj6uua9n3_241011_130244.vital",
+          "read_s": 0.0,
+          "size_mb": 0.03,
+          "tracks": {
+            "Intellivue/FIO2": 5,
+            "Intellivue/VENT_RR": 5,
+            "Intellivue/TV_EXP": 5,
+            "Intellivue/MV_EXP": 5,
+            "Intellivue/PIP_CMH2O": 5,
+            "Intellivue/PEEP_CMH2O": 5,
+            "Intellivue/PLETH_SAT_O2": 5,
+            "Intellivue/PLETH_HR": 5,
+            "Intellivue/ECG_HR": 5,
+            "Intellivue/HR": 5
+          }
+        },
+        {
+          "file": "mj6uua9n3_241011_130348.vital",
+          "read_s": 0.01,
+          "size_mb": 0.07,
+          "tracks": {
+            "Intellivue/FIO2": 1,
+            "Intellivue/VENT_RR": 1,
+            "Intellivue/TV_EXP": 1,
+            "Intellivue/MV_EXP": 1,
+            "Intellivue/PIP_CMH2O": 1,
+            "Intellivue/PEEP_CMH2O": 1,
+            "Intellivue/PLETH_SAT_O2": 51,
+            "Intellivue/PLETH_HR": 51,
+            "Intellivue/ECG_HR": 1,
+            "Intellivue/FLOW_WAV": 8,
+            "Intellivue/AWP_WAV": 8,
+            "Intellivue/HR": 1
+          }
+        },
+        {
+          "file": "mj6uua9n3_241011_130348.vital",
+          "read_s": 0.0,
+          "size_mb": 0.07,
+          "tracks": {
+            "Intellivue/FIO2": 1,
+            "Intellivue/VENT_RR": 1,
+            "Intellivue/TV_EXP": 1,
+            "Intellivue/MV_EXP": 1,
+            "Intellivue/PIP_CMH2O": 1,
+            "Intellivue/PEEP_CMH2O": 1,
+            "Intellivue/PLETH_SAT_O2": 51,
+            "Intellivue/PLETH_HR": 51,
+            "Intellivue/ECG_HR": 1,
+            "Intellivue/FLOW_WAV": 8,
+            "Intellivue/AWP_WAV": 8,
+            "Intellivue/HR": 1
+          }
+        },
+        {
+          "file": "mj6uua9n3_241011_130701.vital",
+          "read_s": 0.02,
+          "size_mb": 0.24,
+          "tracks": {
+            "Intellivue/FIO2": 211,
+            "Intellivue/VENT_RR": 211,
+            "Intellivue/TV_EXP": 211,
+            "Intellivue/MV_EXP": 211,
+            "Intellivue/PIP_CMH2O": 211,
+            "Intellivue/PEEP_CMH2O": 211,
+            "Intellivue/ECG_HR": 211,
+            "Intellivue/FLOW_WAV": 844,
+            "Intellivue/AWP_WAV": 844,
+            "Intellivue/PLETH_SAT_O2": 54,
+            "Intellivue/PLETH_HR": 54
+          }
+        },
+        {
+          "file": "mj6uua9n3_241011_130701.vital",
+          "read_s": 0.02,
+          "size_mb": 0.24,
+          "tracks": {
+            "Intellivue/FIO2": 211,
+            "Intellivue/VENT_RR": 211,
+            "Intellivue/TV_EXP": 211,
+            "Intellivue/MV_EXP": 211,
+            "Intellivue/PIP_CMH2O": 211,
+            "Intellivue/PEEP_CMH2O": 211,
+            "Intellivue/ECG_HR": 211,
+            "Intellivue/FLOW_WAV": 844,
+            "Intellivue/AWP_WAV": 844,
+            "Intellivue/PLETH_SAT_O2": 54,
+            "Intellivue/PLETH_HR": 54
+          }
+        }
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_3",
+      "box": "box14",
+      "duration_min": 0.38,
+      "location": "nombre_en_caja",
+      "n_files_found": 2,
+      "n_missing": 0,
+      "vent_tracks_present": [
+        "Intellivue/AWP_WAV",
+        "Intellivue/FLOW_WAV"
+      ],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "mj6uua9n3_241030_090955.vital",
+          "read_s": 0.0,
+          "size_mb": 0.02,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 23,
+            "Intellivue/PLETH_HR": 23,
+            "Intellivue/ECG_HR": 23,
+            "Intellivue/FLOW_WAV": 92,
+            "Intellivue/AWP_WAV": 92
+          }
+        },
+        {
+          "file": "mj6uua9n3_241030_090955.vital",
+          "read_s": 0.0,
+          "size_mb": 0.02,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 23,
+            "Intellivue/PLETH_HR": 23,
+            "Intellivue/ECG_HR": 23,
+            "Intellivue/FLOW_WAV": 92,
+            "Intellivue/AWP_WAV": 92
+          }
+        }
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_7",
+      "box": "box14",
+      "duration_min": 50.8,
+      "location": "nombre_en_caja",
+      "n_files_found": 2,
+      "n_missing": 0,
+      "vent_tracks_present": [
+        "Intellivue/AWP_WAV",
+        "Intellivue/FLOW_WAV"
+      ],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "7gibrwfgp_241213_085202.vital",
+          "read_s": 0.19,
+          "size_mb": 4.46,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 2701,
+            "Intellivue/PLETH_HR": 2701,
+            "Intellivue/ECG_HR": 2686,
+            "Intellivue/FLOW_WAV": 4205,
+            "Intellivue/AWP_WAV": 4205
+          }
+        },
+        {
+          "file": "7gibrwfgp_241213_085202.vital",
+          "read_s": 0.18,
+          "size_mb": 4.46,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 2701,
+            "Intellivue/PLETH_HR": 2701,
+            "Intellivue/ECG_HR": 2686,
+            "Intellivue/FLOW_WAV": 4205,
+            "Intellivue/AWP_WAV": 4205
+          }
+        }
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_25",
+      "box": "box14",
+      "duration_min": 18.93,
+      "location": "nombre_en_caja",
+      "n_files_found": 0,
+      "n_missing": 0,
+      "vent_tracks_present": [],
+      "monitor_tracks_present": [],
+      "reads": []
+    },
+    {
+      "event_id": "clinic_box14_event_30",
+      "box": "box14",
+      "duration_min": 18.95,
+      "location": "nombre_en_caja",
+      "n_files_found": 5,
+      "n_missing": 0,
+      "vent_tracks_present": [
+        "Intellivue/AWP_WAV",
+        "Intellivue/FLOW_WAV"
+      ],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "7gibrwfgp_250707_015605.vital",
+          "read_s": 1.15,
+          "size_mb": 24.59,
+          "tracks": {
+            "Intellivue/FLOW_WAV": 4444,
+            "Intellivue/AWP_WAV": 4444,
+            "Intellivue/PLETH_SAT_O2": 17884,
+            "Intellivue/PLETH_HR": 17884,
+            "Intellivue/ECG_HR": 18225
+          }
+        },
+        {
+          "file": "7gibrwfgp_250707_071111.vital",
+          "read_s": 104.5,
+          "size_mb": 54.28,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 39586,
+            "Intellivue/PLETH_HR": 39586,
+            "Intellivue/ECG_HR": 40843
+          }
+        },
+        {
+          "file": "7gibrwfgp_250707_185427.vital",
+          "read_s": 0.18,
+          "size_mb": 4.91,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 3226,
+            "Intellivue/PLETH_HR": 3226,
+            "Intellivue/ECG_HR": 3580
+          }
+        },
+        {
+          "file": "7gibrwfgp_250707_195636.vital",
+          "read_s": 83.5,
+          "size_mb": 47.8,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 35439,
+            "Intellivue/PLETH_HR": 35439,
+            "Intellivue/ECG_HR": 36283
+          }
+        },
+        {
+          "file": "7gibrwfgp_250708_062444.vital",
+          "read_s": 20.88,
+          "size_mb": 11.59,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 8414,
+            "Intellivue/PLETH_HR": 8414,
+            "Intellivue/ECG_HR": 8704
+          }
+        }
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_35",
+      "box": "box14",
+      "duration_min": 0.25,
+      "location": "nombre_en_caja",
+      "n_files_found": 1,
+      "n_missing": 0,
+      "vent_tracks_present": [
+        "Intellivue/AWP_WAV",
+        "Intellivue/FIO2",
+        "Intellivue/FLOW_WAV",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "7gibrwfgp_250728_231816.vital",
+          "read_s": 0.01,
+          "size_mb": 0.03,
+          "tracks": {
+            "Intellivue/FIO2": 14,
+            "Intellivue/VENT_RR": 14,
+            "Intellivue/TV_EXP": 14,
+            "Intellivue/MV_EXP": 14,
+            "Intellivue/PIP_CMH2O": 14,
+            "Intellivue/PEEP_CMH2O": 14,
+            "Intellivue/PLETH_SAT_O2": 14,
+            "Intellivue/PLETH_HR": 14,
+            "Intellivue/ECG_HR": 14,
+            "Intellivue/FLOW_WAV": 54,
+            "Intellivue/AWP_WAV": 54
+          }
+        }
+      ]
+    },
+    {
+      "event_id": "clinic_box14_event_37",
+      "box": "box14",
+      "duration_min": 59.42,
+      "location": "nombre_en_caja",
+      "n_files_found": 1,
+      "n_missing": 0,
+      "vent_tracks_present": [
+        "Intellivue/AWP_WAV",
+        "Intellivue/FIO2",
+        "Intellivue/FLOW_WAV",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "7gibrwfgp_250731_123858.vital",
+          "read_s": 0.35,
+          "size_mb": 7.0,
+          "tracks": {
+            "Intellivue/FLOW_WAV": 13914,
+            "Intellivue/AWP_WAV": 13914,
+            "Intellivue/FIO2": 3476,
+            "Intellivue/VENT_RR": 3476,
+            "Intellivue/TV_EXP": 3476,
+            "Intellivue/MV_EXP": 3476,
+            "Intellivue/PIP_CMH2O": 3476,
+            "Intellivue/PEEP_CMH2O": 3476,
+            "Intellivue/PLETH_SAT_O2": 3150,
+            "Intellivue/PLETH_HR": 3150,
+            "Intellivue/ECG_HR": 3441
+          }
+        }
+      ]
+    },
+    {
+      "event_id": "clinic_box2_event_6",
+      "box": "box2",
+      "duration_min": 13.7,
+      "location": "nombre_en_caja",
+      "n_files_found": 1,
+      "n_missing": 0,
+      "vent_tracks_present": [
+        "Intellivue/FIO2",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "fdrbsau47_251006_230937.vital",
+          "read_s": 0.06,
+          "size_mb": 0.79,
+          "tracks": {
+            "Intellivue/FIO2": 804,
+            "Intellivue/VENT_RR": 804,
+            "Intellivue/TV_EXP": 804,
+            "Intellivue/PIP_CMH2O": 804,
+            "Intellivue/PEEP_CMH2O": 804,
+            "Intellivue/PLETH_SAT_O2": 777,
+            "Intellivue/PLETH_HR": 777,
+            "Intellivue/ECG_HR": 785
+          }
+        }
+      ]
+    },
+    {
+      "event_id": "clinic_box4_event_1",
+      "box": "box4",
+      "duration_min": 3.73,
+      "location": "nombre_en_caja",
+      "n_files_found": 1,
+      "n_missing": 0,
+      "vent_tracks_present": [
+        "Intellivue/FIO2"
+      ],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "nd7wx5v9h_250314_012717.vital",
+          "read_s": 20.7,
+          "size_mb": 6.82,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 4730,
+            "Intellivue/PLETH_HR": 4730,
+            "Intellivue/ECG_HR": 4737,
+            "Intellivue/FIO2": 219
+          }
+        }
+      ]
+    },
+    {
+      "event_id": "clinic_box5_event_6",
+      "box": "box5",
+      "duration_min": 4.1,
+      "location": "nombre_en_caja",
+      "n_files_found": 1,
+      "n_missing": 0,
+      "vent_tracks_present": [
+        "Intellivue/FIO2",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "xpwhbn6yp_250614_155236.vital",
+          "read_s": 0.04,
+          "size_mb": 0.27,
+          "tracks": {
+            "Intellivue/FIO2": 241,
+            "Intellivue/VENT_RR": 241,
+            "Intellivue/TV_EXP": 241,
+            "Intellivue/MV_EXP": 241,
+            "Intellivue/PIP_CMH2O": 241,
+            "Intellivue/PEEP_CMH2O": 241,
+            "Intellivue/ECG_HR": 241,
+            "Intellivue/PLETH_SAT_O2": 199,
+            "Intellivue/PLETH_HR": 199
+          }
+        }
+      ]
+    },
+    {
+      "event_id": "clinic_box5_event_7",
+      "box": "box5",
+      "duration_min": 47.95,
+      "location": "nombre_en_caja",
+      "n_files_found": 1,
+      "n_missing": 0,
+      "vent_tracks_present": [
+        "Intellivue/FIO2",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "xpwhbn6yp_250626_131157.vital",
+          "read_s": 86.55,
+          "size_mb": 29.14,
+          "tracks": {
+            "Intellivue/PLETH_SAT_O2": 17830,
+            "Intellivue/PLETH_HR": 17830,
+            "Intellivue/ECG_HR": 18546,
+            "Intellivue/FIO2": 55,
+            "Intellivue/VENT_RR": 48,
+            "Intellivue/TV_EXP": 48,
+            "Intellivue/PIP_CMH2O": 48,
+            "Intellivue/PEEP_CMH2O": 48,
+            "Intellivue/MV_EXP": 44,
+            "Intellivue/HR": 10
+          }
+        }
+      ]
+    },
+    {
+      "event_id": "clinic_box8_event_2",
+      "box": "box8",
+      "duration_min": 59.23,
+      "location": "nombre_en_caja",
+      "n_files_found": 1,
+      "n_missing": 0,
+      "vent_tracks_present": [
+        "Intellivue/FIO2",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "monitor_tracks_present": [
+        "Intellivue/ECG_HR",
+        "Intellivue/PLETH_HR",
+        "Intellivue/PLETH_SAT_O2"
+      ],
+      "reads": [
+        {
+          "file": "rm4aaacre_250407_232800.vital",
+          "read_s": 20.93,
+          "size_mb": 9.46,
+          "tracks": {
+            "Intellivue/FIO2": 3470,
+            "Intellivue/VENT_RR": 3470,
+            "Intellivue/TV_EXP": 3470,
+            "Intellivue/PIP_CMH2O": 3470,
+            "Intellivue/PEEP_CMH2O": 3470,
+            "Intellivue/PLETH_SAT_O2": 3190,
+            "Intellivue/PLETH_HR": 3190,
+            "Intellivue/ECG_HR": 3236
+          }
+        }
+      ]
+    }
+  ]
+}

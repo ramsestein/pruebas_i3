@@ -1,0 +1,117 @@
+{
+  "raw_dir": "D:\\data\\clinic_vitals",
+  "n_vital": 15291,
+  "by_top_dir": {
+    "box10": 510,
+    "box11": 64,
+    "box12": 401,
+    "box13": 549,
+    "box14": 1235,
+    "box2": 183,
+    "box3": 223,
+    "box4": 545,
+    "box5": 371,
+    "box6": 415,
+    "box7": 335,
+    "box8": 346,
+    "box9": 294,
+    "dataset_clinic": 9820
+  },
+  "n_dataset_clinic": 9820,
+  "n_boxes": 5471,
+  "n_names_common": 4893,
+  "n_names_only_in_boxes": 0,
+  "n_names_only_in_dataset_clinic": 4349,
+  "n_duplicated_names": 4893,
+  "duplicated_sample": {
+    "7gibrwfgp_241109_011853.vital": [
+      "D:\\data\\clinic_vitals\\box14\\14\\241124\\241109\\7gibrwfgp_241109_011853.vital",
+      "D:\\data\\clinic_vitals\\box14\\14_2\\14_2\\250906\\14\\241124\\241109\\7gibrwfgp_241109_011853.vital",
+      "D:\\data\\clinic_vitals\\dataset_clinic\\clinic_vitals\\box14\\14\\241124\\241109\\7gibrwfgp_241109_011853.vital",
+      "D:\\data\\clinic_vitals\\dataset_clinic\\clinic_vitals\\box14\\14_2\\14_2\\250906\\14\\241124\\241109\\7gibrwfgp_241109_011853.vital"
+    ],
+    "7gibrwfgp_241109_012052.vital": [
+      "D:\\data\\clinic_vitals\\box14\\14\\241124\\241109\\7gibrwfgp_241109_012052.vital",
+      "D:\\data\\clinic_vitals\\box14\\14_2\\14_2\\250906\\14\\241124\\241109\\7gibrwfgp_241109_012052.vital",
+      "D:\\data\\clinic_vitals\\dataset_clinic\\clinic_vitals\\box14\\14\\241124\\241109\\7gibrwfgp_241109_012052.vital",
+      "D:\\data\\clinic_vitals\\dataset_clinic\\clinic_vitals\\box14\\14_2\\14_2\\250906\\14\\241124\\241109\\7gibrwfgp_241109_012052.vital"
+    ],
+    "7gibrwfgp_241110_073709.vital": [
+      "D:\\data\\clinic_vitals\\box14\\14\\241124\\241110\\7gibrwfgp_241110_073709.vital",
+      "D:\\data\\clinic_vitals\\box14\\14_2\\14_2\\250906\\14\\241124\\241110\\7gibrwfgp_241110_073709.vital",
+      "D:\\data\\clinic_vitals\\dataset_clinic\\clinic_vitals\\box14\\14\\241124\\241110\\7gibrwfgp_241110_073709.vital",
+      "D:\\data\\clinic_vitals\\dataset_clinic\\clinic_vitals\\box14\\14_2\\14_2\\250906\\14\\241124\\241110\\7gibrwfgp_241110_073709.vital"
+    ],
+    "7gibrwfgp_241110_074547.vital": [
+      "D:\\data\\clinic_vitals\\box14\\14\\241124\\241110\\7gibrwfgp_241110_074547.vital",
+      "D:\\data\\clinic_vitals\\box14\\14_2\\14_2\\250906\\14\\241124\\241110\\7gibrwfgp_241110_074547.vital",
+      "D:\\data\\clinic_vitals\\dataset_clinic\\clinic_vitals\\box14\\14\\241124\\241110\\7gibrwfgp_241110_074547.vital",
+      "D:\\data\\clinic_vitals\\dataset_clinic\\clinic_vitals\\box14\\14_2\\14_2\\250906\\14\\241124\\241110\\7gibrwfgp_241110_074547.vital"
+    ],
+    "7gibrwfgp_241110_190902.vital": [
+      "D:\\data\\clinic_vitals\\box14\\14\\241124\\241110\\7gibrwfgp_241110_190902.vital",
+      "D:\\data\\clinic_vitals\\box14\\14_2\\14_2\\250906\\14\\241124\\241110\\7gibrwfgp_241110_190902.vital",
+      "D:\\data\\clinic_vitals\\dataset_clinic\\clinic_vitals\\box14\\14\\241124\\241110\\7gibrwfgp_241110_190902.vital",
+      "D:\\data\\clinic_vitals\\dataset_clinic\\clinic_vitals\\box14\\14_2\\14_2\\250906\\14\\241124\\241110\\7gibrwfgp_241110_190902.vital"
+    ]
+  },
+  "same_file_two_paths": [
+    {
+      "name": "7gibrwfgp_241109_011853.vital",
+      "paths": [
+        "D:\\data\\clinic_vitals\\box14\\14\\241124\\241109\\7gibrwfgp_241109_011853.vital",
+        "D:\\data\\clinic_vitals\\box14\\14_2\\14_2\\250906\\14\\241124\\241109\\7gibrwfgp_241109_011853.vital",
+        "D:\\data\\clinic_vitals\\dataset_clinic\\clinic_vitals\\box14\\14\\241124\\241109\\7gibrwfgp_241109_011853.vital",
+        "D:\\data\\clinic_vitals\\dataset_clinic\\clinic_vitals\\box14\\14_2\\14_2\\250906\\14\\241124\\241109\\7gibrwfgp_241109_011853.vital"
+      ],
+      "reads": [
+        {
+          "dtstart": 1731111531.8226376,
+          "dtend": 1731111604.6866376,
+          "tracks": {
+            "Intellivue/AWP_WAV": 266,
+            "Intellivue/PLETH_SAT_O2": 70,
+            "Intellivue/ECG_HR": 70,
+            "Intellivue/FIO2": 68,
+            "Intellivue/TV_EXP": 68
+          }
+        },
+        {
+          "dtstart": 1731111531.8226376,
+          "dtend": 1731111604.6866376,
+          "tracks": {
+            "Intellivue/AWP_WAV": 266,
+            "Intellivue/PLETH_SAT_O2": 70,
+            "Intellivue/ECG_HR": 70,
+            "Intellivue/FIO2": 68,
+            "Intellivue/TV_EXP": 68
+          }
+        },
+        {
+          "dtstart": 1731111531.8226376,
+          "dtend": 1731111604.6866376,
+          "tracks": {
+            "Intellivue/AWP_WAV": 266,
+            "Intellivue/PLETH_SAT_O2": 70,
+            "Intellivue/ECG_HR": 70,
+            "Intellivue/FIO2": 68,
+            "Intellivue/TV_EXP": 68
+          }
+        },
+        {
+          "dtstart": 1731111531.8226376,
+          "dtend": 1731111604.6866376,
+          "tracks": {
+            "Intellivue/AWP_WAV": 266,
+            "Intellivue/PLETH_SAT_O2": 70,
+            "Intellivue/ECG_HR": 70,
+            "Intellivue/FIO2": 68,
+            "Intellivue/TV_EXP": 68
+          }
+        }
+      ],
+      "tracks_differ": false
+    }
+  ],
+  "explanation": "Los .vital existen DOS veces: en <box>/... y en dataset_clinic/clinic_vitals/<box>/.... Un índice por NOMBRE global se queda con una sola copia (la última del recorrido, que es la de dataset_clinic) y puede leer un fichero distinto del que generó el evento; si esa copia no tiene las pistas de ventilador, el evento parece un artefacto. dataset_clinic contiene además physionet_vitals/ (otro conjunto) y NO es una caja de UCI, por lo que el escáner lo excluye."
+}
