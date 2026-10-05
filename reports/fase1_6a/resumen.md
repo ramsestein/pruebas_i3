@@ -1,5 +1,12 @@
 # Fase 1.6a — Auditoría de eICU y censo por hospital
 
+> ⚠️ **Censo corregido en la Fase 1.6a-bis** → `reports/fase1_6a/resumen_v2.md`.
+> El censo de este documento usa `apache_vent` (`oobVentDay1`), que incluye VNI; la
+> versión corregida usa `apache_intub` (`oobIntubDay1`), mide la cobertura por
+> variable y recalcula los escenarios sobre estancias utilizables
+> (`eicu_hospitales_v2.csv`, `eicu_scenarios_v2.json`, `eicu_plausibilidad.json`).
+> La auditoría documental y el inventario de etiquetas de este documento siguen vigentes.
+
 > **Alcance:** medir, clasificar y proponer. **No** se han calculado etiquetas
 > de desenlace (ni reintubación, ni mortalidad, ni duración) ni se ha aplicado
 > ningún filtro. La selección de hospitales la decide el investigador con estas
