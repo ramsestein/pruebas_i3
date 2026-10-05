@@ -131,7 +131,7 @@ def classify_airway(airway: str) -> str:
     if airway in AIRWAY_INVASIVE:
         return CAT_INVASIVE
     if airway in AIRWAY_NONE:
-        return CAT_O2
+        return CAT_AMBIGUOUS
     return CAT_AMBIGUOUS
 
 
@@ -150,9 +150,12 @@ def classify_treatment(treatmentstring: str) -> str:
 
 def classify_careplan(group: str, value: str) -> str:
     """Categoría de ``carePlanGeneral`` (``cplgroup`` + ``cplitemvalue``)."""
-    g = (group or "").lower()
-    v = (value or "").lower()
+    g = str(group).lower() if group is not None else ""
+    v = str(value).lower() if value is not None else ""
     if g not in ("ventilation", "airway"):
+        return CAT_AMBIGUOUS
+    # "not intubated/..." NO es evidencia invasiva.
+    if "not intubated" in v or "no artificial" in v:
         return CAT_AMBIGUOUS
     if _match(v, CAREPLAN_INVASIVE):
         return CAT_INVASIVE

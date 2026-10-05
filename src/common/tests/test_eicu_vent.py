@@ -45,7 +45,7 @@ class TestLabelClassification:
         assert classify_airway("Oral ETT") == CAT_INVASIVE
         assert classify_airway("Nasal ETT") == CAT_INVASIVE
         assert classify_airway("Tracheostomy") == CAT_INVASIVE
-        assert classify_airway("No Artificial Airway") == CAT_O2
+        assert classify_airway("No Artificial Airway") == CAT_AMBIGUOUS
         assert classify_airway("Other") == CAT_AMBIGUOUS
         assert classify_airway(None) == CAT_AMBIGUOUS
 
@@ -60,7 +60,8 @@ class TestLabelClassification:
 
     def test_careplan(self):
         assert classify_careplan("Ventilation", "Mechanical ventilation") == CAT_INVASIVE
-        assert classify_careplan("Airway", "Endotracheal tube") == CAT_INVASIVE
+        assert classify_careplan("Airway", "Intubated/oral ETT") == CAT_INVASIVE
+        assert classify_careplan("Airway", "Not intubated/normal airway") == CAT_AMBIGUOUS
         assert classify_careplan("Ventilation", "CPAP/BiPAP") == CAT_NIV
         assert classify_careplan("Ventilation", "Oxygen therapy") == CAT_O2
         assert classify_careplan("DVT Prophylaxis", "SCDs") == CAT_AMBIGUOUS
