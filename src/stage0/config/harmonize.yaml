@@ -283,7 +283,7 @@ fase1_6b:
   vent_intervals:
     gap_candidates_h: [2, 4, 6, 8]
     annotation_strata_h: [1, 2, 4]   # submuestreo para emular la anotación de eICU
-    gap_h: null                      # se fija SOLO con la calibración en MIMIC
+    gap_h: 8                        # elegido en MIMIC (ver reports/fase1_6b/calibracion_mimic.md)
   mimic_cases_root: "datasets/mimic3wdb"
   reports_dir: "reports/fase1_6b"
 
