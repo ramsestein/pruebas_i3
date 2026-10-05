@@ -5,7 +5,7 @@
 # Todos los parámetros vienen de aquí.
 # =============================================================================
 
-version: "0.2.0"
+version: "0.3.0"
 
 # ── Rutas ──────────────────────────────────────────────────────────────────────
 paths:
@@ -264,6 +264,28 @@ mimic_outcome_itemids:
   pao2: [50821]
   # FiO2 para P/F (chartevents)
   fio2_pf: [3420, 223835]
+
+# ── Fase 1.6b: cohorte de eICU y calibración del algoritmo de intervalos ─────
+fase1_6b:
+  # Cohorte de eICU = escenario e2 con la regla de permeabilidad nueva:
+  # un hospital es implausible si >= 50 % de sus estancias con ajustes invasivos
+  # NO tienen ni apache_intub (oobIntubDay1) ni cpg_vent (plan de ventilación).
+  # No exige densidad rc_invasive/icu. Incluye concentrado_concordantes (259).
+  eicu:
+    scenario: "e2_permeabilidad_nueva"
+    n_hospitals: 53
+    hospital_ids: [63, 66, 67, 71, 73, 143, 146, 148, 152, 154, 157, 158, 165, 167,
+                   171, 175, 176, 181, 194, 227, 243, 244, 254, 259, 264, 266, 300,
+                   301, 303, 307, 310, 312, 331, 336, 337, 338, 345, 383, 384, 386,
+                   387, 388, 389, 390, 392, 394, 400, 405, 419, 420, 428, 458, 459]
+  # Algoritmo de intervalos de ventilación invasiva a partir de anotaciones:
+  # un ajuste abre/mantiene el episodio; un hueco > gap_h lo cierra.
+  vent_intervals:
+    gap_candidates_h: [2, 4, 6, 8]
+    annotation_strata_h: [1, 2, 4]   # submuestreo para emular la anotación de eICU
+    gap_h: null                      # se fija SOLO con la calibración en MIMIC
+  mimic_cases_root: "datasets/mimic3wdb"
+  reports_dir: "reports/fase1_6b"
 
 # ── Reproducibilidad ──────────────────────────────────────────────────────────
 random_seed: 42

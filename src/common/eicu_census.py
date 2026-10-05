@@ -68,6 +68,43 @@ def classify_plausibility(
     return VERDICT_DENSE
 
 
+# ── Regla de permeabilidad de la Fase 1.6b (punto 0) ─────────────────────────
+# Un hospital es IMPLAUSIBLE si >= 50 % de sus estancias con ajustes invasivos
+# no tienen NI `apache_intub` (oobIntubDay1) NI `cpg_vent` (plan de ventilación).
+# A diferencia de `classify_plausibility`, NO exige densidad rc_invasive/icu alta:
+# la permeabilidad se juzga solo por la ausencia de corroboración clínica.
+PERMEABLE_FRAC_WITHOUT_SUPPORT: float = 0.5
+
+
+def frac_without_support(
+    n_invasive_stays: int,
+    n_without_intub_nor_cpg: int,
+) -> Optional[float]:
+    """Fracción de estancias invasivas sin ``apache_intub`` ni ``cpg_vent``."""
+    if not n_invasive_stays:
+        return None
+    return n_without_intub_nor_cpg / n_invasive_stays
+
+
+def classify_permeability(
+    frac_without_intub_nor_cpg: float | None,
+    threshold: float = PERMEABLE_FRAC_WITHOUT_SUPPORT,
+) -> str:
+    """Veredicto de la regla de permeabilidad del punto 0 de la Fase 1.6b.
+
+    Devuelve ``VERDICT_IMPLAUSIBLE`` si la fracción de estancias con ajustes
+    invasivos que carecen de corroboración clínica (``apache_intub`` **y**
+    ``cpg_vent``) alcanza ``threshold``; ``VERDICT_OK`` en caso contrario.
+    """
+    if frac_without_intub_nor_cpg is None:
+        return VERDICT_OK
+    return (
+        VERDICT_IMPLAUSIBLE
+        if frac_without_intub_nor_cpg >= threshold
+        else VERDICT_OK
+    )
+
+
 def median_iqr(values: Sequence[float]) -> tuple[Optional[float], Optional[float]]:
     """Mediana y rango intercuartílico (Q1–Q3) de una lista de valores."""
     arr = np.asarray([v for v in values if v is not None and np.isfinite(v)], dtype=float)

@@ -1,0 +1,657 @@
+{
+  "generated_at": "2026-10-05T04:49:22.871455+00:00",
+  "regla": "implausible si >= 50 % de las estancias con ajustes invasivos no tienen ni apache_intub ni cpg_vent",
+  "n_hospitales": 205,
+  "n_implausible_v3": 24,
+  "implausible_v3": [
+    83,
+    86,
+    95,
+    151,
+    156,
+    268,
+    269,
+    271,
+    272,
+    277,
+    279,
+    280,
+    282,
+    283,
+    318,
+    393,
+    397,
+    411,
+    412,
+    413,
+    421,
+    422,
+    423,
+    436
+  ],
+  "nuevos_implausible": [
+    83,
+    86,
+    95,
+    151,
+    156,
+    268,
+    269,
+    271,
+    272,
+    277,
+    279,
+    280,
+    282,
+    283,
+    318,
+    393,
+    397,
+    421,
+    422,
+    423,
+    436
+  ],
+  "recuperados": [],
+  "detalle_cambios": [
+    {
+      "hospital_id": 83,
+      "rc_invasive_stays_v3": 12,
+      "rc_without_intub_nor_cpg_stays": 9,
+      "frac_rc_without_intub_nor_cpg": 0.75,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 86,
+      "rc_invasive_stays_v3": 2,
+      "rc_without_intub_nor_cpg_stays": 1,
+      "frac_rc_without_intub_nor_cpg": 0.5,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 95,
+      "rc_invasive_stays_v3": 4,
+      "rc_without_intub_nor_cpg_stays": 3,
+      "frac_rc_without_intub_nor_cpg": 0.75,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 151,
+      "rc_invasive_stays_v3": 2,
+      "rc_without_intub_nor_cpg_stays": 2,
+      "frac_rc_without_intub_nor_cpg": 1.0,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 156,
+      "rc_invasive_stays_v3": 2,
+      "rc_without_intub_nor_cpg_stays": 1,
+      "frac_rc_without_intub_nor_cpg": 0.5,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 268,
+      "rc_invasive_stays_v3": 331,
+      "rc_without_intub_nor_cpg_stays": 193,
+      "frac_rc_without_intub_nor_cpg": 0.583,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 269,
+      "rc_invasive_stays_v3": 333,
+      "rc_without_intub_nor_cpg_stays": 236,
+      "frac_rc_without_intub_nor_cpg": 0.709,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 271,
+      "rc_invasive_stays_v3": 432,
+      "rc_without_intub_nor_cpg_stays": 240,
+      "frac_rc_without_intub_nor_cpg": 0.556,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 272,
+      "rc_invasive_stays_v3": 563,
+      "rc_without_intub_nor_cpg_stays": 452,
+      "frac_rc_without_intub_nor_cpg": 0.803,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 277,
+      "rc_invasive_stays_v3": 756,
+      "rc_without_intub_nor_cpg_stays": 411,
+      "frac_rc_without_intub_nor_cpg": 0.544,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 279,
+      "rc_invasive_stays_v3": 330,
+      "rc_without_intub_nor_cpg_stays": 271,
+      "frac_rc_without_intub_nor_cpg": 0.821,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 280,
+      "rc_invasive_stays_v3": 541,
+      "rc_without_intub_nor_cpg_stays": 331,
+      "frac_rc_without_intub_nor_cpg": 0.612,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 282,
+      "rc_invasive_stays_v3": 410,
+      "rc_without_intub_nor_cpg_stays": 249,
+      "frac_rc_without_intub_nor_cpg": 0.607,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 283,
+      "rc_invasive_stays_v3": 1019,
+      "rc_without_intub_nor_cpg_stays": 537,
+      "frac_rc_without_intub_nor_cpg": 0.527,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 318,
+      "rc_invasive_stays_v3": 197,
+      "rc_without_intub_nor_cpg_stays": 118,
+      "frac_rc_without_intub_nor_cpg": 0.599,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 393,
+      "rc_invasive_stays_v3": 2,
+      "rc_without_intub_nor_cpg_stays": 1,
+      "frac_rc_without_intub_nor_cpg": 0.5,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 397,
+      "rc_invasive_stays_v3": 1,
+      "rc_without_intub_nor_cpg_stays": 1,
+      "frac_rc_without_intub_nor_cpg": 1.0,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 421,
+      "rc_invasive_stays_v3": 174,
+      "rc_without_intub_nor_cpg_stays": 140,
+      "frac_rc_without_intub_nor_cpg": 0.805,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 422,
+      "rc_invasive_stays_v3": 123,
+      "rc_without_intub_nor_cpg_stays": 89,
+      "frac_rc_without_intub_nor_cpg": 0.724,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 423,
+      "rc_invasive_stays_v3": 44,
+      "rc_without_intub_nor_cpg_stays": 23,
+      "frac_rc_without_intub_nor_cpg": 0.523,
+      "implausible_v2": false,
+      "implausible_v3": true
+    },
+    {
+      "hospital_id": 436,
+      "rc_invasive_stays_v3": 80,
+      "rc_without_intub_nor_cpg_stays": 44,
+      "frac_rc_without_intub_nor_cpg": 0.55,
+      "implausible_v2": false,
+      "implausible_v3": true
+    }
+  ],
+  "cohorte_escenario": "e2 + regla de permeabilidad nueva (incluye concentrado_concordante)",
+  "n_cohorte": 53,
+  "hospitals": [
+    63,
+    66,
+    67,
+    71,
+    73,
+    143,
+    146,
+    148,
+    152,
+    154,
+    157,
+    158,
+    165,
+    167,
+    171,
+    175,
+    176,
+    181,
+    194,
+    227,
+    243,
+    244,
+    254,
+    259,
+    264,
+    266,
+    300,
+    301,
+    303,
+    307,
+    310,
+    312,
+    331,
+    336,
+    337,
+    338,
+    345,
+    383,
+    384,
+    386,
+    387,
+    388,
+    389,
+    390,
+    392,
+    394,
+    400,
+    405,
+    419,
+    420,
+    428,
+    458,
+    459
+  ],
+  "n_cohorte_usable": 19905,
+  "cohorte_detalle": [
+    {
+      "hospital_id": 73,
+      "usable_stays": 1519,
+      "vent_stays": 2003,
+      "inter_adj_median_min": 212.0,
+      "frac_rc_without_intub_nor_cpg": 0.049
+    },
+    {
+      "hospital_id": 420,
+      "usable_stays": 1364,
+      "vent_stays": 2051,
+      "inter_adj_median_min": 215.0,
+      "frac_rc_without_intub_nor_cpg": 0.192
+    },
+    {
+      "hospital_id": 264,
+      "usable_stays": 1254,
+      "vent_stays": 1621,
+      "inter_adj_median_min": 45.0,
+      "frac_rc_without_intub_nor_cpg": 0.074
+    },
+    {
+      "hospital_id": 167,
+      "usable_stays": 1166,
+      "vent_stays": 1519,
+      "inter_adj_median_min": 191.0,
+      "frac_rc_without_intub_nor_cpg": 0.07
+    },
+    {
+      "hospital_id": 338,
+      "usable_stays": 1144,
+      "vent_stays": 1560,
+      "inter_adj_median_min": 196.0,
+      "frac_rc_without_intub_nor_cpg": 0.051
+    },
+    {
+      "hospital_id": 243,
+      "usable_stays": 1092,
+      "vent_stays": 1346,
+      "inter_adj_median_min": 229.0,
+      "frac_rc_without_intub_nor_cpg": 0.073
+    },
+    {
+      "hospital_id": 458,
+      "usable_stays": 1079,
+      "vent_stays": 1729,
+      "inter_adj_median_min": 60.0,
+      "frac_rc_without_intub_nor_cpg": 0.218
+    },
+    {
+      "hospital_id": 300,
+      "usable_stays": 933,
+      "vent_stays": 1272,
+      "inter_adj_median_min": 165.0,
+      "frac_rc_without_intub_nor_cpg": 0.027
+    },
+    {
+      "hospital_id": 148,
+      "usable_stays": 663,
+      "vent_stays": 824,
+      "inter_adj_median_min": 110.0,
+      "frac_rc_without_intub_nor_cpg": 0.089
+    },
+    {
+      "hospital_id": 400,
+      "usable_stays": 638,
+      "vent_stays": 726,
+      "inter_adj_median_min": 224.0,
+      "frac_rc_without_intub_nor_cpg": 0.031
+    },
+    {
+      "hospital_id": 176,
+      "usable_stays": 629,
+      "vent_stays": 911,
+      "inter_adj_median_min": 206.0,
+      "frac_rc_without_intub_nor_cpg": 0.154
+    },
+    {
+      "hospital_id": 165,
+      "usable_stays": 573,
+      "vent_stays": 766,
+      "inter_adj_median_min": 178.0,
+      "frac_rc_without_intub_nor_cpg": 0.065
+    },
+    {
+      "hospital_id": 152,
+      "usable_stays": 471,
+      "vent_stays": 544,
+      "inter_adj_median_min": 105.0,
+      "frac_rc_without_intub_nor_cpg": 0.035
+    },
+    {
+      "hospital_id": 157,
+      "usable_stays": 455,
+      "vent_stays": 635,
+      "inter_adj_median_min": 110.0,
+      "frac_rc_without_intub_nor_cpg": 0.07
+    },
+    {
+      "hospital_id": 307,
+      "usable_stays": 452,
+      "vent_stays": 548,
+      "inter_adj_median_min": 102.0,
+      "frac_rc_without_intub_nor_cpg": 0.037
+    },
+    {
+      "hospital_id": 345,
+      "usable_stays": 430,
+      "vent_stays": 576,
+      "inter_adj_median_min": 208.0,
+      "frac_rc_without_intub_nor_cpg": 0.037
+    },
+    {
+      "hospital_id": 390,
+      "usable_stays": 421,
+      "vent_stays": 470,
+      "inter_adj_median_min": 41.0,
+      "frac_rc_without_intub_nor_cpg": 0.027
+    },
+    {
+      "hospital_id": 394,
+      "usable_stays": 359,
+      "vent_stays": 414,
+      "inter_adj_median_min": 60.0,
+      "frac_rc_without_intub_nor_cpg": 0.016
+    },
+    {
+      "hospital_id": 388,
+      "usable_stays": 358,
+      "vent_stays": 399,
+      "inter_adj_median_min": 60.0,
+      "frac_rc_without_intub_nor_cpg": 0.023
+    },
+    {
+      "hospital_id": 154,
+      "usable_stays": 352,
+      "vent_stays": 434,
+      "inter_adj_median_min": 229.0,
+      "frac_rc_without_intub_nor_cpg": 0.066
+    },
+    {
+      "hospital_id": 336,
+      "usable_stays": 309,
+      "vent_stays": 382,
+      "inter_adj_median_min": 120.0,
+      "frac_rc_without_intub_nor_cpg": 0.014
+    },
+    {
+      "hospital_id": 63,
+      "usable_stays": 285,
+      "vent_stays": 360,
+      "inter_adj_median_min": 141.0,
+      "frac_rc_without_intub_nor_cpg": 0.095
+    },
+    {
+      "hospital_id": 146,
+      "usable_stays": 280,
+      "vent_stays": 369,
+      "inter_adj_median_min": 200.0,
+      "frac_rc_without_intub_nor_cpg": 0.069
+    },
+    {
+      "hospital_id": 331,
+      "usable_stays": 254,
+      "vent_stays": 324,
+      "inter_adj_median_min": 225.0,
+      "frac_rc_without_intub_nor_cpg": 0.056
+    },
+    {
+      "hospital_id": 259,
+      "usable_stays": 244,
+      "vent_stays": 365,
+      "inter_adj_median_min": 60.0,
+      "frac_rc_without_intub_nor_cpg": 0.056
+    },
+    {
+      "hospital_id": 171,
+      "usable_stays": 242,
+      "vent_stays": 398,
+      "inter_adj_median_min": 120.0,
+      "frac_rc_without_intub_nor_cpg": 0.175
+    },
+    {
+      "hospital_id": 384,
+      "usable_stays": 239,
+      "vent_stays": 264,
+      "inter_adj_median_min": 60.0,
+      "frac_rc_without_intub_nor_cpg": 0.019
+    },
+    {
+      "hospital_id": 301,
+      "usable_stays": 189,
+      "vent_stays": 399,
+      "inter_adj_median_min": 116.0,
+      "frac_rc_without_intub_nor_cpg": 0.394
+    },
+    {
+      "hospital_id": 387,
+      "usable_stays": 169,
+      "vent_stays": 207,
+      "inter_adj_median_min": 46.0,
+      "frac_rc_without_intub_nor_cpg": 0.027
+    },
+    {
+      "hospital_id": 386,
+      "usable_stays": 156,
+      "vent_stays": 175,
+      "inter_adj_median_min": 102.0,
+      "frac_rc_without_intub_nor_cpg": 0.012
+    },
+    {
+      "hospital_id": 392,
+      "usable_stays": 150,
+      "vent_stays": 166,
+      "inter_adj_median_min": 60.0,
+      "frac_rc_without_intub_nor_cpg": 0.057
+    },
+    {
+      "hospital_id": 310,
+      "usable_stays": 146,
+      "vent_stays": 204,
+      "inter_adj_median_min": 216.0,
+      "frac_rc_without_intub_nor_cpg": 0.118
+    },
+    {
+      "hospital_id": 337,
+      "usable_stays": 131,
+      "vent_stays": 170,
+      "inter_adj_median_min": 225.0,
+      "frac_rc_without_intub_nor_cpg": 0.061
+    },
+    {
+      "hospital_id": 181,
+      "usable_stays": 130,
+      "vent_stays": 238,
+      "inter_adj_median_min": 232.0,
+      "frac_rc_without_intub_nor_cpg": 0.129
+    },
+    {
+      "hospital_id": 254,
+      "usable_stays": 128,
+      "vent_stays": 196,
+      "inter_adj_median_min": 117.0,
+      "frac_rc_without_intub_nor_cpg": 0.137
+    },
+    {
+      "hospital_id": 71,
+      "usable_stays": 125,
+      "vent_stays": 170,
+      "inter_adj_median_min": 126.0,
+      "frac_rc_without_intub_nor_cpg": 0.043
+    },
+    {
+      "hospital_id": 244,
+      "usable_stays": 122,
+      "vent_stays": 172,
+      "inter_adj_median_min": 226.0,
+      "frac_rc_without_intub_nor_cpg": 0.247
+    },
+    {
+      "hospital_id": 383,
+      "usable_stays": 117,
+      "vent_stays": 140,
+      "inter_adj_median_min": 45.0,
+      "frac_rc_without_intub_nor_cpg": 0.065
+    },
+    {
+      "hospital_id": 312,
+      "usable_stays": 117,
+      "vent_stays": 144,
+      "inter_adj_median_min": 119.0,
+      "frac_rc_without_intub_nor_cpg": 0.044
+    },
+    {
+      "hospital_id": 459,
+      "usable_stays": 111,
+      "vent_stays": 261,
+      "inter_adj_median_min": 60.0,
+      "frac_rc_without_intub_nor_cpg": 0.496
+    },
+    {
+      "hospital_id": 66,
+      "usable_stays": 95,
+      "vent_stays": 134,
+      "inter_adj_median_min": 138.0,
+      "frac_rc_without_intub_nor_cpg": 0.075
+    },
+    {
+      "hospital_id": 428,
+      "usable_stays": 86,
+      "vent_stays": 121,
+      "inter_adj_median_min": 176.0,
+      "frac_rc_without_intub_nor_cpg": 0.164
+    },
+    {
+      "hospital_id": 419,
+      "usable_stays": 85,
+      "vent_stays": 101,
+      "inter_adj_median_min": 225.0,
+      "frac_rc_without_intub_nor_cpg": 0.011
+    },
+    {
+      "hospital_id": 405,
+      "usable_stays": 79,
+      "vent_stays": 98,
+      "inter_adj_median_min": 26.0,
+      "frac_rc_without_intub_nor_cpg": 0.074
+    },
+    {
+      "hospital_id": 175,
+      "usable_stays": 76,
+      "vent_stays": 115,
+      "inter_adj_median_min": 230.0,
+      "frac_rc_without_intub_nor_cpg": 0.17
+    },
+    {
+      "hospital_id": 389,
+      "usable_stays": 73,
+      "vent_stays": 78,
+      "inter_adj_median_min": 57.0,
+      "frac_rc_without_intub_nor_cpg": 0.027
+    },
+    {
+      "hospital_id": 227,
+      "usable_stays": 65,
+      "vent_stays": 627,
+      "inter_adj_median_min": 60.0,
+      "frac_rc_without_intub_nor_cpg": 0.242
+    },
+    {
+      "hospital_id": 194,
+      "usable_stays": 64,
+      "vent_stays": 83,
+      "inter_adj_median_min": 155.0,
+      "frac_rc_without_intub_nor_cpg": 0.042
+    },
+    {
+      "hospital_id": 67,
+      "usable_stays": 60,
+      "vent_stays": 84,
+      "inter_adj_median_min": 120.0,
+      "frac_rc_without_intub_nor_cpg": 0.128
+    },
+    {
+      "hospital_id": 143,
+      "usable_stays": 59,
+      "vent_stays": 144,
+      "inter_adj_median_min": 171.0,
+      "frac_rc_without_intub_nor_cpg": 0.388
+    },
+    {
+      "hospital_id": 266,
+      "usable_stays": 59,
+      "vent_stays": 101,
+      "inter_adj_median_min": 30.0,
+      "frac_rc_without_intub_nor_cpg": 0.167
+    },
+    {
+      "hospital_id": 158,
+      "usable_stays": 57,
+      "vent_stays": 76,
+      "inter_adj_median_min": 184.0,
+      "frac_rc_without_intub_nor_cpg": 0.138
+    },
+    {
+      "hospital_id": 303,
+      "usable_stays": 51,
+      "vent_stays": 63,
+      "inter_adj_median_min": 89.0,
+      "frac_rc_without_intub_nor_cpg": 0.065
+    }
+  ]
+}

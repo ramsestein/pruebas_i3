@@ -13,8 +13,10 @@ from src.common.eicu_census import (
     VERDICT_DENSE,
     VERDICT_IMPLAUSIBLE,
     VERDICT_OK,
+    classify_permeability,
     classify_plausibility,
     documentation_metrics,
+    frac_without_support,
     inter_adjustment_intervals,
     is_implausible,
     median_iqr,
@@ -102,6 +104,31 @@ class TestPlausibilityVerdict:
         assert classify_plausibility(600, 1000, 0.99) == VERDICT_OK
         assert classify_plausibility(601, 1000, 0.99) == VERDICT_IMPLAUSIBLE
         assert classify_plausibility(601, 1000, 0.49) == VERDICT_DENSE
+
+
+class TestPermeabilityRule:
+    """Punto 0 de la Fase 1.6b: permeabilidad sin requisito de densidad."""
+
+    def test_frac_without_support(self):
+        assert frac_without_support(200, 100) == 0.5
+        assert frac_without_support(0, 0) is None
+
+    def test_implausible_at_half(self):
+        # Exactamente el 50 % -> implausible (umbral inclusivo).
+        assert classify_permeability(0.5) == VERDICT_IMPLAUSIBLE
+
+    def test_ok_below_half(self):
+        assert classify_permeability(0.499) == VERDICT_OK
+
+    def test_poco_denso_pero_permeable(self):
+        # No se exige densidad: un hospital con pocas estancias invasivas y
+        # ninguna corroboracion clinica tambien es implausible.
+        frac = frac_without_support(20, 18)
+        assert frac == 0.9
+        assert classify_permeability(frac) == VERDICT_IMPLAUSIBLE
+
+    def test_sin_estancias(self):
+        assert classify_permeability(None) == VERDICT_OK
 
 
 class TestScenarios:
