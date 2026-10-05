@@ -563,10 +563,6 @@ def run(config: dict, *, with_coverage: bool = True) -> dict:
             with_coverage=True,
         )
 
-    index, summary = build_eicu_index(
-        patients, respcare, adjustments, vitals, resp_vitals,
-        with_coverage=with_coverage,
-    )
     (out_dir / "eicu_cases_index.json").write_text(
         json.dumps(index, ensure_ascii=False), encoding="utf-8"
     )
