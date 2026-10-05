@@ -1,0 +1,279 @@
+source,value,n_stays,n_hospitals,category
+carePlanGeneral.Airway,Not intubated/normal airway,176651,207,ambigua
+carePlanGeneral.Airway,Not intubated/partial airway obstruction,1445,158,ambigua
+carePlanGeneral.Ventilation,Spontaneous - adequate,160932,207,ambigua
+carePlanGeneral.Ventilation,Ventilated - with daily extubation evaluation,40422,201,ambigua
+carePlanGeneral.Ventilation,Spontaneous - tenuous,28233,201,ambigua
+carePlanGeneral.Ventilation,Ventilated - with no daily extubation trial,7860,168,ambigua
+carePlanGeneral.Ventilation,Ventilated - rapid wean/extubation,5584,153,ambigua
+carePlanGeneral.Ventilation,Ventilated - chronic dependency,1377,120,ambigua
+nurseCharting.nursingchartcelltypevallabel,Respiratory Rate,177583,201,ambigua
+respiratoryCare.airwayType,No Artificial Airway,3755,26,ambigua
+respiratoryCare.airwayType,Other,123,13,ambigua
+respiratoryCharting.respchartvaluelabel,TV/kg IBW,40097,169,ambigua
+respiratoryCharting.respchartvaluelabel,Vent Rate,39057,168,ambigua
+respiratoryCharting.respchartvaluelabel,SaO2,32212,88,ambigua
+respiratoryCharting.respchartvaluelabel,Mean Airway Pressure,27290,100,ambigua
+respiratoryCharting.respchartvaluelabel,Plateau Pressure,23390,94,ambigua
+respiratoryCharting.respchartvaluelabel,Exhaled TV (patient),23168,105,ambigua
+respiratoryCharting.respchartvaluelabel,Compliance,11748,55,ambigua
+respiratoryCharting.respchartvaluelabel,Peak Flow,7710,52,ambigua
+respiratoryCharting.respchartvaluelabel,RT Vent On/Off,2741,12,ambigua
+respiratoryCharting.respchartvaluelabel,Tidal Volume Observed (VT),2656,12,ambigua
+respiratoryCharting.respchartvaluelabel,Exhaled Vt,1439,4,ambigua
+respiratoryCharting.respchartvaluelabel,Spont TV,1007,3,ambigua
+respiratoryCharting.respchartvaluelabel,"Tidal Volume, Delivered",995,5,ambigua
+respiratoryCharting.respchartvaluelabel,A1: High Exhaled Vt,858,2,ambigua
+respiratoryCharting.respchartvaluelabel,Adult Con Pt/Vent SpO2,817,2,ambigua
+respiratoryCharting.respchartvaluelabel,Adult Con Pt/Vent Spont Rate,797,2,ambigua
+respiratoryCharting.respchartvaluelabel,Adult Con Pt/Vent MinuteVentil,795,2,ambigua
+respiratoryCharting.respchartvaluelabel,Adult Con Pt/Vent InspiratorTV,795,2,ambigua
+respiratoryCharting.respchartvaluelabel,Adult Con Setting Set Vt,794,2,ambigua
+respiratoryCharting.respchartvaluelabel,WUA Patient Response/RASS Score,675,3,ambigua
+respiratoryCharting.respchartvaluelabel,Respiratory Phase,674,1,ambigua
+respiratoryCharting.respchartvaluelabel,Endotracheal Tube Placement,661,3,ambigua
+respiratoryCharting.respchartvaluelabel,Wake up assessment interventions,641,3,ambigua
+respiratoryCharting.respchartvaluelabel,Minute Ventilation Set(L/min),631,2,ambigua
+respiratoryCharting.respchartvaluelabel,Secured at-ETT ,628,5,ambigua
+respiratoryCharting.respchartvaluelabel,Adult Con Setting Spont Exp Vt,623,2,ambigua
+respiratoryCharting.respchartvaluelabel,Mechanical Ventilator High Tidal Volume Alarm,535,1,ambigua
+respiratoryCharting.respchartvaluelabel,Adult Con Pt/Vent IBW in Kg,395,2,ambigua
+respiratoryCharting.respchartvaluelabel,Respiratory Device,392,1,ambigua
+respiratoryCharting.respchartvaluelabel,Mechanical Ventilation Slope,367,1,ambigua
+respiratoryCharting.respchartvaluelabel,Ventilator Population,367,1,ambigua
+respiratoryCharting.respchartvaluelabel,Minute Volume Leak,363,1,ambigua
+respiratoryCharting.respchartvaluelabel,Ventilator Heater Temperature,336,2,ambigua
+respiratoryCharting.respchartvaluelabel,Endotracheal Tube Placement Checked,335,1,ambigua
+respiratoryCharting.respchartvaluelabel,"Minute Volume, Spontaneous",330,5,ambigua
+respiratoryCharting.respchartvaluelabel,Endotracheal Position at Lip,320,2,ambigua
+respiratoryCharting.respchartvaluelabel,Apnea Ventilation,305,1,ambigua
+respiratoryCharting.respchartvaluelabel,ETT Peptic Ulcer Prophylaxis,299,1,ambigua
+respiratoryCharting.respchartvaluelabel,Vt Spontaneous (mL),253,2,ambigua
+respiratoryCharting.respchartvaluelabel,ETT Sedation Vacation,231,1,ambigua
+respiratoryCharting.respchartvaluelabel,Adult Con Pt/Vent ETCO2_,225,2,ambigua
+respiratoryCharting.respchartvaluelabel,Adult Con Pt/Vent ETCO2,217,2,ambigua
+respiratoryCharting.respchartvaluelabel,Mechanical Ventilator Compliance,210,1,ambigua
+respiratoryCharting.respchartvaluelabel,Mechanical Ventilator Resistance,210,1,ambigua
+respiratoryCharting.respchartvaluelabel,Unable to Obtain PEEPi and Vtrap,195,1,ambigua
+respiratoryCharting.respchartvaluelabel,Endotracheal Tube Moved to,189,1,ambigua
+respiratoryCharting.respchartvaluelabel,CCU Ventilator Weaning Protocol Started,167,1,ambigua
+respiratoryCharting.respchartvaluelabel,End Tidal CO2 Status,144,1,ambigua
+respiratoryCharting.respchartvaluelabel,AIRWAY TEMPERATURE,143,2,ambigua
+respiratoryCharting.respchartvaluelabel,VS RESP RATE,124,2,ambigua
+respiratoryCharting.respchartvaluelabel,Sedation Scoring Ventilation Depth,123,1,ambigua
+respiratoryCharting.respchartvaluelabel,PULSE OX RESULTS VT,119,2,ambigua
+respiratoryCharting.respchartvaluelabel,ETCO2,116,3,ambigua
+respiratoryCharting.respchartvaluelabel,Airway Attachments,112,1,ambigua
+respiratoryCharting.respchartvaluelabel,Ventilator Checks,72,1,ambigua
+respiratoryCharting.respchartvaluelabel,Backup Vent Active,70,1,ambigua
+respiratoryCharting.respchartvaluelabel,Static Compliance,68,1,ambigua
+respiratoryCharting.respchartvaluelabel,Spontaneous Respiratory Rate,68,1,ambigua
+respiratoryCharting.respchartvaluelabel,4. RSBI (RR/Vt),59,3,ambigua
+respiratoryCharting.respchartvaluelabel,EtCO2,54,2,ambigua
+respiratoryCharting.respchartvaluelabel,Tracheostomy Type,37,1,ambigua
+respiratoryCharting.respchartvaluelabel,Lung Sound Respiratory Phase,30,1,ambigua
+respiratoryCharting.respchartvaluelabel,Trachestomy Tube Size,24,1,ambigua
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|ventilator weaning,5132,126,ambigua
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|tracheal suctioning,4349,116,ambigua
+treatment.treatmentstring,pulmonary|radiologic procedures / bronchoscopy|endotracheal tube removal,4016,103,ambigua
+treatment.treatmentstring,pulmonary|radiologic procedures / bronchoscopy|endotracheal tube,3462,128,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|mechanical ventilation,1559,104,ambigua
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|ventilator weaning|rapid,729,23,ambigua
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|physiotherapy of chest,575,34,ambigua
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|ventilator weaning|active,550,52,ambigua
+treatment.treatmentstring,pulmonary|radiologic procedures / bronchoscopy|reintubation,443,81,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|ventilator weaning,411,48,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (< 40%)|nasal cannula,358,64,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (40% to 60%),315,54,ambigua
+treatment.treatmentstring,pulmonary|radiologic procedures / bronchoscopy|pulmonary ventilation perfusion study,275,74,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|CPAP/PEEP therapy,208,23,ambigua
+treatment.treatmentstring,toxicology|drug overdose|mechanical ventilation,203,81,ambigua
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|ventilator weaning|slow,198,41,ambigua
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|lung recruitment maneuver,193,29,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|tracheal suctioning,187,38,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|ventilator weaning|rapid,149,22,ambigua
+treatment.treatmentstring,toxicology|drug overdose|endotracheal tube,138,58,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|mechanical ventilation|assist controlled,126,30,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (< 40%),118,42,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|non-invasive ventilation,88,40,ambigua
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|prone position,81,27,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (> 60%),75,34,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|mechanical ventilation|volume controlled,55,22,ambigua
+treatment.treatmentstring,toxicology|drug overdose|endotracheal tube|insertion,49,26,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|ventilator weaning|active,47,14,ambigua
+treatment.treatmentstring,cardiovascular|vascular disorders|pulmonary ventilation perfusion study,43,29,ambigua
+treatment.treatmentstring,pulmonary|surgery / incision and drainage of thorax|procedure on upper respiratory tract - not tracheostomy,43,29,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (40% to 60%)|face mask,41,18,ambigua
+treatment.treatmentstring,pulmonary|vascular disorders|pulmonary ventilation perfusion study,40,24,ambigua
+treatment.treatmentstring,pulmonary|radiologic procedures / bronchoscopy|endotracheal tube|repositioning,37,14,ambigua
+treatment.treatmentstring,toxicology|drug overdose|mechanical ventilation|assist controlled,31,20,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (> 60%)|>90%,27,12,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|mechanical ventilation|synchronized intermittent,25,10,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (40% to 60%)|40-50%,25,15,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|non-invasive ventilation|face mask,20,12,ambigua
+treatment.treatmentstring,neurologic|ICH/ cerebral infarct|thrombolytics|mechanical thrombolysis,19,13,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|mechanical ventilation|tidal volume 6-10 ml/kg,18,10,ambigua
+treatment.treatmentstring,pulmonary|surgery / incision and drainage of thorax|repair of bronchus or trachea,17,12,ambigua
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|continuous lateral rotation therapy,17,11,ambigua
+treatment.treatmentstring,toxicology|drug overdose|non-invasive ventilation,15,13,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (40% to 60%)|50-60%,13,12,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|CPAP/PEEP therapy|5-10 cm H2O,12,4,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|mechanical ventilation|pressure support,11,5,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (< 40%)|trach collar,11,10,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (> 60%)|non-rebreather mask,11,4,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (< 40%)|30-40%,9,6,ambigua
+treatment.treatmentstring,toxicology|drug overdose|mechanical ventilation|tidal volume 6-10 ml/kg,8,7,ambigua
+treatment.treatmentstring,neurologic|therapy for controlling cerebral perfusion pressure|hyperventilation,7,6,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|mechanical ventilation|non-invasive ventilation,7,7,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (< 40%)|face mask,7,7,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|ventilator weaning|slow,7,7,ambigua
+treatment.treatmentstring,toxicology|drug overdose|mechanical ventilation|volume controlled,7,6,ambigua
+treatment.treatmentstring,infectious diseases|procedures|hyperbaric oxygen,6,4,ambigua
+treatment.treatmentstring,neurologic|procedures / diagnostics|intracranial/cerebral perfusion pressure monitoring|cerebral tissue oxygenation monitor,6,2,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (< 40%)|25-30%,6,5,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (> 60%)|face mask,6,4,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|mechanical ventilation|tidal volume < 6 ml/kg,5,4,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|mechanical ventilation|permissive hypercapnea,4,3,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|mechanical ventilation|pressure controlled,4,4,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (40% to 60%)|trach collar,4,3,ambigua
+treatment.treatmentstring,toxicology|drug overdose|agent specific therapy|carbon monoxide|hyperbaric oxygen,4,3,ambigua
+treatment.treatmentstring,neurologic|therapy for controlling cerebral perfusion pressure|hyperventilation|pCO2 25-35mmhg,3,2,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|mechanical ventilation|non-invasive ventilation|face mask,3,2,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|mechanical ventilation|tidal volume > 10 ml/kg,3,2,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|non-invasive ventilation|nasal mask,3,3,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (40% to 60%)|face tent,3,3,ambigua
+treatment.treatmentstring,endocrine|pituitary and temperature regulation|active core rewarming|heated humidified oxygen,2,2,ambigua
+treatment.treatmentstring,pulmonary|surgery / incision and drainage of thorax|repair of bronchus or trachea|bronchopleural fistula,2,2,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|CPAP/PEEP therapy|10-15 cm H2O,2,2,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (> 60%)|60-70%,2,2,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (> 60%)|70-80%,2,2,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (> 60%)|80-90%,2,2,ambigua
+treatment.treatmentstring,toxicology|drug overdose|non-invasive ventilation|face mask,2,2,ambigua
+treatment.treatmentstring,pulmonary|radiologic procedures / bronchoscopy|endotracheal tube|double lumen,1,1,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|CPAP/PEEP therapy|> 15 cm H2O,1,1,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|mechanical ventilation|non-invasive ventilation|nasal mask,1,1,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (40% to 60%)|non-rebreather mask,1,1,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (< 40%)|face tent,1,1,ambigua
+treatment.treatmentstring,surgery|pulmonary therapies|oxygen therapy (< 40%)|non-rebreather mask,1,1,ambigua
+treatment.treatmentstring,toxicology|drug overdose|mechanical ventilation|permissive hypercapnea,1,1,ambigua
+treatment.treatmentstring,toxicology|drug overdose|mechanical ventilation|pressure controlled,1,1,ambigua
+treatment.treatmentstring,toxicology|drug overdose|mechanical ventilation|pressure support,1,1,ambigua
+treatment.treatmentstring,toxicology|drug overdose|mechanical ventilation|synchronized intermittent,1,1,ambigua
+treatment.treatmentstring,toxicology|drug overdose|mechanical ventilation|volume assured,1,1,ambigua
+apacheApsVar.intubated,1,25398,167,invasiva
+apacheApsVar.vent,1,41348,205,invasiva
+apachePredVar.oobintubday1,1,44530,204,invasiva
+apachePredVar.oobventday1,1,56530,205,invasiva
+carePlanGeneral.Airway,Intubated/oral ETT,47519,205,invasiva
+carePlanGeneral.Airway,Intubated/trach-acute,3594,154,invasiva
+carePlanGeneral.Airway,Intubated/trach-chronic,3222,152,invasiva
+carePlanGeneral.Airway,Intubated/oral ETT - difficult,654,121,invasiva
+carePlanGeneral.Airway,Intubated/nasal ETT,322,95,invasiva
+carePlanGeneral.Airway,Intubated/nasal ETT - difficult,48,29,invasiva
+respiratoryCare.airwayType,Oral ETT,8110,92,invasiva
+respiratoryCare.airwayType,Tracheostomy,1028,62,invasiva
+respiratoryCare.airwayType,Nasal ETT,52,17,invasiva
+respiratoryCare.airwayType,Cricothyrotomy,4,3,invasiva
+respiratoryCare.airwayType,Double-Lumen Tube,4,2,invasiva
+respiratoryCharting.respchartvaluelabel,PEEP,45541,166,invasiva
+respiratoryCharting.respchartvaluelabel,Tidal Volume (set),37448,167,invasiva
+respiratoryCharting.respchartvaluelabel,Exhaled MV,24713,80,invasiva
+respiratoryCharting.respchartvaluelabel,Peak Insp. Pressure,22481,96,invasiva
+respiratoryCharting.respchartvaluelabel,Exhaled TV (machine),16579,67,invasiva
+respiratoryCharting.respchartvaluelabel,Resp Rate Total,1498,4,invasiva
+respiratoryCharting.respchartvaluelabel,"Set Vt (Servo,LTV)",343,3,invasiva
+respiratoryCharting.respchartvaluelabel,Mechanical Ventilator Mode,332,1,invasiva
+respiratoryCharting.respchartvaluelabel,Set Vt (Drager),289,2,invasiva
+respiratoryCharting.respchartvaluelabel,Ventilator Support Mode,72,1,invasiva
+respiratoryCharting.respchartvaluelabel,Peak Pressure,72,1,invasiva
+respiratoryCharting.respchartvaluelabel,Ventilator Type,67,1,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation,34059,188,invasiva
+treatment.treatmentstring,pulmonary|radiologic procedures / bronchoscopy|endotracheal tube|insertion,3235,146,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation|assist controlled,3149,99,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation|volume controlled,1889,79,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation|tidal volume 6-10 ml/kg,1279,53,invasiva
+treatment.treatmentstring,pulmonary|surgery / incision and drainage of thorax|tracheostomy,1264,110,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation|synchronized intermittent,992,32,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation|non-invasive ventilation,984,85,invasiva
+treatment.treatmentstring,pulmonary|surgery / incision and drainage of thorax|tracheostomy|performed during current admission for ventilatory support,760,92,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation|pressure controlled,537,62,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation|pressure support,499,39,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation|non-invasive ventilation|face mask,302,59,invasiva
+treatment.treatmentstring,pulmonary|surgery / incision and drainage of thorax|tracheostomy|percutaneous,205,52,invasiva
+treatment.treatmentstring,pulmonary|surgery / incision and drainage of thorax|tracheostomy|planned,191,58,invasiva
+treatment.treatmentstring,pulmonary|surgery / incision and drainage of thorax|tracheostomy|conventional,155,43,invasiva
+treatment.treatmentstring,pulmonary|surgery / incision and drainage of thorax|tracheostomy|performed during current admission for Head and Neck surgery,130,40,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation|tidal volume < 6 ml/kg,126,29,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation|permissive hypercapnea,54,13,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation|volume assured,49,14,invasiva
+treatment.treatmentstring,pulmonary|surgery / incision and drainage of thorax|tracheostomy|consider,44,13,invasiva
+treatment.treatmentstring,pulmonary|surgery / incision and drainage of thorax|tracheostomy|performed during current admission for Head and Neck surgery|permanent,41,18,invasiva
+treatment.treatmentstring,pulmonary|surgery / incision and drainage of thorax|tracheostomy|performed during current admission for Head and Neck surgery|temporary,15,10,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation|non-invasive ventilation|nasal mask,11,7,invasiva
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|mechanical ventilation|tidal volume > 10 ml/kg,5,4,invasiva
+nurseCharting.nursingchartcelltypevallabel,O2 Saturation,166113,202,oxigenoterapia
+nurseCharting.nursingchartcelltypevallabel,O2 L/%,71466,152,oxigenoterapia
+nurseCharting.nursingchartcelltypevallabel,O2 Admin Device,35259,128,oxigenoterapia
+respiratoryCharting.respchartvaluelabel,FiO2,75234,177,oxigenoterapia
+respiratoryCharting.respchartvaluelabel,LPM O2,54561,113,oxigenoterapia
+respiratoryCharting.respchartvaluelabel,O2 Device,6254,6,oxigenoterapia
+respiratoryCharting.respchartvaluelabel,FIO2 (%),2057,6,oxigenoterapia
+respiratoryCharting.respchartvaluelabel,O2 Percentage,1831,3,oxigenoterapia
+respiratoryCharting.respchartvaluelabel,Oxygen Flow Rate,1036,1,oxigenoterapia
+respiratoryCharting.respchartvaluelabel,Oxygen Delivery Method,920,1,oxigenoterapia
+respiratoryCharting.respchartvaluelabel,Oxygen Delivery Status,847,1,oxigenoterapia
+respiratoryCharting.respchartvaluelabel,Set Fraction of Inspired Oxygen (FIO2),353,1,oxigenoterapia
+respiratoryCharting.respchartvaluelabel,RETIRED O2 Device,70,5,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (< 40%)|nasal cannula,13926,161,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (40% to 60%),9049,163,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (< 40%),7260,167,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (> 60%),4116,166,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (> 60%)|>90%,1719,129,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (40% to 60%)|40-50%,1401,92,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (40% to 60%)|face mask,1394,121,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (40% to 60%)|reduce FIO2 as tolerated,1245,80,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (< 40%)|25-30%,1168,70,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (> 60%)|reduce FIO2 as tolerated,1024,85,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (< 40%)|30-40%,948,75,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (40% to 60%)|50-60%,892,88,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (> 60%)|non-rebreather mask,698,110,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (< 40%)|face mask,642,92,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (> 60%)|face mask,532,113,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (< 40%)|trach collar,316,59,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (40% to 60%)|trach collar,272,55,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (> 60%)|80-90%,244,62,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (> 60%)|60-70%,212,50,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (> 60%)|70-80%,211,58,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (40% to 60%)|non-rebreather mask,79,42,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (> 60%)|trach collar,65,21,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (< 40%)|non-rebreather mask,58,32,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (40% to 60%)|face tent,24,17,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (< 40%)|face tent,19,12,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (< 40%)|heliox,18,13,oxigenoterapia
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|oxygen therapy (> 60%)|face tent,5,4,oxigenoterapia
+carePlanGeneral.Ventilation,Non-invasive ventilation,21637,203,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,PEEP/CPAP,5407,48,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,CPAP,3074,61,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,PS above PEEP,486,2,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,NIV Setting EPAP,404,2,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,NIV Pt/Vent SpO2_5,402,2,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,NIV Setting Total RR_5,395,2,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,NIV Setting Leak_,394,2,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,NIV Alarms Hi Press Alarm_5,393,2,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,NIV Setting Spont Exp Vt_5,391,2,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,NIV Alarms Low Press Alarm,390,2,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,NIV Setting Set_RR,350,2,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,NIV Pt/Vent Spont_Rate,340,2,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,NIV Pt/Vent Spont_TidalV,336,2,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,Non-invasive Ventilation Mode,282,1,vni_alto_flujo
+respiratoryCharting.respchartvaluelabel,Bipap Delivery Mode,264,1,vni_alto_flujo
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|non-invasive ventilation,12383,184,vni_alto_flujo
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|CPAP/PEEP therapy,5203,140,vni_alto_flujo
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|non-invasive ventilation|face mask,2671,160,vni_alto_flujo
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|CPAP/PEEP therapy|5-10 cm H2O,1436,87,vni_alto_flujo
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|CPAP/PEEP therapy|10-15 cm H2O,318,64,vni_alto_flujo
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|non-invasive ventilation|nasal mask,173,61,vni_alto_flujo
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|CPAP/PEEP therapy|> 15 cm H2O,81,29,vni_alto_flujo
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|CPAP/PEEP therapy|reduce PEEP as tolerated,80,14,vni_alto_flujo
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|CPAP/PEEP therapy|titrate PEEP,75,14,vni_alto_flujo
+treatment.treatmentstring,pulmonary|ventilation and oxygenation|CPAP/PEEP therapy|reduce CPAP as tolerated,48,12,vni_alto_flujo

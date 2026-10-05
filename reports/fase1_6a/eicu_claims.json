@@ -1,0 +1,33 @@
+{
+  "ventendoffset": {
+    "n_rows": 865381,
+    "n_zero_or_null": 865224,
+    "pct_zero_or_null": 99.9819,
+    "n_stays_with_ventend_gt0": 1,
+    "source": "eICU-CRD respiratoryCare; issue #82 (865224/865381)"
+  },
+  "ventstartoffset": {
+    "n_rows_gt0": 60565,
+    "n_stays_gt0": 8637,
+    "n_rows_lt0": 119611,
+    "pct_with_airway_ett": 23.42,
+    "pct_with_apache_vent": 61.05,
+    "pct_with_apache_intub": 52.96
+  },
+  "apache_disagreement": {
+    "n_vent_not_intub": 12000,
+    "n_intub_not_vent": 0,
+    "note": "oobVentDay1 sin oobIntubDay1 = ventilado no invasivo (docs eICU)"
+  },
+  "respchart_entry_minus_offset": {
+    "n": 20168176,
+    "pct_equal": 74.91,
+    "median_min": 0.0,
+    "p90_min": 47.0
+  },
+  "ventstart_vs_first_invasive": {
+    "n_compared": 3888,
+    "pct_within_2h": 1.72,
+    "n_stays_with_invasive": 56075
+  }
+}
