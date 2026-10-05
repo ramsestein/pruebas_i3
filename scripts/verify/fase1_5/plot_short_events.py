@@ -168,9 +168,12 @@ def main() -> None:
     figs.mkdir(parents=True, exist_ok=True)
 
     short = [e for e in idx["events"] if e["duration_seconds"] < 3600]
+    # Los .vital de Clínic están anidados (box/.../fecha/fichero); se indexan
+    # por nombre una sola vez.
+    name_map = {p.name: p for p in raw_dir.rglob("*.vital")}
     results: list[dict] = []
     for ev in short:
-        paths = [raw_dir / ev["box"] / name for name in ev["source_files"]]
+        paths = [name_map[n] for n in ev["source_files"] if n in name_map]
         sig = read_event_signals(paths)
         cls = classify_short_event(sig)
         plot_event(ev, sig, figs / f"{ev['event_id']}.png")
