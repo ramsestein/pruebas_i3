@@ -27,6 +27,7 @@ import numpy as np
 import vitaldb
 
 from .episodes import Span
+from .monitor_observation import physiological_extent, range_for_track
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,11 @@ class TrackProbe:
     n_recs: int
     srate: float
     is_wave: bool
+    # Fase 1.6b (punto 4): extremos de los valores FISIOLÓGICOS de la pista
+    # (None si la pista no es una constante vital o no tiene ninguno).
+    dt_min_phys: Optional[float] = None
+    dt_max_phys: Optional[float] = None
+    n_phys: int = 0
 
 
 @dataclass
@@ -175,6 +181,17 @@ def probe_vital_file_detail(
         dts = [float(r["dt"]) for r in recs if "dt" in r]
         if not dts:
             continue
+        rng = range_for_track(name)
+        min_phys = max_phys = None
+        n_phys = 0
+        if rng is not None:
+            pairs = [(float(r["dt"]), float(np.asarray(r["val"], dtype=np.float64).ravel()[0]))
+                     for r in recs if "dt" in r and r.get("val") is not None]
+            if pairs:
+                t_arr = [p[0] for p in pairs]
+                v_arr = [p[1] for p in pairs]
+                min_phys, max_phys, n_phys = physiological_extent(
+                    t_arr, v_arr, rng[0], rng[1])
         probe.tracks[name] = TrackProbe(
             name=name,
             dt_min=min(dts),
@@ -182,6 +199,9 @@ def probe_vital_file_detail(
             n_recs=len(dts),
             srate=float(trk.srate or 0.0),
             is_wave=bool(trk.type == 1),
+            dt_min_phys=min_phys,
+            dt_max_phys=max_phys,
+            n_phys=n_phys,
         )
         # Liberar memoria de la pista cuanto antes.
         trk.recs = None
@@ -201,7 +221,8 @@ def probe_to_dict(probe: Optional[VitalProbe]) -> Optional[dict]:
         "dtstart": probe.dtstart,
         "dtend": probe.dtend,
         "tracks": {
-            name: [t.dt_min, t.dt_max, t.n_recs, t.srate, t.is_wave]
+            name: [t.dt_min, t.dt_max, t.n_recs, t.srate, t.is_wave,
+                   t.dt_min_phys, t.dt_max_phys, t.n_phys]
             for name, t in probe.tracks.items()
         },
     }
@@ -213,10 +234,17 @@ def probe_from_dict(path: str | Path, data: Optional[dict]) -> Optional[VitalPro
         return None
     probe = VitalProbe(path=Path(path), dtstart=float(data["dtstart"]),
                        dtend=float(data["dtend"]))
-    for name, (dt_min, dt_max, n_recs, srate, is_wave) in data["tracks"].items():
+    for name, vals in data["tracks"].items():
+        dt_min, dt_max, n_recs, srate, is_wave = vals[:5]
+        min_phys = vals[5] if len(vals) > 5 else None
+        max_phys = vals[6] if len(vals) > 6 else None
+        n_phys = vals[7] if len(vals) > 7 else 0
         probe.tracks[name] = TrackProbe(
             name=name, dt_min=float(dt_min), dt_max=float(dt_max),
             n_recs=int(n_recs), srate=float(srate), is_wave=bool(is_wave),
+            dt_min_phys=(None if min_phys is None else float(min_phys)),
+            dt_max_phys=(None if max_phys is None else float(max_phys)),
+            n_phys=int(n_phys or 0),
         )
     return probe
 
@@ -260,11 +288,34 @@ def monitor_span_from_probe(probe: VitalProbe) -> Optional[Span]:
     )
 
 
-def hr_span_from_probe(probe: VitalProbe) -> Optional[Span]:
+def _physiological_extent(probe: VitalProbe, names: Iterable[str]) -> Optional[Span]:
+    """Extremos de los valores FISIOLÓGICOS de las pistas ``names``.
+
+    Cae al extremo bruto si la sonda no trae información fisiológica (cachés
+    antiguas): así el comportamiento previo se conserva cuando no hay datos.
+    """
+    present = [probe.tracks[n] for n in names if n in probe.tracks]
+    if not present:
+        return None
+    with_phys = [t for t in present if t.dt_min_phys is not None
+                 and t.dt_max_phys is not None]
+    if with_phys:
+        return Span(min(t.dt_min_phys for t in with_phys),
+                    max(t.dt_max_phys for t in with_phys))
+    return Span(min(t.dt_min for t in present), max(t.dt_max for t in present))
+
+
+def hr_span_from_probe(probe: VitalProbe, *, physiological: bool = True) -> Optional[Span]:
+    """Intervalo con FC; por defecto solo con valores fisiológicos (20-250)."""
+    if physiological:
+        return _physiological_extent(probe, HR_TRACKS)
     return _union_extent(probe, HR_TRACKS)
 
 
-def spo2_span_from_probe(probe: VitalProbe) -> Optional[Span]:
+def spo2_span_from_probe(probe: VitalProbe, *, physiological: bool = True) -> Optional[Span]:
+    """Intervalo con SpO2; por defecto solo con valores fisiológicos (50-100)."""
+    if physiological:
+        return _physiological_extent(probe, SPO2_TRACKS)
     return _union_extent(probe, SPO2_TRACKS)
 
 
@@ -319,6 +370,31 @@ COVERAGE_TRACKS: dict[str, tuple[str, ...]] = {
     "FiO2": ("Intellivue/FIO2",),
     "PEEP": ("Intellivue/PEEP_CMH2O",),
 }
+
+
+def coverage_fractions(
+    series: dict[str, tuple[Sequence[float], Sequence[float]]],
+    vent_spans_h: Sequence[tuple[float, float]],
+    *,
+    max_age_h: float | None = None,
+) -> dict[str, float]:
+    """Cobertura por variable (D8) de series dadas en **horas desde t0**.
+
+    ``hourly_coverage`` trabaja en MINUTOS: aquí se convierte tanto las marcas
+    como los tramos ventilados. Olvidar esta conversión deja la rejilla en
+    pasos de 60 h y la cobertura medida deja de tener sentido (Fase 1.6b,
+    punto 4).
+    """
+    from src.common.eicu_levels import LOCF_MAX_AGE_H, hourly_coverage
+
+    age = LOCF_MAX_AGE_H if max_age_h is None else max_age_h
+    spans_min = [(float(a) * 60.0, float(b) * 60.0) for a, b in vent_spans_h]
+    out: dict[str, float] = {}
+    for var, (times, values) in series.items():
+        times_min = [float(t) * 60.0 for t in times]
+        out[var] = hourly_coverage(times_min, list(values), spans_min,
+                                   max_age_h=age)
+    return out
 
 
 def read_coverage_series(

@@ -475,6 +475,7 @@ def build_episodes(
     if evaluate_d4:
         hr = _as_spans(hr_spans or [])
         spo2 = _as_spans(spo2_spans or [])
+        physiological = merge_spans(hr + spo2, monitor_gap_h)
         for ep in episodes:
             frac = _no_patient_fraction(
                 [a.span for a in ep.attempts], hr, spo2
@@ -483,6 +484,11 @@ def build_episodes(
             if frac >= no_patient_fraction - _EPS:
                 ep.excluded = True
                 ep.exclusion_reason = "ventilator_without_patient"
+            # Fin de la observación con señal fisiológica posterior al último
+            # intento (recortado a la región de paciente).
+            tail = clip_spans(physiological, ep.attempts[-1].end_h,
+                              ep.region_end_h)
+            ep.observation_end_h = tail[-1].end_h if tail else ep.attempts[-1].end_h
 
     return episodes
 

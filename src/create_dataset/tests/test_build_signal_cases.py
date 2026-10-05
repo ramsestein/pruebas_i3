@@ -314,7 +314,8 @@ class TestSignalD5:
         ev = self._events(tmp_path)[0]
         assert ev["death_signal"]["detected"] is True
         assert ev["death_signal"]["died_ventilated"] is False
-        assert ev["end_reason"] == "death_signal"
+        # Fase 1.6b (punto 4): vocabulario unico -> death_at_vent.
+        assert ev["end_reason"] == "death_at_vent"
         assert ev["d5"]["48h"]["censor_cause"] == "terminal_extubation"
         assert ev["labels"]["48h"]["event_type"] == "censored_terminal_extubation"
 

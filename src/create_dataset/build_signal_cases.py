@@ -68,6 +68,7 @@ from src.common.vital_signals import (
     COVERAGE_TRACKS,
     MERGE_TRACK_NAMES,
     VitalProbe,
+    coverage_fractions,
     hr_span_from_probe,
     merge_event_files,
     monitor_span_from_probe,
@@ -283,9 +284,21 @@ def _region_end_h(episode: Episode) -> float:
     return float(episode.end_h)
 
 
+def observation_end_h(episode: Episode) -> float:
+    """Fin de la observación **sin ventilador** con señal fisiológica (Fase 1.6b).
+
+    Solo cuentan FC/SpO2 con valores fisiológicos: si tras la desconexión el box
+    sigue grabando ondas planas, no hay observación válida y el fin es el de la
+    propia desconexión (→ el evento se censura como ``end_of_record``).
+    """
+    if episode.observation_end_h is not None:
+        return float(episode.observation_end_h)
+    return _region_end_h(episode)
+
+
 def monitor_tail_h(episode: Episode) -> float:
-    """Horas de monitor sin ventilador tras el último intento."""
-    return float(_region_end_h(episode) - episode.attempts[-1].end_h)
+    """Horas de observación fisiológica sin ventilador tras el último intento."""
+    return float(observation_end_h(episode) - episode.attempts[-1].end_h)
 
 
 def is_confirmed_extubation(episode: Episode) -> bool:
@@ -303,7 +316,7 @@ def extubation_decision(episode: Episode) -> ExtubationDecision:
     """
     return resolve_extubation(
         last_vent_end_h=float(episode.attempts[-1].end_h),
-        observation_end_h=float(_region_end_h(episode)),
+        observation_end_h=float(observation_end_h(episode)),
         stay_end_h=None,
     )
 
@@ -453,7 +466,7 @@ def build_event_record(
     # El fin de la observación es el fin del MONITOR de la región (corrección 1);
     # si la última desconexión no va seguida de >= 1 h de monitor sin ventilador,
     # NO es una extubación confirmada → el evento queda censurado (end_of_record).
-    obs_end_h = _region_end_h(episode) - episode.start_h
+    obs_end_h = observation_end_h(episode) - episode.start_h
     tail_h = monitor_tail_h(episode)
     last_disconnect_h = episode.attempts[-1].end_h - episode.start_h
     ext_dec = extubation_decision(episode)
@@ -517,8 +530,13 @@ def build_event_record(
         "attempts": attempts,
         "extubation_rule": ext_dec.reason,
         "end_reason": (
-            "death_signal" if died
-            else ("death_or_transfer" if signal_loss else _end_reason(episode))
+            # Vocabulario ÚNICO compartido por las 4 cohortes (Fase 1.6b,
+            # punto 4): la pérdida de constantes al final NO es un motivo de
+            # fin por sí misma. Si no hay muerte por señal y la observación
+            # fisiológica sin ventilador no alcanza 1 h, el evento es
+            # ``end_of_record``. ``signal_loss_at_end`` se conserva como QC.
+            "death_at_vent" if died
+            else ("extubation_observed" if ext_dec.is_extubation else "end_of_record")
         ),
         "d5": d5_by_window,
         "death_signal": {
@@ -613,10 +631,8 @@ def build_cohort_index(
                 vent_spans_h = [
                     (a["vent_start_h"], a["vent_end_h"]) for a in rec["attempts"]
                 ]
-                fracs = {
-                    var: hourly_coverage(times, vals, vent_spans_h)
-                    for var, (times, vals) in series.items()
-                }
+                # OJO: ``coverage_fractions`` convierte horas -> minutos (D8).
+                fracs = coverage_fractions(series, vent_spans_h)
                 rec["coverage"] = {k: round(v, 4) for k, v in fracs.items()}
                 rec["vars_ok_50"] = bool(fracs) and all(
                     v > 0.5 for v in fracs.values()
