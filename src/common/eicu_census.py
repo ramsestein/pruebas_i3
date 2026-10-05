@@ -17,6 +17,56 @@ import numpy as np
 LOCF_CONSTANT_H: float = 2.0
 LOCF_SETTING_H: float = 12.0
 
+# Umbral de plausibilidad: rc_invasive/icu_stays_total por encima de esto se
+# considera implausible (todo el hospital marcado como ventilado).
+IMPLAUSIBLE_RC_ICU_RATIO: float = 0.6
+
+
+def is_implausible(
+    rc_invasive_stays: int,
+    icu_stays_total: int,
+    threshold: float = IMPLAUSIBLE_RC_ICU_RATIO,
+) -> bool:
+    """True si ``rc_invasive/icu_stays_total`` supera ``threshold``."""
+    if not icu_stays_total:
+        return False
+    return (rc_invasive_stays / icu_stays_total) > threshold
+
+
+# Veredictos de plausibilidad del punto 2 de la Fase 1.6a-bis.
+VERDICT_OK = "ok"
+VERDICT_DENSE = "concentrado_concordante"
+VERDICT_IMPLAUSIBLE = "implausible_permeable"
+
+# Fracción de estancias con ajustes invasivos que NO tienen intubación APACHE
+# a partir de la cual el etiquetado se considera permeable (marca como invasiva
+# a pacientes que no están intubados).
+PERMEABLE_FRAC_WITHOUT_INTUB: float = 0.5
+
+
+def classify_plausibility(
+    rc_invasive_stays: int,
+    icu_stays_total: int,
+    frac_without_intub: float | None,
+    threshold: float = IMPLAUSIBLE_RC_ICU_RATIO,
+    permeable_frac: float = PERMEABLE_FRAC_WITHOUT_INTUB,
+) -> str:
+    """Veredicto de plausibilidad de un hospital.
+
+    - ``VERDICT_OK``: ``rc_invasive/icu`` dentro de lo esperado.
+    - ``VERDICT_DENSE``: el hospital marca casi todas sus estancias como
+      ventiladas (``rc_invasive/icu > threshold``) pero concuerda con APACHE
+      (pocas estancias invasivas sin intubación). No se descarta, se vigila.
+    - ``VERDICT_IMPLAUSIBLE``: además de denso, etiqueta como invasivas una
+      mayoría de estancias sin intubación APACHE ni plan de ventilación: el
+      etiquetado es permeable y no sirve como evidencia de ventilación.
+    """
+    if not icu_stays_total or (rc_invasive_stays / icu_stays_total) <= threshold:
+        return VERDICT_OK
+    if frac_without_intub is not None and frac_without_intub >= permeable_frac:
+        return VERDICT_IMPLAUSIBLE
+    return VERDICT_DENSE
+
 
 def median_iqr(values: Sequence[float]) -> tuple[Optional[float], Optional[float]]:
     """Mediana y rango intercuartílico (Q1–Q3) de una lista de valores."""

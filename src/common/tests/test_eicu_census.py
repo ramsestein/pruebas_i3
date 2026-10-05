@@ -10,8 +10,13 @@ from __future__ import annotations
 import pytest
 
 from src.common.eicu_census import (
+    VERDICT_DENSE,
+    VERDICT_IMPLAUSIBLE,
+    VERDICT_OK,
+    classify_plausibility,
     documentation_metrics,
     inter_adjustment_intervals,
+    is_implausible,
     median_iqr,
     scenario_a,
     scenario_b,
@@ -63,6 +68,40 @@ class TestHelpers:
 
     def test_median_iqr_empty(self):
         assert median_iqr([]) == (None, None)
+
+
+class TestPlausibility:
+    def test_implausible_above_threshold(self):
+        assert is_implausible(700, 1000) is True
+        assert is_implausible(600, 1000) is False
+
+    def test_implausible_zero_icu(self):
+        assert is_implausible(0, 0) is False
+
+    def test_negative_control_low_ratio(self):
+        assert is_implausible(100, 1000) is False
+
+
+class TestPlausibilityVerdict:
+    def test_ok_when_density_low(self):
+        assert classify_plausibility(100, 1000, 0.9) == VERDICT_OK
+
+    def test_dense_but_concordant(self):
+        # 70 % de las estancias con ajustes invasivos, pero solo el 12 % sin
+        # intubación APACHE -> denso, no permeable.
+        assert classify_plausibility(700, 1000, 0.12) == VERDICT_DENSE
+
+    def test_implausible_permeable(self):
+        # 91 % de densidad y 87.5 % de las invasivas sin intubación -> permeable.
+        assert classify_plausibility(912, 1000, 0.875) == VERDICT_IMPLAUSIBLE
+
+    def test_ok_without_icu_stays(self):
+        assert classify_plausibility(0, 0, 1.0) == VERDICT_OK
+
+    def test_threshold_boundary(self):
+        assert classify_plausibility(600, 1000, 0.99) == VERDICT_OK
+        assert classify_plausibility(601, 1000, 0.99) == VERDICT_IMPLAUSIBLE
+        assert classify_plausibility(601, 1000, 0.49) == VERDICT_DENSE
 
 
 class TestScenarios:
