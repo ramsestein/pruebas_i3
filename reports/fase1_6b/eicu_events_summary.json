@@ -1,0 +1,115 @@
+{
+  "gap_h": 8.0,
+  "n_events": 23362,
+  "n_hospitals": 53,
+  "success_48h": 19720,
+  "censored_48h": 3642,
+  "success_72h": 19636,
+  "censored_72h": 3726,
+  "failure_events_48h": 2775,
+  "vars_ok_50": 15999,
+  "vars_ok_80": 10819,
+  "duration": {
+    "median_h": 32.016666666666666,
+    "p25_h": 10.0,
+    "p75_h": 96.35
+  },
+  "censor_causes": {
+    "terminal_extubation": 4496,
+    "transfer_ventilated": 1936,
+    "trach": 746,
+    "death_at_vent": 190
+  },
+  "by_annotation_stratum": {
+    "1_2h": {
+      "events": 6612,
+      "success_48h": 5326,
+      "censored_48h": 1286,
+      "failure_events_48h": 733,
+      "vars_ok_50": 4553,
+      "duration": {
+        "median_h": 36.016666666666666,
+        "p25_h": 11.716666666666667,
+        "p75_h": 105.6
+      }
+    },
+    "gt2h": {
+      "events": 14340,
+      "success_48h": 12481,
+      "censored_48h": 1859,
+      "failure_events_48h": 1733,
+      "vars_ok_50": 9545,
+      "duration": {
+        "median_h": 28.391666666666666,
+        "p25_h": 8.8,
+        "p75_h": 91.83749999999999
+      }
+    },
+    "le1h": {
+      "events": 2410,
+      "success_48h": 1913,
+      "censored_48h": 497,
+      "failure_events_48h": 309,
+      "vars_ok_50": 1901,
+      "duration": {
+        "median_h": 39.725,
+        "p25_h": 13.55,
+        "p75_h": 99.8
+      }
+    }
+  },
+  "expected_label_error": {
+    "1.0": {
+      "subsample_h": 1.0,
+      "end_error_median_h": -1.275000000023283,
+      "end_error_iqr_h": 2.6499999999068677,
+      "end_error_p90_abs_h": 10.99999666668009,
+      "end_within_1h_pct": 36.42915980230643,
+      "end_within_2h_pct": 55.72487644151565,
+      "end_within_4h_pct": 78.62438220757826,
+      "start_within_2h_pct": 91.94810543657331,
+      "lost_pct": 3.1221945137157108,
+      "extra_minutes_pct": 8.049277219232522,
+      "reintub_sensitivity": 0.6298283261802575,
+      "reintub_ppv": 0.28902018709995075,
+      "reintub_f1": 0.3962200472494094,
+      "label48_agreement_pct": 85.18722466960352,
+      "extubation_diff_median_h": -1.1499999999068677
+    },
+    "2.0": {
+      "subsample_h": 2.0,
+      "end_error_median_h": -1.5499999998137355,
+      "end_error_iqr_h": 2.533300000242889,
+      "end_error_p90_abs_h": 11.016686666756868,
+      "end_within_1h_pct": 29.336814621409925,
+      "end_within_2h_pct": 51.81201044386423,
+      "end_within_4h_pct": 77.73368146214099,
+      "start_within_2h_pct": 91.87467362924282,
+      "lost_pct": 4.488778054862843,
+      "extra_minutes_pct": 8.025763666503178,
+      "reintub_sensitivity": 0.6201716738197425,
+      "reintub_ppv": 0.28756218905472636,
+      "reintub_f1": 0.39292997960571036,
+      "label48_agreement_pct": 83.79955947136564,
+      "extubation_diff_median_h": -1.4500333333954103
+    },
+    "4.0": {
+      "subsample_h": 4.0,
+      "end_error_median_h": -2.416633333428763,
+      "end_error_iqr_h": 3.2333333332207985,
+      "end_error_p90_abs_h": 12.980806666612613,
+      "end_within_1h_pct": 19.43933823529412,
+      "end_within_2h_pct": 36.661305147058826,
+      "end_within_4h_pct": 67.35983455882352,
+      "start_within_2h_pct": 90.28033088235294,
+      "lost_pct": 13.17705735660848,
+      "extra_minutes_pct": 7.8887504335700305,
+      "reintub_sensitivity": 0.5954935622317596,
+      "reintub_ppv": 0.15373961218836565,
+      "reintub_f1": 0.24438573315719947,
+      "label48_agreement_pct": 75.58370044052863,
+      "extubation_diff_median_h": -2.483333333441987
+    }
+  },
+  "version": "v0.3.0_37558586"
+}
