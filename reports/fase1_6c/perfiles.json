@@ -1,0 +1,319 @@
+{
+  "mimic": {
+    "n_events": 0,
+    "aviso": "sin cobertura medida"
+  },
+  "eicu": {
+    "n_events": 9754,
+    "combinaciones_top": [
+      {
+        "variables": "HR+SpO2+MAP+RR+FiO2+PEEP",
+        "events": 6890,
+        "pct": 70.6
+      },
+      {
+        "variables": "HR+SpO2+MAP+RR",
+        "events": 768,
+        "pct": 7.9
+      },
+      {
+        "variables": "HR+SpO2+MAP+FiO2+PEEP",
+        "events": 684,
+        "pct": 7.0
+      },
+      {
+        "variables": "HR+SpO2+MAP+RR+FiO2",
+        "events": 551,
+        "pct": 5.6
+      },
+      {
+        "variables": "(ninguna)",
+        "events": 341,
+        "pct": 3.5
+      },
+      {
+        "variables": "FiO2+PEEP",
+        "events": 231,
+        "pct": 2.4
+      },
+      {
+        "variables": "FiO2",
+        "events": 56,
+        "pct": 0.6
+      },
+      {
+        "variables": "HR+MAP+RR+FiO2+PEEP",
+        "events": 44,
+        "pct": 0.5
+      }
+    ],
+    "combinaciones_distintas": 30,
+    "estado_por_variable": {
+      "HR": {
+        "ausente_todo": {
+          "events": 239,
+          "pct": 2.5
+        },
+        "completa": {
+          "events": 420,
+          "pct": 4.3
+        },
+        "intermitente": {
+          "events": 9095,
+          "pct": 93.2
+        }
+      },
+      "SpO2": {
+        "ausente_todo": {
+          "events": 283,
+          "pct": 2.9
+        },
+        "completa": {
+          "events": 374,
+          "pct": 3.8
+        },
+        "intermitente": {
+          "events": 9097,
+          "pct": 93.3
+        }
+      },
+      "MAP": {
+        "ausente_todo": {
+          "events": 234,
+          "pct": 2.4
+        },
+        "completa": {
+          "events": 792,
+          "pct": 8.1
+        },
+        "intermitente": {
+          "events": 8728,
+          "pct": 89.5
+        }
+      },
+      "RR": {
+        "ausente_todo": {
+          "events": 493,
+          "pct": 5.1
+        },
+        "completa": {
+          "events": 355,
+          "pct": 3.6
+        },
+        "intermitente": {
+          "events": 8906,
+          "pct": 91.3
+        }
+      },
+      "FiO2": {
+        "ausente_todo": {
+          "events": 747,
+          "pct": 7.7
+        },
+        "completa": {
+          "events": 3425,
+          "pct": 35.1
+        },
+        "intermitente": {
+          "events": 5582,
+          "pct": 57.2
+        }
+      },
+      "PEEP": {
+        "ausente_todo": {
+          "events": 1214,
+          "pct": 12.4
+        },
+        "completa": {
+          "events": 2549,
+          "pct": 26.1
+        },
+        "intermitente": {
+          "events": 5991,
+          "pct": 61.4
+        }
+      }
+    }
+  },
+  "clinic": {
+    "n_events": 181,
+    "combinaciones_top": [
+      {
+        "variables": "(ninguna)",
+        "events": 181,
+        "pct": 100.0
+      }
+    ],
+    "combinaciones_distintas": 1,
+    "estado_por_variable": {
+      "HR": {
+        "ausente_todo": {
+          "events": 181,
+          "pct": 100.0
+        }
+      },
+      "SpO2": {
+        "ausente_todo": {
+          "events": 181,
+          "pct": 100.0
+        }
+      },
+      "MAP": {
+        "ausente_todo": {
+          "events": 181,
+          "pct": 100.0
+        }
+      },
+      "RR": {
+        "ausente_todo": {
+          "events": 181,
+          "pct": 100.0
+        }
+      },
+      "FiO2": {
+        "ausente_todo": {
+          "events": 181,
+          "pct": 100.0
+        }
+      },
+      "PEEP": {
+        "ausente_todo": {
+          "events": 181,
+          "pct": 100.0
+        }
+      }
+    }
+  },
+  "vitaldb": {
+    "n_events": 96,
+    "combinaciones_top": [
+      {
+        "variables": "(ninguna)",
+        "events": 27,
+        "pct": 28.1
+      },
+      {
+        "variables": "HR+SpO2+MAP+RR",
+        "events": 24,
+        "pct": 25.0
+      },
+      {
+        "variables": "HR+SpO2+MAP+RR+FiO2",
+        "events": 15,
+        "pct": 15.6
+      },
+      {
+        "variables": "HR+SpO2+MAP",
+        "events": 10,
+        "pct": 10.4
+      },
+      {
+        "variables": "RR",
+        "events": 9,
+        "pct": 9.4
+      },
+      {
+        "variables": "HR+SpO2+MAP+RR+FiO2+PEEP",
+        "events": 5,
+        "pct": 5.2
+      },
+      {
+        "variables": "SpO2+RR",
+        "events": 2,
+        "pct": 2.1
+      },
+      {
+        "variables": "MAP+RR",
+        "events": 1,
+        "pct": 1.0
+      }
+    ],
+    "combinaciones_distintas": 11,
+    "estado_por_variable": {
+      "HR": {
+        "ausente_todo": {
+          "events": 23,
+          "pct": 24.0
+        },
+        "completa": {
+          "events": 49,
+          "pct": 51.0
+        },
+        "intermitente": {
+          "events": 24,
+          "pct": 25.0
+        }
+      },
+      "SpO2": {
+        "ausente_todo": {
+          "events": 21,
+          "pct": 21.9
+        },
+        "completa": {
+          "events": 52,
+          "pct": 54.2
+        },
+        "intermitente": {
+          "events": 23,
+          "pct": 24.0
+        }
+      },
+      "MAP": {
+        "ausente_todo": {
+          "events": 23,
+          "pct": 24.0
+        },
+        "completa": {
+          "events": 49,
+          "pct": 51.0
+        },
+        "intermitente": {
+          "events": 24,
+          "pct": 25.0
+        }
+      },
+      "RR": {
+        "ausente_todo": {
+          "events": 26,
+          "pct": 27.1
+        },
+        "completa": {
+          "events": 51,
+          "pct": 53.1
+        },
+        "intermitente": {
+          "events": 19,
+          "pct": 19.8
+        }
+      },
+      "FiO2": {
+        "ausente_todo": {
+          "events": 69,
+          "pct": 71.9
+        },
+        "completa": {
+          "events": 17,
+          "pct": 17.7
+        },
+        "intermitente": {
+          "events": 10,
+          "pct": 10.4
+        }
+      },
+      "PEEP": {
+        "ausente_todo": {
+          "events": 84,
+          "pct": 87.5
+        },
+        "completa": {
+          "events": 2,
+          "pct": 2.1
+        },
+        "intermitente": {
+          "events": 10,
+          "pct": 10.4
+        }
+      }
+    }
+  }
+}
