@@ -32,8 +32,11 @@ def _patients(rows) -> pd.DataFrame:
 class TestStrata:
     def test_bins(self):
         assert stratum_of_annotation(30) == "le1h"
-        assert stratum_of_annotation(60) == "1_2h"
-        assert stratum_of_annotation(120) == "gt2h"
+        # Límites inclusivos por arriba (Fase 1.6c): 2 h exactas es 1_2h.
+        assert stratum_of_annotation(60) == "le1h"
+        assert stratum_of_annotation(90) == "1_2h"
+        assert stratum_of_annotation(120) == "1_2h"
+        assert stratum_of_annotation(120.1) == "gt2h"
         assert stratum_of_annotation(None) == "le1h"
 
 
@@ -144,7 +147,7 @@ class TestRule0AndD5:
 class TestSchemaAndSummary:
     def _index(self):
         patients = _patients([(1, 10, 2880, "Alive"), (2, 11, 2880, "Alive")])
-        meta = {10: {"inter_adj_median_min": 60.0}, 11: {"inter_adj_median_min": 240.0}}
+        meta = {10: {"inter_adj_median_min": 90.0}, 11: {"inter_adj_median_min": 240.0}}
         return build_eicu_events(
             patients, {1: [0.0, 60.0, 120.0], 2: [0.0, 60.0, 120.0]}, {}, {},
             gap_h=8.0, hospital_meta=meta, with_coverage=False)
@@ -187,3 +190,94 @@ class TestSchemaAndSummary:
             gap_h=8.0, with_coverage=False)
         assert idx["events"][0]["labels"]["48h"]["n_failed_attempts"] == 1
         assert summary["failure_events_48h"] == 1
+
+
+class TestCorreccionDelFin:
+    """Fase 1.6c (punto 3): corrección del fin y las dos versiones de etiqueta.
+
+    El fin reconstruido desde los ajustes se queda corto, así que se alarga
+    sumando la mediana (positiva) medida en MIMIC para el estrato del hospital.
+    La etiqueta vigente es la corregida y la original queda en
+    ``labels_sin_correccion``.
+    """
+
+    @staticmethod
+    def _build(shift_by_stratum):
+        patients = _patients([(1, 10, 2880, "Alive")])
+        meta = {10: {"inter_adj_median_min": 90.0}}      # estrato 1_2h
+        return build_eicu_events(
+            patients, {1: [0.0, 60.0, 1500.0, 1560.0]}, {}, {},
+            gap_h=8.0, hospital_meta=meta, with_coverage=False,
+            end_shift_by_stratum=shift_by_stratum)
+
+    def test_sin_correccion_no_guarda_segunda_version(self):
+        idx, _ = self._build(None)
+        ev = idx["events"][0]
+        assert ev["end_correccion_h"] == 0.0
+        assert ev["labels_sin_correccion"] is None
+        assert idx["end_correccion"]["aplicada"] is False
+
+    def test_alarga_el_fin_y_guarda_las_dos_versiones(self):
+        base, _ = self._build(None)
+        idx, summary = self._build({"1_2h": 1.5})
+        ev = idx["events"][0]
+        assert ev["end_correccion_h"] == 1.5
+        assert ev["annotation_stratum"] == "1_2h"
+        # El fin del último intento se alarga exactamente 1.5 h.
+        assert (ev["attempts"][-1]["vent_end_h"]
+                == base["events"][0]["attempts"][-1]["vent_end_h"] + 1.5)
+        # Las dos versiones conviven: la corregida en ``labels`` y la original
+        # en ``labels_sin_correccion``.
+        assert ev["labels_sin_correccion"]["48h"] == base["events"][0]["labels"]["48h"]
+        assert idx["end_correccion"]["shifts_por_estrato_h"] == {"1_2h": 1.5}
+        assert "labels_cambiados_por_correccion" in summary
+
+    def test_correccion_de_otro_estrato_no_afecta(self):
+        idx, _ = self._build({"le1h": 1.2})
+        ev = idx["events"][0]
+        assert ev["end_correccion_h"] == 0.0
+        assert ev["labels_sin_correccion"] is None
+
+    def test_la_correccion_puede_cambiar_la_etiqueta(self):
+        # Alta a las 10 h con el último ajuste a 8.6 h: alargar el fin 1.5 h lo
+        # lleva más allá del alta (10.1 h), o sea que el alta pasa a ocurrir
+        # estando ventilado y la etiqueta cambia de éxito a censura.
+        patients = _patients([(1, 10, 600, "Alive")])
+        meta = {10: {"inter_adj_median_min": 90.0}}
+        adj = {1: [0.0, 60.0, 480.0, 516.0]}   # último ajuste a 8.6 h
+        base, _ = build_eicu_events(patients, adj, {}, {}, gap_h=8.0,
+                                    hospital_meta=meta, with_coverage=False)
+        corr, _ = build_eicu_events(patients, adj, {}, {}, gap_h=8.0,
+                                    hospital_meta=meta, with_coverage=False,
+                                    end_shift_by_stratum={"1_2h": 1.5})
+        ev_b = base["events"][0]
+        ev_c = corr["events"][0]
+        assert ev_b["labels"]["48h"]["event_type"] == "successful_extubation"
+        # El fin corregido (10.1 h) se recorta al alta (10 h): el alta ocurre
+        # estando ventilado y la etiqueta pasa a censura.
+        assert ev_c["attempts"][-1]["vent_end_h"] == 10.0
+        assert ev_c["labels"]["48h"]["event_type"] == "censored_transfer_ventilated"
+        assert ev_c["labels_sin_correccion"]["48h"] == ev_b["labels"]["48h"]
+
+    def test_el_fin_corregido_no_pasa_del_alta(self):
+        patients = _patients([(1, 10, 2880, "Alive")])
+        meta = {10: {"inter_adj_median_min": 90.0}}
+        # Último ajuste a 47 h y alta a 48 h: una corrección de 4 h se recorta.
+        adj = {1: [0.0, 60.0, 2400.0, 2820.0]}
+        idx, _ = build_eicu_events(patients, adj, {}, {}, gap_h=8.0,
+                                   hospital_meta=meta, with_coverage=False,
+                                   end_shift_by_stratum={"1_2h": 4.0})
+        assert idx["events"][0]["attempts"][-1]["vent_end_h"] == 48.0
+
+    def test_el_fin_corregido_no_solapa_el_intento_siguiente(self):
+        patients = _patients([(1, 10, 2880, "Alive")])
+        meta = {10: {"inter_adj_median_min": 90.0}}
+        # Dos intentos con hueco > G: el primero acaba a 1 h y el segundo
+        # empieza a 4 h.
+        adj = {1: [0.0, 30.0, 60.0, 240.0, 270.0]}
+        idx, _ = build_eicu_events(patients, adj, {}, {}, gap_h=1.0,
+                                   hospital_meta=meta, with_coverage=False,
+                                   end_shift_by_stratum={"1_2h": 5.0})
+        att = idx["events"][0]["attempts"]
+        assert len(att) == 2
+        assert att[0]["vent_end_h"] == att[1]["vent_start_h"] == 4.0

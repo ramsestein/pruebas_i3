@@ -45,6 +45,7 @@ Uso:
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from datetime import datetime, timezone
@@ -61,7 +62,11 @@ from src.common.labels import assign_label, attempts_from_pairs  # noqa: E402
 from src.common.paths import config_path  # noqa: E402
 from src.common.vent_intervals import (  # noqa: E402
     GAP_CANDIDATES_H,
+    confusion_matrix,
+    correction_verdict,
     intervals_from_annotations,
+    label3,
+    shift_interval_ends,
     subsample_times,
 )
 from src.stage0.io.versioning import load_config  # noqa: E402
@@ -164,6 +169,11 @@ def _err_stats(err: np.ndarray) -> dict:
         "pct_1h": _pct(err, 1.0),
         "pct_2h": _pct(err, 2.0),
         "pct_4h": _pct(err, 4.0),
+        # Cuantiles CON SIGNO (Fase 1.6c, punto 3)
+        "p10": float(np.percentile(err, 10)),
+        "p25": float(q1),
+        "p75": float(q3),
+        "p90": float(np.percentile(err, 90)),
     }
 
 
@@ -174,21 +184,28 @@ def _fmt(value, spec: str = "%.1f") -> str:
     return spec % value
 
 
+def _f1_of(all_stats: list[dict], gap_h: float, subsample_h: float) -> float:
+    """F1 de reintubación de un (G, estrato) sin corrección."""
+    for s in all_stats:
+        if s["gap_h"] == gap_h and float(s["subsample_h"]) == float(subsample_h):
+            return float(s["reintub_f1"])
+    return float("nan")
+
+
+def _strip_lists(stats: list[dict]) -> None:
+    """Quita del JSON las listas por evento (solo sirven para la confusión)."""
+    for s in stats:
+        s.pop("labels3_ann", None)
+        s.pop("labels3_ref", None)
+
+
 def run_stratum(refs: dict[int, dict], ann_by_stay: dict[int, np.ndarray],
-                gap_h: float, subsample_h: float) -> dict:
-    """Métricas de un (G, submuestreo).
+                gap_h: float, subsample_h: float, *, end_shift_h: float = 0.0) -> dict:
+    """Métricas de un (G, submuestreo, desplazamiento del fin).
 
-    Emparejamiento por **solape**: cada intervalo de referencia se compara con
-    la UNIÓN de los intervalos reconstruidos que lo solapan, de modo que la
-    fragmentación (varios trozos dentro del mismo intervalo real) NO se cuenta
-    como error de inicio/fin; su efecto se mide aparte (fragmentos por intervalo
-    y F1 de reintubación).
-
-    - ``lost``: intervalos de referencia sin ningún solape reconstruido.
-    - ``spurious_min``: minutos reconstruidos FUERA de todo intervalo real.
-    - ``start_error``/``end_error``: (primer inicio reconstruido dentro del
-      intervalo real) − inicio real, y (último fin reconstruido dentro) − fin real.
-    - ``n_fragments``: trozos reconstruidos por intervalo real (fragmentación).
+    ``end_shift_h``: corrección sistemática del fin reconstruido (Fase 1.6c,
+    punto 3). Se suma al FIN de cada intervalo reconstruido antes de medir y de
+    etiquetar; el inicio no se toca.
     """
     err_s: list[float] = []
     err_e: list[float] = []
@@ -202,6 +219,8 @@ def run_stratum(refs: dict[int, dict], ann_by_stay: dict[int, np.ndarray],
     matched_reintub = 0
     label_ok = label_n = 0
     fail_ok = fail_n = 0
+    ann_cls: list[str] = []
+    ref_cls: list[str] = []
 
     for stay, ref in refs.items():
         refs_list = ref["attempts"]
@@ -213,6 +232,8 @@ def run_stratum(refs: dict[int, dict], ann_by_stay: dict[int, np.ndarray],
             continue
         spans = intervals_from_annotations(
             subsample_times(times, subsample_h), gap_h, keep_singletons=False)
+        if end_shift_h:
+            spans = shift_interval_ends(spans, end_shift_h)
         ann = [(s.start_h, s.end_h) for s in spans]
         n_ann += len(ann)
         ann_total_min += sum((b - a) * 60.0 for a, b in ann)
@@ -264,6 +285,8 @@ def run_stratum(refs: dict[int, dict], ann_by_stay: dict[int, np.ndarray],
             label_n += 1
             if lab.event_type == ref["label_event_type"]:
                 label_ok += 1
+            ann_cls.append(label3(lab.event_type, lab.n_failed_attempts))
+            ref_cls.append(label3(ref["label_event_type"], ref["label_n_failed"]))
             fail_n += 1
             if (lab.n_failed_attempts > 0) == (ref["label_n_failed"] > 0):
                 fail_ok += 1
@@ -301,11 +324,17 @@ def run_stratum(refs: dict[int, dict], ann_by_stay: dict[int, np.ndarray],
         "label48_agreement": (100.0 * label_ok / label_n) if label_n else float("nan"),
         "label48_fail_agreement": (100.0 * fail_ok / fail_n) if fail_n else float("nan"),
         "extubation_diff": _err_stats(err_x_a),
+        "end_shift_h": float(end_shift_h),
+        "labels3_ann": ann_cls,
+        "labels3_ref": ref_cls,
+        "confusion": confusion_matrix(ann_cls, ref_cls),
+        "label3_agreement_pct": (
+            100.0 * sum(1 for a, r in zip(ann_cls, ref_cls) if a == r) / len(ann_cls)
+            if ann_cls else float("nan")),
     }
 
 
 def _score(stats: dict) -> float:
-    """Puntuación de un estrato: cobertura (inicio/fin ±2 h) y F1 de reintubación."""
     parts = []
     for key in ("start_error", "end_error"):
         v = stats[key]["pct_2h"]
@@ -407,15 +436,29 @@ def transferable_error(all_stats: list[dict], gap_h: float) -> list[dict]:
 
 
 def main() -> None:
-    config = load_config(CONFIG)
+    try:  # consola Windows cp1252
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:  # noqa: BLE001
+        pass
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", default=str(CONFIG))
+    ap.add_argument("--gaps", default=None,
+                    help="Huecos a evaluar, p.ej. 8,10,12 (por defecto, la config)")
+    ap.add_argument("--out-dir", default=None)
+    args = ap.parse_args()
+
+    config = load_config(args.config)
     cfg = config.get("fase1_6b", {})
     root = ROOT / cfg.get("mimic_cases_root", "datasets/mimic3wdb")
     cases_dir = latest_cases_dir(root)
     clinical_dir = config_path(config, "paths", "mimic_clinical_dir")
-    out_dir = ROOT / cfg.get("reports_dir", "reports/fase1_6b")
+    out_dir = Path(args.out_dir) if args.out_dir else ROOT / cfg.get(
+        "reports_dir", "reports/fase1_6b")
     out_dir.mkdir(parents=True, exist_ok=True)
     strata = tuple(cfg.get("vent_intervals", {}).get("annotation_strata_h", [1, 2, 4]))
-    gaps = tuple(cfg.get("vent_intervals", {}).get("gap_candidates_h", [2, 4, 6, 8]))
+    gaps = (tuple(float(g) for g in args.gaps.split(",")) if args.gaps
+            else tuple(cfg.get("vent_intervals", {}).get("gap_candidates_h",
+                                                         [2, 4, 6, 8])))
 
     print(f"[cal] casos: {cases_dir}", flush=True)
     refs = load_reference(cases_dir, clinical_dir)
@@ -437,6 +480,45 @@ def main() -> None:
                   f"etiq48={_fmt(st['label48_agreement'])}%", flush=True)
 
     choice = choose_gap(all_stats)
+
+    # ── Fase 1.6c (punto 3): corrección del fin por estrato ─────────────────
+    # ``end_error`` = fin_reconstruido − fin_real: la mediana es NEGATIVA
+    # cuando los ajustes dejan de anotarse antes de la desconexión real. La
+    # corrección es el OPUESTO del error medido (sumar -mediana); sumar la
+    # mediana tal cual duplicaba el sesgo (comprobado: el error mediano pasaba
+    # de -1.23 h a -2.45 h).
+    corrected: list[dict] = []
+    shifts: dict[float, float] = {}
+    if choice["chosen_gap_h"] is not None:
+        for st in all_stats:
+            if st["gap_h"] == choice["chosen_gap_h"]:
+                shifts[float(st["subsample_h"])] = -float(
+                    st["end_error"]["median"] or 0.0)
+        for st in all_stats:
+            if st["gap_h"] != choice["chosen_gap_h"]:
+                continue
+            sub = float(st["subsample_h"])
+            if not shifts.get(sub):
+                continue
+            st2 = run_stratum(refs, ann, float(choice["chosen_gap_h"]), sub,
+                              end_shift_h=shifts[sub])
+            corrected.append(st2)
+            print(f"[cal] CORREGIDO G={choice['chosen_gap_h']}h anot>={sub}h "
+                  f"(fin {shifts[sub]:+.2f} h): "
+                  f"fin_med={_fmt(st2['end_error']['median'], '%.2f')}h "
+                  f"(antes {_fmt(st['end_error']['median'], '%.2f')}h) "
+                  f"etiq48={_fmt(st2['label48_agreement'])}% "
+                  f"(antes {_fmt(st['label48_agreement'])}%) "
+                  f"F1={_fmt(st2['reintub_f1'], '%.3f')} "
+                  f"fin±2h={_fmt(st2['end_error']['pct_2h'])}%", flush=True)
+
+    before_pct = {float(s["subsample_h"]): s["label48_agreement"] for s in all_stats
+                  if s["gap_h"] == choice["chosen_gap_h"]}
+    after_pct = {float(s["subsample_h"]): s["label48_agreement"] for s in corrected}
+    verdict = correction_verdict(
+        {k: v for k, v in before_pct.items() if k <= 2.0},
+        {k: v for k, v in after_pct.items() if k <= 2.0})
+
     out = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "cases_dir": str(cases_dir.relative_to(ROOT)),
@@ -447,15 +529,26 @@ def main() -> None:
         "gaps_h": list(gaps),
         "metrics": all_stats,
         "choice": choice,
+        "end_shift_correction": {
+            "shifts_h": {str(k): v for k, v in shifts.items()},
+            "metrics_corrected": corrected,
+            "verdict_strata_1_2h": verdict,
+            "note": ("El error de fin medido (fin_reconstruido - fin_real) es "
+                     "negativo: el fin reconstruido se queda corto. La corrección "
+                     "SUMA el opuesto de esa mediana al fin reconstruido. Se aplica "
+                     "a eICU solo si mejora la concordancia en los estratos de 1 h "
+                     "y 2 h."),
+        },
         "transferable_error": (
             transferable_error(all_stats, choice["chosen_gap_h"])
             if choice["chosen_gap_h"] is not None else []),
     }
+    _strip_lists(all_stats)
+    _strip_lists(corrected)
     (out_dir / "calibracion_mimic.json").write_text(
         json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
-
     # Tabla legible
-    lines = ["# Calibración de G en MIMIC-MetaVision (Fase 1.6b, punto 1)", ""]
+    lines = ["# Calibración de G en MIMIC-MetaVision (Fase 1.6b punto 1 / 1.6c punto 3)", ""]
     lines.append("| G (h) | anotación | perdidos | fuera | fragmentos/int | "
                  "inicio med (P90, ±2h) | fin med (P90, ±2h) | F1 reintub | "
                  "etiq 48 h | Δ extubación med |")
@@ -496,8 +589,60 @@ def main() -> None:
             f"{_fmt(t['reintub_sensitivity'], '%.3f')} | "
             f"{_fmt(t['reintub_ppv'], '%.3f')} | {_fmt(t['reintub_f1'], '%.3f')} | "
             f"{_fmt(t['label48_agreement_pct'])} % |")
+
+    # ── Fase 1.6c: desplazamiento con signo, confusión 3x3 y corrección ─────
+    lines += ["", "## Desplazamiento del fin (con signo, G elegido)", "",
+              "Distribución del error de fin reconstruido − referencia (h):",
+              "", "| Anotación | P10 | P25 | mediana | P75 | P90 | % |err| ≤ 2 h |",
+              "|---|---|---|---|---|---|---|"]
+    for s in all_stats:
+        if s["gap_h"] != choice["chosen_gap_h"]:
+            continue
+        q = s.get("end_error_quantiles") or {}
+        lines.append(
+            f"| {s['subsample_h']:.0f} h | {_fmt(q.get('p10'), '%.2f')} | "
+            f"{_fmt(q.get('p25'), '%.2f')} | {_fmt(s['end_error']['median'], '%.2f')} | "
+            f"{_fmt(q.get('p75'), '%.2f')} | {_fmt(q.get('p90'), '%.2f')} | "
+            f"{_fmt(s['end_error']['pct_2h'])} % |")
+
+    lines += ["", "## Matriz de confusión 3x3 de la etiqueta a 48 h", "",
+              "Filas = método de anotaciones; columnas = referencia.",
+              "Clases: éxito / éxito con fallo previo / censura.", ""]
+    for s in all_stats:
+        if s["gap_h"] != choice["chosen_gap_h"] or s["subsample_h"] > 2.0:
+            continue
+        conf = s["confusion"]
+        lines += [f"**Estrato {s['subsample_h']:.0f} h** (concordancia "
+                  f"{_fmt(s['label3_agreement_pct'], '%.1f')} %)", "",
+                  "| | ref éxito | ref fallo+éxito | ref censura |",
+                  "|---|---|---|---|"]
+        for row in ("exito", "exito_con_fallo_previo", "censura"):
+            cells = " | ".join(str(conf[row][col]) for col in
+                               ("exito", "exito_con_fallo_previo", "censura"))
+            lines.append(f"| **{row}** | {cells} |")
+        lines.append("")
+
+    lines += ["## Corrección del fin por estrato", "",
+              f"Desplazamientos medidos (mediana con signo): "
+              f"{ {f'{k:.0f} h': round(v, 2) for k, v in shifts.items()} }",
+              "",
+              f"¿Mejora la concordancia en los estratos de 1 h y 2 h? "
+              f"**{'SÍ' if verdict['approved'] else 'NO'}** "
+              f"({ {f'{k:.0f} h': round(v, 2) for k, v in verdict['gains_pct'].items()} } pp)",
+              "", "| Anotación | etiq 48 h antes | etiq 48 h después | F1 antes | "
+              "F1 después | fin ±2 h después |",
+              "|---|---|---|---|---|---|"]
+    for s in corrected:
+        sub = float(s["subsample_h"])
+        b = before_pct.get(sub, float("nan"))
+        lines.append(
+            f"| {sub:.0f} h | {_fmt(b)} % | {_fmt(s['label48_agreement'])} % | "
+            f"{_fmt(_f1_of(all_stats, choice['chosen_gap_h'], sub), '%.3f')} | "
+            f"{_fmt(s['reintub_f1'], '%.3f')} | "
+            f"{_fmt(s['end_error']['pct_2h'])} % |")
     (out_dir / "calibracion_mimic.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(json.dumps(choice, ensure_ascii=False, indent=2))
+    print(json.dumps({"choice": choice, "correction": verdict},
+                     ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

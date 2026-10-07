@@ -95,3 +95,80 @@ def annotation_interval_h(times_h: Sequence[float]) -> float | None:
     if diffs.size == 0:
         return None
     return float(np.median(diffs))
+
+
+# ── Etiqueta de 3 clases y corrección por estrato (Fase 1.6c, punto 3) ───────
+
+LABEL3_SUCCESS = "exito"
+LABEL3_SUCCESS_AFTER_FAILURE = "exito_con_fallo_previo"
+LABEL3_CENSORED = "censura"
+LABEL3_CLASSES: tuple[str, ...] = (LABEL3_SUCCESS, LABEL3_SUCCESS_AFTER_FAILURE,
+                                   LABEL3_CENSORED)
+
+
+def label3(event_type: str | None, n_failed_attempts: int = 0) -> str:
+    """Clase de 3 niveles de la etiqueta a 48 h.
+
+    - ``exito``: extubación exitosa sin fallos previos;
+    - ``exito_con_fallo_previo``: extubación exitosa tras ≥ 1 fallo;
+    - ``censura``: sin extubación exitosa (cualquier causa).
+    """
+    if event_type == "successful_extubation":
+        return (LABEL3_SUCCESS_AFTER_FAILURE if int(n_failed_attempts or 0) > 0
+                else LABEL3_SUCCESS)
+    return LABEL3_CENSORED
+
+
+def shift_interval_ends(
+    spans: Sequence[Span],
+    shift_h: float,
+    *,
+    min_duration_h: float = 0.0,
+) -> list[Span]:
+    """Suma ``shift_h`` al FIN de cada intervalo (corrección sistemática).
+
+    El desplazamiento del fin reconstruido es sistemático (los ajustes dejan de
+    anotarse antes de la desconexión real), así que se corrige sumando la
+    mediana medida en MIMIC. ``min_duration_h`` impide que un desplazamiento
+    negativo invierta o colapse el intervalo. El inicio NO se toca.
+    """
+    out: list[Span] = []
+    for sp in spans:
+        end = sp.end_h + float(shift_h)
+        if end < sp.start_h + min_duration_h:
+            end = sp.start_h + min_duration_h
+        out.append(Span(sp.start_h, end))
+    return out
+
+
+def confusion_matrix(
+    pred: Sequence[str],
+    ref: Sequence[str],
+    classes: Sequence[str] = LABEL3_CLASSES,
+) -> dict[str, dict[str, int]]:
+    """Matriz de confusión (filas = ``pred``, columnas = ``ref``)."""
+    idx = {c: i for i, c in enumerate(classes)}
+    m = np.zeros((len(classes), len(classes)), dtype=int)
+    for p, r in zip(pred, ref):
+        if p in idx and r in idx:
+            m[idx[p], idx[r]] += 1
+    return {pc: {rc: int(m[i, j]) for j, rc in enumerate(classes)}
+            for i, pc in enumerate(classes)}
+
+
+def correction_verdict(
+    before_pct: dict[float, float],
+    after_pct: dict[float, float],
+    *,
+    min_gain_pct: float = 0.0,
+) -> dict:
+    """¿Mejora la concordancia de la etiqueta en TODOS los estratos?
+
+    Criterio de aplicación de la corrección por estrato: se aplica solo si la
+    concordancia a 48 h mejora (``> min_gain_pct``) en **todos** los estratos.
+    """
+    strata = sorted(set(before_pct) & set(after_pct))
+    gains = {s: float(after_pct[s]) - float(before_pct[s]) for s in strata}
+    improves_all = bool(strata) and all(g > min_gain_pct for g in gains.values())
+    return {"approved": improves_all, "gains_pct": gains,
+            "mean_gain_pct": (float(np.mean(list(gains.values()))) if gains else None)}

@@ -1,41 +1,42 @@
 {
   "index": "datasets\\eicu_collaborative\\cases_v0.4.0_aa142f35\\eicu_cases_index.json",
   "regla": "cohorte e2 con anotación mediana <= 120 min",
+  "gap_h": 8.0,
   "n_hospitals": 27,
   "n_events": 9754,
   "success_48h": {
-    "success": 7881,
-    "censored": 1873,
+    "success": 7419,
+    "censored": 2335,
     "causes": {
-      "transfer_ventilated": 607,
-      "terminal_extubation": 1106,
-      "death_at_vent": 63,
+      "transfer_ventilated": 969,
+      "death_at_vent": 439,
+      "terminal_extubation": 830,
       "trach": 97
     }
   },
   "success_72h": {
-    "success": 7836,
-    "censored": 1918,
+    "success": 7367,
+    "censored": 2387,
     "causes": {
-      "transfer_ventilated": 630,
-      "terminal_extubation": 1127,
-      "death_at_vent": 63,
-      "trach": 98
+      "transfer_ventilated": 996,
+      "death_at_vent": 442,
+      "terminal_extubation": 850,
+      "trach": 99
     }
   },
-  "failure_events_48h": 1089,
-  "d13_incluidos": 9030,
-  "d13_pct": 92.6,
-  "vars_ok_50": 6890,
-  "vars_ok_80": 4939,
-  "vars_ok_50_pct": 70.6,
+  "failure_events_48h": 1093,
+  "d13_incluidos": 9222,
+  "d13_pct": 94.5,
+  "vars_ok_50": 7021,
+  "vars_ok_80": 5157,
+  "vars_ok_50_pct": 72.0,
   "cobertura_mediana_por_variable": {
-    "FiO2": 0.972,
-    "HR": 0.958,
-    "MAP": 0.947,
-    "PEEP": 0.934,
-    "RR": 0.938,
-    "SpO2": 0.955
+    "FiO2": 0.967,
+    "HR": 0.96,
+    "MAP": 0.95,
+    "PEEP": 0.931,
+    "RR": 0.942,
+    "SpO2": 0.957
   },
   "identificadores": {
     "sin_patientunitstayid": 0,
@@ -282,5 +283,38 @@
     "median": 311.0,
     "max": 1416,
     "mayor_peso_pct": 14.5
+  },
+  "por_estrato_de_anotacion": {
+    "1_2h": 3866,
+    "le1h": 5888
+  },
+  "error_de_etiqueta": {
+    "estratos": {
+      "1_2h": 3866,
+      "le1h": 5888
+    },
+    "desplazamiento_por_estrato_h": {
+      "1.0": 1.2332999999634922,
+      "2.0": 1.5,
+      "4.0": 2.3083333333488554
+    },
+    "sin_correccion": {
+      "end_error_median_h": -1.34,
+      "label48_agreement_pct": 84.69
+    },
+    "con_correccion": {
+      "end_error_median_h": 0.0,
+      "label48_agreement_pct": 86.96
+    },
+    "veredicto_mimic": {
+      "approved": true,
+      "gains_pct": {
+        "1.0": 2.092511013215855,
+        "2.0": 2.533039647577084
+      },
+      "mean_gain_pct": 2.3127753303964695
+    },
+    "aplicada": true,
+    "nota": "La corrección (sumar al fin reconstruido la mediana con signo del error de fin de su estrato) se aplica a eICU solo si mejora la concordancia de la etiqueta a 48 h en MIMIC en los estratos de 1 h y 2 h. Si el veredicto es negativo, la versión vigente es la de sin corrección y la corregida queda como simulación."
   }
 }

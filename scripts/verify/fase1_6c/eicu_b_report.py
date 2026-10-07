@@ -37,6 +37,7 @@ from src.stage0.io.versioning import load_config  # noqa: E402
 
 CONFIG = ROOT / "src/stage0/config/harmonize.yaml"
 CORE = ("HR", "SpO2")
+MONTH_H = {"le1h": 1.0, "1_2h": 2.0, "gt2h": 4.0}
 
 
 def latest_index(root: Path) -> Path | None:
@@ -56,6 +57,58 @@ def _by_cause(events: list[dict], window: str) -> dict:
             causes[lab.get("censor_cause") or "desconocido"] += 1
     return {"success": success, "censored": sum(causes.values()),
             "causes": dict(causes)}
+
+
+def _label_versions(events: list[dict], calib: dict | None) -> dict:
+    """Las dos versiones del error de etiqueta: sin y con corrección del fin.
+
+    La corrección del desplazamiento por estrato solo se aplica si mejora la
+    concordancia en MIMIC en **ambos** estratos (1 h y 2 h); si no, la version
+    aplicada es la de **sin corrección** y la corregida queda solo simulada.
+    """
+    if not calib:
+        return {}
+    transfer = {float(t["subsample_h"]): t
+                for t in calib.get("transferable_error", [])}
+    weights = Counter(e.get("annotation_stratum") for e in events)
+    corr = calib.get("end_shift_correction") or {}
+    verdict = corr.get("verdict_strata_1_2h") or {}
+    after = {float(s["subsample_h"]): s for s in corr.get("metrics_corrected", [])}
+
+    def _weighted(table, getter):
+        num = den = 0.0
+        for stratum, n in weights.items():
+            h = MONTH_H.get(stratum)
+            if h is None or h not in table:
+                continue
+            value = getter(table[h])
+            if value is None:
+                continue
+            num += n * float(value)
+            den += n
+        return round(num / den, 2) if den else None
+
+    antes = {
+        "end_error_median_h": _weighted(transfer, lambda s: s["end_error_median_h"]),
+        "label48_agreement_pct": _weighted(transfer, lambda s: s["label48_agreement_pct"]),
+    }
+    despues = {
+        "end_error_median_h": _weighted(after, lambda s: s["end_error"]["median"]),
+        "label48_agreement_pct": _weighted(after, lambda s: s["label48_agreement"]),
+    }
+    return {
+        "estratos": dict(weights),
+        "desplazamiento_por_estrato_h": corr.get("shifts_h"),
+        "sin_correccion": antes,
+        "con_correccion": despues,
+        "veredicto_mimic": verdict,
+        "aplicada": bool(verdict.get("approved")),
+        "nota": ("La corrección (sumar al fin reconstruido la mediana con signo del "
+                 "error de fin de su estrato) se aplica a eICU solo si mejora la "
+                 "concordancia de la etiqueta a 48 h en MIMIC en los estratos de 1 h "
+                 "y 2 h. Si el veredicto es negativo, la versión vigente es la de sin "
+                 "corrección y la corregida queda como simulación."),
+    }
 
 
 def main() -> None:
@@ -80,6 +133,10 @@ def main() -> None:
         raise SystemExit("no hay índice de eICU")
     idx = json.loads(path.read_text(encoding="utf-8"))
     events = [e for e in idx["events"] if int(e["hospital_id"]) in hospitals]
+
+    calib_path = ROOT / "reports" / "fase1_6c" / "calibracion_mimic.json"
+    calib = (json.loads(calib_path.read_text(encoding="utf-8"))
+             if calib_path.exists() else None)
 
     # Metadatos de hospital (región, tamaño, docencia)
     hosp_meta: dict[int, dict] = {}
@@ -118,6 +175,7 @@ def main() -> None:
     out = {
         "index": str(path.relative_to(ROOT)),
         "regla": f"cohorte e2 con anotación mediana <= {max_med:.0f} min",
+        "gap_h": idx.get("gap_h"),
         "n_hospitals": len(per_hosp),
         "n_events": len(events),
         "success_48h": _by_cause(events, "48h"),
@@ -144,6 +202,9 @@ def main() -> None:
             "max": int(max(per_hosp.values())),
             "mayor_peso_pct": round(100.0 * max(per_hosp.values()) / len(events), 1),
         },
+        "por_estrato_de_anotacion": dict(Counter(
+            e.get("annotation_stratum") for e in events)),
+        "error_de_etiqueta": _label_versions(events, calib),
     }
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
