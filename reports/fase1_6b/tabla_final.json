@@ -68,10 +68,19 @@
       "death_signal": 1
     },
     "label_error": {
-      "end_error_median_h": -1.275000000023283,
-      "label48_agreement_pct": 85.18722466960352,
-      "source": "calibracion MIMIC, estrato 1 h",
-      "annotation_median_min": 60.0
+      "end_error_median_h": null,
+      "label48_agreement_pct": null,
+      "source": "no aplica (señal continua)",
+      "nota": "Etiqueta derivada de la señal continua (onda AWP/FLOW): no existe el error de temporalidad de las anotaciones de enfermería de MIMIC/eICU."
+    },
+    "label_error_correccion": {
+      "fase": "1.6c punto 4",
+      "antes": {
+        "end_error_median_h": -1.275000000023283,
+        "label48_agreement_pct": 85.18722466960352,
+        "source": "calibracion MIMIC, estrato 1 h",
+        "annotation_median_min": 60.0
+      }
     }
   },
   "vitaldb": {
@@ -98,10 +107,19 @@
       "end_of_record": 19
     },
     "label_error": {
-      "end_error_median_h": -1.275000000023283,
-      "label48_agreement_pct": 85.18722466960352,
-      "source": "calibracion MIMIC, estrato 1 h",
-      "annotation_median_min": 60.0
+      "end_error_median_h": null,
+      "label48_agreement_pct": null,
+      "source": "no aplica (señal continua)",
+      "nota": "Etiqueta derivada de la señal continua (onda AWP/FLOW): no existe el error de temporalidad de las anotaciones de enfermería de MIMIC/eICU."
+    },
+    "label_error_correccion": {
+      "fase": "1.6c punto 4",
+      "antes": {
+        "end_error_median_h": -1.275000000023283,
+        "label48_agreement_pct": 85.18722466960352,
+        "source": "calibracion MIMIC, estrato 1 h",
+        "annotation_median_min": 60.0
+      }
     }
   }
 }

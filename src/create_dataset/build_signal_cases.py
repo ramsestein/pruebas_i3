@@ -325,16 +325,25 @@ def extubation_decision(episode: Episode) -> ExtubationDecision:
     )
 
 
-def _files_for_episode(files: Sequence[SourceFile], episode: Episode) -> list[SourceFile]:
+def _files_for_episode(
+    files: Sequence[SourceFile],
+    episode: Episode,
+    *,
+    probes: dict[str, Optional[VitalProbe]] | None = None,
+) -> list[SourceFile]:
     """Ficheros desde t0 hasta el fin del MONITOR de la región (corrección 1).
 
     No solo los que solapan con ventilación: el monitor posterior a la
     desconexión es necesario para confirmar la extubación y para D5.
 
-    Fase 1.6c (punto 4): si el episodio no solapa NINGÚN fichero (región de
-    monitor fuera de los ficheros del box), se devuelven los que solapan algún
-    intento; sin este respaldo el evento quedaba sin ``source_files`` y no se
-    podía ni auditar ni medir su cobertura.
+    Respaldos (Fase 1.6c, punto 4), en este orden:
+
+    1. los que solapan algún intento;
+    2. los que solapan el episodio según la **hora de cabecera** del sondeo
+       (``dtstart``/``dtend``): hay ficheros de VitalDB cuyo nombre no coincide
+       con la fecha real del contenido y su episodio nace de la cabecera, no del
+       nombre. Sin este respaldo el evento quedaba sin ``source_files`` y no se
+       podía ni auditar ni medir su cobertura.
     """
     start_h = episode.start_h
     end_h = _region_end_h(episode)
@@ -350,6 +359,16 @@ def _files_for_episode(files: Sequence[SourceFile], episode: Episode) -> list[So
         for sf in files:
             f_start = sf.dt_unix / _SECONDS_PER_HOUR
             if f_start < att.end_h and f_start + 1.0 > att.start_h:
+                out.append(sf)
+    if out:
+        return out
+    if probes:
+        for sf in files:
+            pr = probes.get(str(sf.path))
+            if pr is None:
+                continue
+            if (pr.dtstart / _SECONDS_PER_HOUR < end_h
+                    and pr.dtend / _SECONDS_PER_HOUR > start_h):
                 out.append(sf)
     return out
 
@@ -379,7 +398,7 @@ def signal_loss_at_end(
     Se conserva como indicador de calidad; la censura por muerte la decide
     ``detect_death_for_episode`` (ajuste 2).
     """
-    ep_files = _files_for_episode(files, episode)
+    ep_files = _files_for_episode(files, episode, probes=probes)
     if not ep_files:
         return False
     last = probes.get(str(ep_files[-1].path))
@@ -631,7 +650,7 @@ def build_cohort_index(
         for i, ep in enumerate(seg.episodes):
             t0_unix = ep.start_h * _SECONDS_PER_HOUR
             death, raw = detect_death_for_episode(seg.files, ep)
-            ep_files = _files_for_episode(seg.files, ep)
+            ep_files = _files_for_episode(seg.files, ep, probes=seg.probes)
             rec = build_event_record(
                 cohort=cohort, box=box, episode=ep,
                 files=ep_files, t0_unix=t0_unix,
@@ -777,7 +796,7 @@ def run_cohort(
             for i, ep in enumerate(seg.episodes):
                 event_id = f"{cohort}_{box}_event_{i + 1}"
                 rec = by_id[event_id]
-                files = _files_for_episode(seg.files, ep)
+                files = _files_for_episode(seg.files, ep, probes=seg.probes)
                 out_path = out_dir / f"{event_id}.vital"
                 _, dt0, dtend = merge_event_files(
                     [f.path for f in files], out_path, MERGE_TRACK_NAMES

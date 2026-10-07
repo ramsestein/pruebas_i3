@@ -368,6 +368,47 @@ class TestIndexAndMerge:
         out = _files_for_episode(files, ep)
         assert out, "el respaldo debe devolver los ficheros del intento"
 
+    def test_respaldo_por_hora_de_cabecera(self, tmp_path: Path):
+        """Hay ficheros de VitalDB cuyo nombre no coincide con su contenido.
+
+        El episodio nace de la **cabecera** (``dtstart``), así que si ni la
+        región ni los intentos solapan por nombre-hora hay que mirar la
+        cabecera del sondeo: sin esto el evento se quedaba sin
+        ``source_files`` (4 de 96 en VitalDB, Fase 1.6c punto 4).
+        """
+        from src.create_dataset.build_signal_cases import _files_for_episode
+        from src.common.episodes import Attempt, Episode
+
+        raw = tmp_path / "raw" / "box2"
+        # Fichero con el nombre en la hora 0 y el contenido 100 h después.
+        real = BASE + timedelta(hours=100)
+        write_hour(raw / _fname("tok1", BASE), real, monitor=True, vent=True)
+        boxes = scan_source_files(tmp_path / "raw", CLINIC_SPEC)
+        files = list(boxes.values())[0]
+        seg = segment_box("box2", files)
+        start_h = to_epoch_utc(real) / 3600.0
+        ep = Episode(attempts=[Attempt(0, start_h, start_h + 1.0)],
+                     region_start_h=start_h, region_end_h=start_h + 1.0)
+        # Por nombre-hora no solapa nada...
+        assert _files_for_episode(files, ep) == []
+        # ... pero la CABECERA del sondeo sí: se devuelve por esa vía.
+        out = _files_for_episode(files, ep, probes=seg.probes)
+        assert out, "el respaldo por cabecera debe encontrar los ficheros"
+        assert out[0].path.name == files[0].path.name
+
+    def test_negativo_sin_probes_no_inventa_ficheros(self, tmp_path: Path):
+        from src.create_dataset.build_signal_cases import _files_for_episode
+        from src.common.episodes import Attempt, Episode
+
+        make_box(tmp_path / "raw", "box2", [0, 1], [0])
+        boxes = scan_source_files(tmp_path / "raw", CLINIC_SPEC)
+        files = list(boxes.values())[0]
+        ep = Episode(attempts=[Attempt(0, files[0].dt_unix / 3600.0 + 100.0,
+                                       files[0].dt_unix / 3600.0 + 101.0)],
+                     region_start_h=files[0].dt_unix / 3600.0 + 100.0,
+                     region_end_h=files[0].dt_unix / 3600.0 + 101.0)
+        assert _files_for_episode(files, ep, probes=None) == []
+
     def test_labels_d3_are_consistent_with_attempts(self, tmp_path: Path):
         """D3: un fallo a 48 h seguido de éxito debe etiquetarse así."""
         make_box(tmp_path / "raw", "box2", list(range(0, 9)), [0, 7])
