@@ -1,9 +1,9 @@
 {
   "indices": {
-    "mimic": "datasets\\mimic3wdb\\cases_v0.2.0_a805771c\\mimic_cases_index.json",
-    "eicu": "datasets\\eicu_collaborative\\cases_v0.3.0_37558586\\eicu_cases_index.json",
+    "mimic": "datasets\\mimic3wdb\\cases_v0.4.0_aa142f35\\mimic_cases_index.json",
+    "eicu": "datasets\\eicu_collaborative\\cases_v0.4.0_aa142f35\\eicu_cases_index.json",
     "clinic": "datasets\\clinic\\cases_v0.1.0_a225d21b\\clinic_cases_index.json",
-    "vitaldb": "datasets\\vitaldb\\cases_v0.2.0_a805771c\\vitaldb_cases_index.json"
+    "vitaldb": "datasets\\vitaldb\\cases_v0.4.0_aa142f35\\vitaldb_cases_index.json"
   },
   "mimic": {
     "n_events": 9093,
@@ -240,12 +240,12 @@
       "train": {
         "events": 72,
         "fallos": 5,
-        "censura": 14
+        "censura": 46
       },
       "test": {
         "events": 24,
         "fallos": 0,
-        "censura": 7
+        "censura": 10
       }
     }
   }

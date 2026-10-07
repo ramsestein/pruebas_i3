@@ -1,0 +1,225 @@
+{
+  "mimic": {
+    "cohort": "mimic",
+    "index": "datasets\\mimic3wdb\\cases_v0.4.0_aa142f35\\mimic_cases_index.json",
+    "n_events": 9093,
+    "labels48h": {
+      "success": 7455,
+      "censored": 1638,
+      "causes": {
+        "death_at_vent": 556,
+        "transfer_ventilated": 438,
+        "terminal_extubation": 418,
+        "trach": 226
+      }
+    },
+    "labels72h": {
+      "success": 7390,
+      "censored": 1703,
+      "causes": {
+        "death_at_vent": 567,
+        "terminal_extubation": 460,
+        "transfer_ventilated": 443,
+        "trach": 233
+      }
+    },
+    "failure_events_48h": 471,
+    "end_reason": {
+      "extubation_observed": 7027,
+      "death": 1297,
+      "transfer_ventilated": 459,
+      "tracheostomy": 310
+    },
+    "profile_dominante": {
+      "profile": "HR+SpO2+MAP+RR+FiO2+PEEP",
+      "n": 8035,
+      "pct": 88.4
+    },
+    "d13": {
+      "core": [
+        "HR",
+        "SpO2"
+      ],
+      "n_included": 8983,
+      "pct_included": 98.8,
+      "fuente": "reports/fase1_6c/mimic_coverage.json"
+    },
+    "vars_ok_50": 8035,
+    "vars_ok_80": 5514,
+    "vars_ok_50_pct": 88.4,
+    "vars_ok_80_pct": 60.6,
+    "n_hospitals": null,
+    "label_error": {
+      "end_error_median_h": 0.0,
+      "label48_agreement_pct": 100.0,
+      "source": "referencia"
+    }
+  },
+  "eicu": {
+    "cohort": "eicu",
+    "index": "datasets\\eicu_collaborative\\cases_v0.4.0_aa142f35\\eicu_cases_index.json",
+    "n_events": 9754,
+    "labels48h": {
+      "success": 7419,
+      "censored": 2335,
+      "causes": {
+        "transfer_ventilated": 969,
+        "terminal_extubation": 830,
+        "death_at_vent": 439,
+        "trach": 97
+      }
+    },
+    "labels72h": {
+      "success": 7367,
+      "censored": 2387,
+      "causes": {
+        "transfer_ventilated": 996,
+        "terminal_extubation": 850,
+        "death_at_vent": 442,
+        "trach": 99
+      }
+    },
+    "failure_events_48h": 1093,
+    "end_reason": {
+      "extubation_observed": 7948,
+      "transfer_ventilated": 1358,
+      "death_at_vent": 448
+    },
+    "profile_dominante": {
+      "profile": "HR+SpO2+MAP+RR+FiO2+PEEP",
+      "n": 7021,
+      "pct": 72.0
+    },
+    "d13": {
+      "core": [
+        "HR",
+        "SpO2"
+      ],
+      "n_included": 9222,
+      "pct_included": 94.5,
+      "fuente": "reports/fase1_6c/eicu_b.json"
+    },
+    "vars_ok_50": 7021,
+    "vars_ok_50_pct": 72.0,
+    "vars_ok_80": 5157,
+    "vars_ok_80_pct": 52.9,
+    "n_hospitals": 27,
+    "label_error_sin_correccion": {
+      "end_error_median_h": -1.3390066023974823,
+      "label48_agreement_pct": 84.69228934881792,
+      "source": "calibración MIMIC ponderada por estrato de anotación",
+      "strata": {
+        "1_2h": 3866,
+        "le1h": 5888
+      }
+    },
+    "correccion_desplazamiento": {
+      "shifts_h": {
+        "1.0": 1.2332999999634922,
+        "2.0": 1.5,
+        "4.0": 2.3083333333488554
+      },
+      "verdict": {
+        "approved": true,
+        "gains_pct": {
+          "1.0": 2.092511013215855,
+          "2.0": 2.533039647577084
+        },
+        "mean_gain_pct": 2.3127753303964695
+      }
+    },
+    "label_error": {
+      "end_error_median_h": 0.0,
+      "label48_agreement_pct": 86.96,
+      "source": "corrección del fin por estrato aplicada"
+    }
+  },
+  "clinic": {
+    "cohort": "clinic",
+    "index": "datasets\\clinic\\cases_v0.1.0_a225d21b\\clinic_cases_index.json",
+    "n_events": 181,
+    "index_obsoleto": true,
+    "pendiente": "reconstrucción de la fase pendiente (índice antiguo)",
+    "labels48h": {
+      "success": 140,
+      "censored": 41,
+      "causes": {
+        "end_of_record": 40,
+        "terminal_extubation": 1
+      }
+    },
+    "labels72h": {
+      "success": 140,
+      "censored": 41,
+      "causes": {
+        "end_of_record": 40,
+        "terminal_extubation": 1
+      }
+    },
+    "failure_events_48h": 7,
+    "end_reason": {
+      "extubation_observed": 139,
+      "end_of_record": 41,
+      "death_signal": 1
+    },
+    "profile_dominante": {
+      "profile": "(ninguna)",
+      "n": 181,
+      "pct": 100.0
+    },
+    "n_hospitals": null,
+    "label_error": {
+      "end_error_median_h": null,
+      "label48_agreement_pct": null,
+      "source": "no aplica (señal continua)"
+    }
+  },
+  "vitaldb": {
+    "cohort": "vitaldb",
+    "index": "datasets\\vitaldb\\cases_v0.4.0_aa142f35\\vitaldb_cases_index.json",
+    "n_events": 96,
+    "labels48h": {
+      "success": 40,
+      "censored": 56,
+      "causes": {
+        "end_of_record": 56
+      }
+    },
+    "labels72h": {
+      "success": 39,
+      "censored": 57,
+      "causes": {
+        "end_of_record": 57
+      }
+    },
+    "failure_events_48h": 5,
+    "end_reason": {
+      "end_of_record": 60,
+      "extubation_observed": 36
+    },
+    "profile_dominante": {
+      "profile": "HR+SpO2+MAP+RR",
+      "n": 29,
+      "pct": 30.2
+    },
+    "d13": {
+      "core": [
+        "HR",
+        "SpO2"
+      ],
+      "n_included": 67,
+      "pct_included": 69.79,
+      "fuente": "reports/fase1_6c/clinic_vitaldb.json"
+    },
+    "vars_ok_50": 22,
+    "vars_ok_80": 16,
+    "vars_ok_50_pct": 22.9,
+    "vars_ok_80_pct": 16.7,
+    "n_hospitals": null,
+    "label_error": {
+      "end_error_median_h": null,
+      "label48_agreement_pct": null,
+      "source": "no aplica (señal continua)"
+    }
+  }
+}

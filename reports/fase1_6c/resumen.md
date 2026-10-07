@@ -65,13 +65,37 @@ confundiría dos variables distintas; `224696`/`543` son presión de plateau, no
 
 ### Recalculo (tras re-extraer CHARTEVENTS con el catálogo corregido)
 
-(pendiente: el streaming de CHARTEVENTS está en curso)
+23 312 533 observaciones → **9 093 eventos** (25 excluidos). Cobertura por evento
+(> 50 % de horas útiles, D8) y su mediana:
 
-**D13**: con FC y SpO2 ≥ 50 % entran el **98.8 %** de los eventos (8 983/9 093);
-`vars_ok` 50 % (6 variables) = **37.5 %** (3 407) con el catálogo antiguo.
+| Variable | antes (> 50 %) | **ahora (> 50 %)** | mediana | > 80 % |
+|---|---|---|---|---|
+| HR | 99.3 % | 99.3 % | 1.00 | 94.3 % |
+| SpO2 | 98.8 % | 98.8 % | 1.00 | 93.0 % |
+| MAP (invasiva / no invasiva) | 96.4 % | 96.4 % | 0.97 | 80.9 % |
+| — invasiva | 70.4 % | 70.4 % | 0.90 | 58.1 % |
+| — no invasiva | 33.8 % | 33.8 % | 0.20 | 24.6 % |
+| RR del ventilador | 91.9 % | 91.9 % | 0.97 | 74.2 % |
+| FiO2 | 98.3 % | 98.3 % | 1.00 | 92.9 % |
+| **PEEP** | **39.6 %** | **98.2 %** | **1.00** | **92.2 %** |
+| TV | 98.2 % | 98.2 % | 1.00 | 91.9 % |
+| PIP | 97.6 % | 97.6 % | 1.00 | 90.3 % |
+
+- `vars_ok` 50 % (6 variables): **3 407 (37.5 %) → 8 035 (88.4 %)**.
+- `vars_ok` 80 %: **5 514 (60.6 %)**.
+- **D13** (FC y SpO2 ≥ 50 %): **8 983 (98.8 %)** — no cambia con el arreglo.
+- 0 eventos sin ninguna serie.
+
+Variables que **de verdad** bloquean `vars_ok` (eventos por debajo del 50 %):
+RR 733, MAP 323, PEEP 163, FiO2 151, SpO2 107, HR 63. (El campo
+`variable_limitante` del JSON es el mínimo de las 6 y con coberturas altas suele
+ser un empate sin significado: se conserva solo por trazabilidad.)
 
 Entregables: `mimic_coverage.json`, `mimic_coverage_events.csv`,
-`mimic_itemids_check.json`.
+`mimic_itemids_check.json`. Tests: `TestItemidsFase16c` (catálogo: 220339, 682 y
+FR del ventilador = 224690) y `test_coverage_units.py` (evento sintético con
+anotación horaria de las 8 variables → ≥ 90 % en todas, más la regresión del bug
+horas/minutos).
 
 ## 2. eICU — estrategia B (D14)
 
@@ -81,22 +105,29 @@ cohorte e2). Guardados en `harmonize.yaml → fase1_6c.eicu_b.hospital_ids`.
 | Métrica | 48 h | 72 h |
 |---|---|---|
 | Eventos | 9 754 | 9 754 |
-| Éxito | 7 881 | 7 836 |
-| Censura | 1 873 | 1 918 |
+| Éxito | 7 419 | 7 367 |
+| Censura | 2 335 | 2 387 |
 
-Causas de censura (48 h): `terminal_extubation` 1 106, `transfer_ventilated` 607,
-`trach` 97, `death_at_vent` 63.
+Causas de censura (48 h): `transfer_ventilated` 1 965, `terminal_extubation`
+1 680, `death_at_vent` 881, `trach` 196. Estas cifras **incluyen la corrección
+del fin por estrato** (§3), que es la que convierte en censura por "alta estando
+ventilado" los eventos cuyo último ajuste está a menos de ~1.5 h del alta.
 
-- **Eventos con ≥ 1 fallo**: 1 089.
-- **Inclusión D13** (FC y SpO2 ≥ 50 %): **9 030 (92.6 %)**.
-- `vars_ok` 50 % = **6 890 (70.6 %)**; 80 % = 4 939.
-- Cobertura mediana por variable: FiO2 0.97, HR 0.96, MAP 0.95, PEEP 0.93,
-  RR 0.94, SpO2 0.96.
+- **Eventos con ≥ 1 fallo**: 1 093.
+- **Inclusión D13** (FC y SpO2 ≥ 50 %): **9 222 (94.5 %)**.
+- `vars_ok` 50 % = **7 021 (72.0 %)**; 80 % = 5 157 (52.9 %).
+- Cobertura mediana por variable: FiO2 0.97, HR 0.96, SpO2 0.96, MAP 0.95,
+  RR 0.94, PEEP 0.93.
 
 Distribución: **West 14, Midwest 6, South 5**, sin región 2 hospitales; tamaño
 `100–249` 10, `250–499` 9, `≥ 500` 3, `< 100` 1; docencia: 2 docentes / 25 no
 docentes. Eventos por hospital: mínimo 60, mediana 311, máximo 1 416 (el mayor
 concentra el **14.5 %** de los eventos).
+
+Estratos de anotación del hospital (con la frontera corregida): **`le1h` 5 888,
+`1_2h` 3 866, `gt2h` 0** (los 732 eventos que caían en `gt2h` por la frontera
+estricta eran hospitales de exactamente 2 h: se les aplicaba la corrección de
+4 h, que no les corresponde).
 
 Identificadores: **todos** los eventos guardan `patientunitstayid`, `uniquepid` y
 `hospital_id` (0 faltantes).
@@ -105,29 +136,156 @@ Entregable: `eicu_b.json`.
 
 ## 3. Calibración del algoritmo de intervalos (MIMIC)
 
-(pendiente: depende de la re-extracción de CHARTEVENTS, porque PEEP es un
-concepto marcador y su ausencia alteraba la densidad de anotaciones)
+Con el catálogo corregido se reevalúa la rejilla en **{8, 10, 12} h** (1.6b usó
+{2,4,6,8} h), con la misma regla de elección: `extra ≤ 10 %` y `perdidos ≤ 5 %`
+(anotación ≤ 2 h) / `≤ 15 %` (4 h) en **todos** los estratos; entre los que
+cumplen, máximo del mínimo entre estratos de
+`score = media(% inicio ±2 h, % fin ±2 h, F1 reintubación)`; empate a < 0.02 → G
+menor.
 
-Se amplía la rejilla a **{8, 10, 12} h** con la misma regla de elección, se añade
-la **matriz de confusión 3×3** de la etiqueta a 48 h (éxito / éxito con fallo
-previo / censura) en los estratos de 1 h y 2 h, la **distribución con signo** del
-desplazamiento del fin y la **simulación de la corrección por estrato** (sumar al
-fin reconstruido la mediana del desplazamiento medido), aplicable a eICU solo si
-mejora la concordancia en **ambos** estratos.
+| G (h) | ¿cumple? | score (peor estrato) |
+|---|---|---|
+| 8 | sí | 0.506 |
+| 10 | sí | **0.562** |
+| 12 | sí | 0.571 |
+
+**La rejilla ampliada cambia la elección: G = 10 h** (12 queda a 0.009 del 10, en
+la banda de empate, y se prefiere el menor). Diferencias frente a G = 8:
+
+| Métrica (estratos 1 h / 2 h) | G = 8 h | G = 10 h |
+|---|---|---|
+| perdidos | 3.1 / 4.4 % | 3.0 / 4.4 % |
+| ventilación inventada (`extra`) | 8.1 / 8.0 % | 8.2 / 8.2 % |
+| fragmentos por intento | 1.07 / 1.08 | 1.04 / 1.04 |
+| inicio ±2 h | 91.9 / 91.9 % | 91.5 / 91.5 % |
+| fin ±2 h | 56.8 / 52.5 % | 56.4 / 52.1 % |
+| F1 reintubación | 0.398 / 0.394 | **0.440 / 0.438** |
+| etiqueta 48 h | 85.2 / 83.8 % | 85.2 / 83.9 % |
+
+G = 10 mejora sobre todo el **F1 de reintubación** (+0.04) y la fragmentación, y
+es neutro para la etiqueta a 48 h. **Los índices ya construidos (MIMIC v0.4.0 y
+eICU-B) usan G = 8 h** por coherencia con la 1.6b y para no repetir una
+re-extracción de MIMIC de 2 h 20 min; pasar a G = 10 h es la recomendación y
+requiere esa re-extracción (decisión pendiente).
+
+### Distribución **con signo** del error (G = 8 h)
+
+`error = reconstruido − real`. El inicio está centrado; el **fin se queda corto**
+de forma sistemática:
+
+| Estrato de anotación | inicio mediana (p10, p90) | **fin mediana** (p10, p25, p75, p90) |
+|---|---|---|
+| 1 h | −0.07 h (−1.00, +0.42) | **−1.25 h** (−5.00, −2.83, −0.28, +0.42) |
+| 2 h | −0.08 h (−1.00, +0.42) | **−1.52 h** (−5.23, −3.00, −0.50, +0.30) |
+| 4 h | −0.08 h (−1.00, +0.50) | **−2.35 h** (−7.17, −4.05, −0.93, +0.17) |
+
+### Matriz de confusión 3×3 de la etiqueta a 48 h (G = 8 h)
+
+Estrato de 1 h (filas = reconstruido, columnas = real):
+
+| | éxito | éxito tras fallo | censura |
+|---|---|---|---|
+| **éxito** | **6 602** | 92 | 1 007 |
+| **éxito tras fallo** | 351 | 229 | 161 |
+| **censura** | 172 | 0 | 466 |
+
+Concordancia de 3 clases: **80.4 %** (1 h), 78.9 % (2 h), 66.1 % (4 h). El error
+es casi todo "éxito reconstruido que en realidad es censura" (1 007), es decir
+extubaciones que el algoritmo cree ver y no lo son.
+
+### Corrección del fin por estrato (aplicada)
+
+Sumar al fin reconstruido el **opuesto** de la mediana del error de fin del
+estrato del hospital. (El script sumaba la mediana tal cual, lo que **duplicaba**
+el sesgo: el error mediano pasaba de −1.23 h a −2.45 h. Corregido el signo —
+test `TestSignoDeLaCorreccion` — la corrección pasa a centrar el fin en 0.00 h.)
+
+| Estrato | desplazamiento aplicado | fin mediana antes → después | etiqueta 48 h antes → después |
+|---|---|---|---|
+| 1 h | **+1.23 h** | −1.23 h → **0.00 h** | 85.2 % → **87.3 %** |
+| 2 h | **+1.50 h** | −1.50 h → **0.00 h** | 83.9 % → **86.4 %** |
+
+**Veredicto: SÍ se aplica** (mejora en los dos estratos: +2.09 y +2.53 pp; media
++2.31 pp). Aplicada a eICU-B:
+
+- **815 de 9 754 eventos (8.4 %)** cambian la etiqueta a 48 h (825 a 72 h);
+- éxito 48 h **7 881 → 7 419**, censura 1 873 → 2 335, fallos 1 089 → 1 093;
+- el fin corregido **se recorta al alta** (no puede haber ventilación después del
+  alta) y al inicio del intento siguiente; aun así el efecto es el mismo, porque
+  un fin que toca el alta ya censura por "alta estando ventilado";
+- **las dos versiones quedan guardadas**: `labels` (corregida, vigente) y
+  `labels_sin_correccion` (original) por evento, con `end_correccion_h`.
+  Error de etiqueta resultante: 84.7 % → **87.0 %** de concordancia.
 
 Lógica pura (con tests): `label3`, `shift_interval_ends`, `confusion_matrix` y
 `correction_verdict` en `src/common/vent_intervals.py`.
 
 ## 4. Clínic y VitalDB — reconstrucción completa
 
-Código actual aplicado: regla 0 con **observación fisiológica** (FC 20–250,
-SpO2 50–100), *sin dato ≠ sin señal*, ficheros localizados **dentro de su caja**
-(se ignora `dataset_clinic`), cobertura D8 **en minutos** y `label_source`.
-Se añade un **respaldo de ficheros** para los eventos cuya región de monitor no
-solapa ningún fichero del box (resuelve los 4 eventos de VitalDB sin
-`source_files`).
+Código aplicado: regla 0 con **observación fisiológica** (FC 20–250, SpO2 50–100),
+*sin dato ≠ sin señal*, ficheros localizados **dentro de su caja** (se ignora
+`dataset_clinic`), cobertura D8 **en minutos** (arreglo del bug de unidades) y
+`label_source`. Se añaden **dos respaldos** para localizar los ficheros de un
+evento (Fase 1.6c, punto 4):
 
-(pendiente: reconstrucciones en curso — ver §8)
+1. los que solapan algún intento (región de monitor fuera de los ficheros);
+2. los que solapan el episodio por la **hora de cabecera** del sondeo: hay
+   ficheros de VitalDB cuyo **nombre no coincide con la fecha del contenido** y
+   su episodio nace de la cabecera. Sin este respaldo el evento quedaba sin
+   `source_files`, su cobertura salía 0 y D13 lo excluía por un artefacto.
+
+### VitalDB (índice `v0.4.0`)
+
+| Métrica | Valor |
+|---|---|
+| Eventos / excluidos | 96 / 18 (nivel A: 96) |
+| Éxito 48 h / censura 48 h | 40 / 56 (todos `end_of_record`) |
+| Eventos con ≥ 1 fallo | 5 |
+| **Inclusión D13** (FC y SpO2 ≥ 50 %) | **67 (69.8 %)** |
+| `vars_ok` 50 % / 80 % | 22 / 16 |
+
+`end_reason`: `end_of_record` 60, `extubation_observed` 36 (vocabulario único).
+Cobertura mediana: RR 0.92, SpO2 0.91, HR 0.87, MAP 0.87 y **FiO2 / PEEP 0.00**:
+en VitalDB esos numéricos del ventilador **no se registran** en las pistas
+`Intellivue/FIO2` / `PEEP_CMH2O` (muchos ficheros solo traen `ABP`, `PLETH` y las
+ondas `AWP_WAV`/`FLOW_WAV`). Por eso `vars_ok` (6 variables) no es alcanzable
+aquí y el criterio útil es D13.
+
+**Pendiente de 4 eventos (4.2 %):** `vitaldb_SICU1_08_event_4`,
+`SICU1_12_event_4`, `SICU2_05_event_4` y `SICU2_16_event_15` siguen **sin
+`source_files`**: su episodio nace de la **cabecera** de un fichero cuyo nombre
+está a días de distancia (box sin ficheros con esa fecha en el nombre) y el
+sondeo completo de esas 4 cajas se quedó bloqueado por el estado del disco D:
+(§9). Sin ficheros su cobertura es 0 y D13 los excluye, así que el **69.8 % de
+D13 es una cota inferior**. Mitigación implementada y probada con tests:
+`_files_for_episode(..., probes=...)` (respaldo por cabecera) y
+`scripts/verify/fase1_6c/repair_source_files.py` para aplicarlo a un índice ya
+construido cuando la E/S esté sana.
+
+### Clínic (índice `v0.4.0`) — **no completado**
+
+La reconstrucción completa **no ha terminado** por el estado del disco D:
+(§9). Evidencia medida en la ejecución abortada: 35.1 GB leídos, 2 110 s de CPU
+en ~14 h de reloj (≈4.7 MB/s y tramos con lecturas bloqueadas minutos), sin
+llegar a escribir el índice. `datasets/clinic/cases_v0.4.0_aa142f35` queda
+**vacío**; el único índice de Clínic disponible sigue siendo el antiguo
+(`cases_v0.1.0_a225d21b`, 181 eventos) y **sus cifras de cobertura están
+invalidadas** por el bug de unidades de la 1.6b, así que la fila de Clínic en la
+tabla final se marca como pendiente.
+
+Para cerrarlo se deja preparada la receta en dos pasos (evita la fase serial que
+es el cuello de botella):
+
+```
+python -m src.create_dataset.build_signal_cases --cohort clinic --no-merge --workers 10
+python scripts/verify/fase1_6c/coverage_parallel.py --cohort clinic --workers 10
+```
+
+El builder ya incorpora los dos respaldos de `source_files`, así que esta
+receta no necesita reparación posterior. Lo ya verificado para Clínic en fases
+previas sigue vigente: los 16 eventos de < 1 h son **12 ventilación real** (6 por
+onda AWP/FLOW, 6 por ajustes D6) y 4 artefactos
+(`reports/fase1_6b/clinic_short_verdict.json`).
 
 ## 5. Campos que necesitará la Fase 2
 
@@ -176,11 +334,76 @@ eICU añade `uniquepid`; para los índices anteriores se completaron los campos 
 
 ## 8. Tabla final
 
-(pendiente)
+Generada por `scripts/verify/fase1_6c/final_table.py` a partir de los
+artefactos de los puntos 1-4, 6 y 7 (`tabla_final.json` / `tabla_final.md`):
 
-## 9. Limitaciones
+| Cohorte | Eventos | Incluidos D13 | Éxito 48 h | Censura 48 h | Fallos (≥1) | `vars_ok` 50 % | `vars_ok` 80 % | Error de etiqueta | Perfil dominante |
+|---|---|---|---|---|---|---|---|---|---|
+| MIMIC | 9 093 | 8 983 (98.8 %) | 7 455 | 1 638 | 471 | 88.4 % | 60.6 % | 0.00 h / 100 % (referencia) | las 6 variables (88.4 %) |
+| eICU-B | 9 754 | 9 222 (94.5 %) | 7 419 | 2 335 | 1 093 | 72.0 % | 52.9 % | 0.00 h / 87.0 % (corregida) | las 6 variables (72.0 %) |
+| Clínic | 181 (índice antiguo) | **pendiente** | 140 | 41 | 7 | pendiente | pendiente | **no aplica (señal continua)** | pendiente |
+| VitalDB | 96 | 67 (69.8 %, cota inferior) | 40 | 56 | 5 | 22.9 % | 16.7 % | **no aplica (señal continua)** | HR+SpO2+MAP+RR (30.2 %) |
 
-- El disco de datos es el cuello de botella: Clínic son 101.5 GB en 5 471
-  ficheros de caja y algunos tardan decenas de segundos en abrirse.
-- MIMIC y Clínic/VitalDB se re-extraen con itemids y code corregidos; sus
+Notas de la tabla:
+
+- Éxito y censura son **mutuamente excluyentes**; los eventos con ≥ 1 fallo van en
+  columna aparte porque también existen entre los censurados.
+- `vars_ok` (6 variables) es **indicador de calidad**, nunca filtro; el filtro es
+  D13.
+- eICU-B aparece con la etiqueta **corregida** (§3); sin corrección era
+  7 881 / 1 873 con error de etiqueta −1.34 h y 84.7 % de concordancia.
+- **`end_reason` no tiene todavía un vocabulario idéntico entre cohorts** (queda
+  para la Fase 2): MIMIC `{extubation_observed, death, transfer_ventilated,
+  tracheostomy}`; eICU-B `{extubation_observed, transfer_ventilated,
+  death_at_vent}`; Clínic/VitalDB `{extubation_observed, end_of_record}`. Cada
+  una es coherente dentro de su índice, pero la unión no es un vocabulario común.
+
+## 9. Limitaciones y decisiones abiertas
+
+- **El disco de datos es el cuello de botella** y está degradado: Clínic son
+  101.5 GB en 5 471 ficheros de caja y VitalDB 72.7 GB en 15 493, con tramos en
+  los que una lectura se bloquea minutos (la reconstrucción de VitalDB tardó
+  13.7 h de reloj y la de Clínic no llegó a terminar: 35.1 GB leídos en ~14 h).
+  De ahí las dos consecuencias ya descritas: Clínic pendiente y los 4 eventos de
+  VitalDB sin `source_files`. Medidas tomadas: la cobertura se puede medir aparte
+  y **en paralelo** (`coverage_parallel.py`) porque en el builder era **serial**.
+- **G**: la rejilla ampliada {8, 10, 12} h elige **G = 10 h** (score 0.562 frente
+  a 0.506 de G = 8), con la misma etiqueta a 48 h y mejor F1 de reintubación
+  (+0.04). Los índices construidos usan **G = 8 h**: pasar a 10 h exige
+  re-extraer MIMIC (2 h 20 min medidos) y reconstruir eICU. Es la decisión
+  pendiente más importante antes de la Fase 2.
+- **La corrección del fin es la que más mueve la etiqueta de eICU**: 815 de
+  9 754 eventos (8.4 %) cambian de etiqueta a 48 h, casi todos de "éxito" a
+  "alta estando ventilado". Es lo que dice la calibración en MIMIC (+2.1/+2.5 pp),
+  pero conviene revisarlo antes de la Fase 2, porque la mitad de ese efecto nace
+  de que el fin corregido **toca el alta**.
+- MIMIC y Clínic/VitalDB se re-extraen con itemids y código corregidos; sus
   cifras anteriores (Fase 1.5/1.6b) quedan superadas.
+- Los datos crudos son inmutables: no se ha modificado nada en `D:\data`.
+
+## 10. Reproducibilidad
+
+```
+# 1. MIMIC: catálogo de itemids + cobertura
+python -m src.create_dataset.build_mimic_cases
+python scripts/verify/fase1_6c/mimic_coverage.py
+
+# 2. Calibración (G, matriz 3x3, corrección del fin)
+python scripts/verify/fase1_6b/calibrate_gap_mimic.py --gaps 8,10,12 --out-dir reports/fase1_6c
+
+# 3. eICU-B (aplica la corrección si el veredicto la aprueba)
+python -m src.create_dataset.build_eicu_events
+python scripts/verify/fase1_6c/eicu_b_report.py
+
+# 4. Cohortes con señal (dos pasos: evita la cobertura serial)
+python -m src.create_dataset.build_signal_cases --cohort vitaldb --no-merge --workers 6
+python scripts/verify/fase1_6c/coverage_parallel.py --cohort vitaldb --workers 8
+python scripts/verify/fase1_6c/clinic_vitaldb_report.py --cohorts clinic vitaldb
+
+# 6-8. Particiones, perfiles y tabla final
+python scripts/verify/fase1_6c/cohorts_report.py
+python scripts/verify/fase1_6c/final_table.py
+```
+
+Tests: `python -m pytest src/stage0/tests src/common/tests src/create_dataset/tests -q`
+→ **432 pasan, 1 se salta** (el que valida el catálogo contra `D_ITEMS` real).
