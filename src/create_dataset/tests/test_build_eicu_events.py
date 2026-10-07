@@ -23,7 +23,8 @@ from src.create_dataset.build_eicu_events import (
 def _patients(rows) -> pd.DataFrame:
     return pd.DataFrame([
         {"patientunitstayid": pid, "hospitalid": hosp,
-         "unitdischargeoffset": disch, "unitdischargestatus": status}
+         "unitdischargeoffset": disch, "unitdischargestatus": status,
+         "uniquepid": f"pid-{hosp}-{pid}"}
         for pid, hosp, disch, status in rows
     ])
 
@@ -156,6 +157,19 @@ class TestSchemaAndSummary:
         assert ev["inter_adj_median_min"] is not None
         assert idx["gap_h"] == 8.0
         assert summary["gap_h"] == 8.0
+
+    def test_campos_para_la_fase2(self):
+        """Fase 1.6c (punto 5): agrupación y origen de la etiqueta."""
+        idx, _ = self._index()
+        for ev in idx["events"]:
+            assert ev["patientunitstayid"] > 0
+            assert ev["uniquepid"] == f"pid-{ev['hospital_id']}-{ev['patientunitstayid']}"
+            assert ev["hospital_id"] > 0
+            assert ev["label_source"] == "anotaciones"
+            assert ev["annotation_stratum"] in ("le1h", "1_2h", "gt2h")
+            for window in ("48h", "72h"):
+                lab = ev["labels"][window]
+                assert "censor_cause" in lab and "censor_time_h" in lab
 
     def test_resumen_por_estrato_de_anotacion(self):
         _, summary = self._index()

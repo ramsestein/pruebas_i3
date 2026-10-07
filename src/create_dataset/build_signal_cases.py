@@ -90,6 +90,10 @@ _SECONDS_PER_HOUR = 3600.0
 MIN_EXTUBATION_MONITOR_TAIL_H: float = 1.0
 _EPS: float = 1e-9
 
+# Fase 1.6c (punto 5): de dónde sale la etiqueta en las cohortes con señal
+# (los tramos y las desconexiones se derivan de las propias señales).
+LABEL_SOURCE = "senal"
+
 
 # ── Configuración por cohorte ────────────────────────────────────────────────
 
@@ -326,6 +330,11 @@ def _files_for_episode(files: Sequence[SourceFile], episode: Episode) -> list[So
 
     No solo los que solapan con ventilación: el monitor posterior a la
     desconexión es necesario para confirmar la extubación y para D5.
+
+    Fase 1.6c (punto 4): si el episodio no solapa NINGÚN fichero (región de
+    monitor fuera de los ficheros del box), se devuelven los que solapan algún
+    intento; sin este respaldo el evento quedaba sin ``source_files`` y no se
+    podía ni auditar ni medir su cobertura.
     """
     start_h = episode.start_h
     end_h = _region_end_h(episode)
@@ -335,6 +344,13 @@ def _files_for_episode(files: Sequence[SourceFile], episode: Episode) -> list[So
         f_end = f_start + 1.0  # los ficheros de origen son horarios
         if f_start < end_h and f_end > start_h:
             out.append(sf)
+    if out:
+        return out
+    for att in episode.attempts:
+        for sf in files:
+            f_start = sf.dt_unix / _SECONDS_PER_HOUR
+            if f_start < att.end_h and f_start + 1.0 > att.start_h:
+                out.append(sf)
     return out
 
 
@@ -514,6 +530,7 @@ def build_event_record(
     return {
         "event_id": "",  # se rellena en el orquestador
         "cohort": cohort,
+        "label_source": LABEL_SOURCE,
         "box": box,
         "source_files": [f.path.name for f in files],
         "source_tokens": sorted({f.token for f in files}),

@@ -75,6 +75,9 @@ logger = logging.getLogger(__name__)
 
 _SECONDS_PER_HOUR = 3600.0
 
+# Fase 1.6c (punto 5): de dónde sale la etiqueta de este índice.
+LABEL_SOURCE = "explicita"
+
 
 # ── Carga de tablas clínicas ─────────────────────────────────────────────────
 
@@ -459,6 +462,9 @@ def build_stay_events(stay: StayInputs) -> list[dict]:
         out.append({
             "event_id": f"mimic_{stay.stay_id}_event_{i + 1}",
             "cohort": "mimic",
+            # Fase 1.6c (punto 5): la etiqueta sale de un procedimiento
+            # documentado (PROCEDUREEVENTS_MV 225792 + eventos de extubación).
+            "label_source": LABEL_SOURCE,
             "subject_id": stay.subject_id,
             "hadm_id": stay.hadm_id,
             "icustay_id": stay.stay_id,

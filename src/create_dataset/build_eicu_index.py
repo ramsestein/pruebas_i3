@@ -70,7 +70,7 @@ def load_patients(eicu_dir: Path) -> pd.DataFrame:
     return pd.read_csv(
         eicu_dir / "patient.csv.gz",
         usecols=["patientunitstayid", "hospitalid", "unitdischargeoffset",
-                 "unitdischargestatus"],
+                 "unitdischargestatus", "uniquepid"],
     )
 
 

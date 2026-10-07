@@ -340,10 +340,33 @@ class TestIndexAndMerge:
         assert idx["total_events"] == 1
         ev = idx["events"][0]
         for key in ("t0_unix", "t0_source", "arrived_ventilated", "attempts",
-                    "end_reason", "labels", "source_files", "source_tokens"):
+                    "end_reason", "labels", "source_files", "source_tokens",
+                    "label_source", "box"):
             assert key in ev
         assert ev["arrived_ventilated"] is True
         assert ev["t0_source"] == "already_ventilated_at_record_start"
+        # Fase 1.6c (punto 5): origen de la etiqueta en las cohortes con señal.
+        assert ev["label_source"] == "senal"
+
+    def test_evento_sin_ficheros_en_la_region_usa_los_del_intento(self, tmp_path: Path):
+        """Fase 1.6c (punto 4): ningún evento debe quedarse sin ``source_files``.
+
+        Se fuerza una región de monitor posterior a los ficheros (episodio
+        recortado) y se comprueba que el respaldo por intento rellena la lista.
+        """
+        from src.create_dataset.build_signal_cases import _files_for_episode
+        from src.common.episodes import Attempt, Episode
+
+        make_box(tmp_path / "raw", "box2", [0, 1], [0])
+        boxes = scan_source_files(tmp_path / "raw", CLINIC_SPEC)
+        files = list(boxes.values())[0]
+        # Región de monitor 100 h después de los ficheros: no solapa ninguno.
+        ep = Episode(attempts=[Attempt(0, files[0].dt_unix / 3600.0,
+                                       files[0].dt_unix / 3600.0 + 1.0)],
+                     region_start_h=files[0].dt_unix / 3600.0,
+                     region_end_h=files[0].dt_unix / 3600.0 + 100.0)
+        out = _files_for_episode(files, ep)
+        assert out, "el respaldo debe devolver los ficheros del intento"
 
     def test_labels_d3_are_consistent_with_attempts(self, tmp_path: Path):
         """D3: un fallo a 48 h seguido de éxito debe etiquetarse así."""
