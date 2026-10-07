@@ -5,7 +5,7 @@
 # Todos los parámetros vienen de aquí.
 # =============================================================================
 
-version: "0.3.0"
+version: "0.4.0"
 
 # ── Rutas ──────────────────────────────────────────────────────────────────────
 paths:
@@ -274,18 +274,115 @@ fase1_6b:
   eicu:
     scenario: "e2_permeabilidad_nueva"
     n_hospitals: 53
-    hospital_ids: [63, 66, 67, 71, 73, 143, 146, 148, 152, 154, 157, 158, 165, 167,
-                   171, 175, 176, 181, 194, 227, 243, 244, 254, 259, 264, 266, 300,
-                   301, 303, 307, 310, 312, 331, 336, 337, 338, 345, 383, 384, 386,
-                   387, 388, 389, 390, 392, 394, 400, 405, 419, 420, 428, 458, 459]
+    hospital_ids:
+      [
+        63,
+        66,
+        67,
+        71,
+        73,
+        143,
+        146,
+        148,
+        152,
+        154,
+        157,
+        158,
+        165,
+        167,
+        171,
+        175,
+        176,
+        181,
+        194,
+        227,
+        243,
+        244,
+        254,
+        259,
+        264,
+        266,
+        300,
+        301,
+        303,
+        307,
+        310,
+        312,
+        331,
+        336,
+        337,
+        338,
+        345,
+        383,
+        384,
+        386,
+        387,
+        388,
+        389,
+        390,
+        392,
+        394,
+        400,
+        405,
+        419,
+        420,
+        428,
+        458,
+        459,
+      ]
   # Algoritmo de intervalos de ventilación invasiva a partir de anotaciones:
   # un ajuste abre/mantiene el episodio; un hueco > gap_h lo cierra.
   vent_intervals:
     gap_candidates_h: [2, 4, 6, 8]
-    annotation_strata_h: [1, 2, 4]   # submuestreo para emular la anotación de eICU
-    gap_h: 8                        # elegido en MIMIC (ver reports/fase1_6b/calibracion_mimic.md)
+    annotation_strata_h: [1, 2, 4] # submuestreo para emular la anotación de eICU
+    gap_h: 8 # elegido en MIMIC (ver reports/fase1_6b/calibracion_mimic.md)
   mimic_cases_root: "datasets/mimic3wdb"
   reports_dir: "reports/fase1_6b"
+
+# ── Fase 1.6c: cohortes definitivas antes del dataset final ──────────────────
+# D14: eICU estrategia B = hospitales de la cohorte e2 (regla de permeabilidad
+# sin densidad) cuyo intervalo MEDIANO de anotación es <= 2 h.
+fase1_6c:
+  reports_dir: "reports/fase1_6c"
+  eicu_b:
+    scenario: "e2_permeabilidad_nueva + anotacion_mediana_le_2h"
+    n_hospitals: 27
+    hospital_ids:
+      [
+        67,
+        148,
+        152,
+        157,
+        171,
+        227,
+        254,
+        259,
+        264,
+        266,
+        301,
+        303,
+        307,
+        312,
+        336,
+        383,
+        384,
+        386,
+        387,
+        388,
+        389,
+        390,
+        392,
+        394,
+        405,
+        458,
+        459,
+      ]
+    max_annotation_median_min: 120
+  # D13: inclusión por núcleo mínimo (FC y SpO2 con >= 50 % de horas útiles).
+  # `vars_ok` (6 variables) es un INDICADOR de calidad, no un filtro.
+  d13:
+    core_variables: ["HR", "SpO2"]
+    min_coverage: 0.5
 
 # ── Reproducibilidad ──────────────────────────────────────────────────────────
 random_seed: 42

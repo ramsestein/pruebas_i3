@@ -1,0 +1,286 @@
+{
+  "index": "datasets\\eicu_collaborative\\cases_v0.4.0_aa142f35\\eicu_cases_index.json",
+  "regla": "cohorte e2 con anotación mediana <= 120 min",
+  "n_hospitals": 27,
+  "n_events": 9754,
+  "success_48h": {
+    "success": 7881,
+    "censored": 1873,
+    "causes": {
+      "transfer_ventilated": 607,
+      "terminal_extubation": 1106,
+      "death_at_vent": 63,
+      "trach": 97
+    }
+  },
+  "success_72h": {
+    "success": 7836,
+    "censored": 1918,
+    "causes": {
+      "transfer_ventilated": 630,
+      "terminal_extubation": 1127,
+      "death_at_vent": 63,
+      "trach": 98
+    }
+  },
+  "failure_events_48h": 1089,
+  "d13_incluidos": 9030,
+  "d13_pct": 92.6,
+  "vars_ok_50": 6890,
+  "vars_ok_80": 4939,
+  "vars_ok_50_pct": 70.6,
+  "cobertura_mediana_por_variable": {
+    "FiO2": 0.972,
+    "HR": 0.958,
+    "MAP": 0.947,
+    "PEEP": 0.934,
+    "RR": 0.938,
+    "SpO2": 0.955
+  },
+  "identificadores": {
+    "sin_patientunitstayid": 0,
+    "sin_uniquepid": 0,
+    "sin_hospital_id": 0
+  },
+  "por_hospital": [
+    {
+      "hospital_id": 458,
+      "events": 1416,
+      "region": "South",
+      "teaching": "f",
+      "beds_category": ">= 500",
+      "inter_adj_median_min": 60.0
+    },
+    {
+      "hospital_id": 264,
+      "events": 1411,
+      "region": "Midwest",
+      "teaching": "t",
+      "beds_category": ">= 500",
+      "inter_adj_median_min": 45.0
+    },
+    {
+      "hospital_id": 148,
+      "events": 724,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": "250 - 499",
+      "inter_adj_median_min": 110.0
+    },
+    {
+      "hospital_id": 157,
+      "events": 550,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": "250 - 499",
+      "inter_adj_median_min": 110.0
+    },
+    {
+      "hospital_id": 152,
+      "events": 504,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": "100 - 249",
+      "inter_adj_median_min": 105.0
+    },
+    {
+      "hospital_id": 307,
+      "events": 493,
+      "region": "South",
+      "teaching": "f",
+      "beds_category": "250 - 499",
+      "inter_adj_median_min": 102.0
+    },
+    {
+      "hospital_id": 390,
+      "events": 438,
+      "region": null,
+      "teaching": "f",
+      "beds_category": "250 - 499",
+      "inter_adj_median_min": 41.0
+    },
+    {
+      "hospital_id": 227,
+      "events": 400,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": "250 - 499",
+      "inter_adj_median_min": 60.0
+    },
+    {
+      "hospital_id": 388,
+      "events": 379,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": "100 - 249",
+      "inter_adj_median_min": 60.0
+    },
+    {
+      "hospital_id": 394,
+      "events": 367,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": "250 - 499",
+      "inter_adj_median_min": 60.0
+    },
+    {
+      "hospital_id": 336,
+      "events": 353,
+      "region": "Midwest",
+      "teaching": "f",
+      "beds_category": "100 - 249",
+      "inter_adj_median_min": 120.0
+    },
+    {
+      "hospital_id": 301,
+      "events": 348,
+      "region": "South",
+      "teaching": "f",
+      "beds_category": "100 - 249",
+      "inter_adj_median_min": 116.0
+    },
+    {
+      "hospital_id": 259,
+      "events": 341,
+      "region": "Midwest",
+      "teaching": "t",
+      "beds_category": "250 - 499",
+      "inter_adj_median_min": 60.0
+    },
+    {
+      "hospital_id": 171,
+      "events": 311,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": "100 - 249",
+      "inter_adj_median_min": 120.0
+    },
+    {
+      "hospital_id": 384,
+      "events": 248,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": "250 - 499",
+      "inter_adj_median_min": 60.0
+    },
+    {
+      "hospital_id": 387,
+      "events": 180,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": ">= 500",
+      "inter_adj_median_min": 46.0
+    },
+    {
+      "hospital_id": 459,
+      "events": 174,
+      "region": "South",
+      "teaching": "f",
+      "beds_category": "100 - 249",
+      "inter_adj_median_min": 60.0
+    },
+    {
+      "hospital_id": 386,
+      "events": 167,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": "100 - 249",
+      "inter_adj_median_min": 102.0
+    },
+    {
+      "hospital_id": 254,
+      "events": 162,
+      "region": "Midwest",
+      "teaching": "f",
+      "beds_category": null,
+      "inter_adj_median_min": 117.0
+    },
+    {
+      "hospital_id": 392,
+      "events": 153,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": "250 - 499",
+      "inter_adj_median_min": 60.0
+    },
+    {
+      "hospital_id": 383,
+      "events": 136,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": "100 - 249",
+      "inter_adj_median_min": 45.0
+    },
+    {
+      "hospital_id": 312,
+      "events": 126,
+      "region": "South",
+      "teaching": "f",
+      "beds_category": "100 - 249",
+      "inter_adj_median_min": 119.0
+    },
+    {
+      "hospital_id": 405,
+      "events": 88,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": "100 - 249",
+      "inter_adj_median_min": 26.0
+    },
+    {
+      "hospital_id": 266,
+      "events": 84,
+      "region": "Midwest",
+      "teaching": "f",
+      "beds_category": null,
+      "inter_adj_median_min": 30.0
+    },
+    {
+      "hospital_id": 389,
+      "events": 73,
+      "region": "West",
+      "teaching": "f",
+      "beds_category": "<100",
+      "inter_adj_median_min": 57.0
+    },
+    {
+      "hospital_id": 67,
+      "events": 68,
+      "region": "Midwest",
+      "teaching": "f",
+      "beds_category": null,
+      "inter_adj_median_min": 120.0
+    },
+    {
+      "hospital_id": 303,
+      "events": 60,
+      "region": null,
+      "teaching": "f",
+      "beds_category": null,
+      "inter_adj_median_min": 89.0
+    }
+  ],
+  "por_region": {
+    "Midwest": 6,
+    "West": 14,
+    "South": 5,
+    "desconocida": 2
+  },
+  "por_tamano": {
+    "desconocido": 4,
+    "100 - 249": 10,
+    "250 - 499": 9,
+    ">= 500": 3,
+    "<100": 1
+  },
+  "por_docencia": {
+    "f": 25,
+    "t": 2
+  },
+  "eventos_por_hospital": {
+    "min": 60,
+    "median": 311.0,
+    "max": 1416,
+    "mayor_peso_pct": 14.5
+  }
+}

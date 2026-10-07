@@ -60,6 +60,9 @@ logger = logging.getLogger(__name__)
 
 _MIN_PER_HOUR = 60.0
 
+# Fase 1.6c (punto 5): de dónde sale la etiqueta de este índice.
+LABEL_SOURCE = "anotaciones"
+
 # Estratos de anotación del hospital (min) -> estrato de calibración (h).
 STRATUM_BINS = ((0.0, 60.0, "le1h"), (60.0, 120.0, "1_2h"), (120.0, np.inf, "gt2h"))
 CALIB_STRATUM_BY_BIN = {"le1h": 1.0, "1_2h": 2.0, "gt2h": 4.0}
@@ -237,7 +240,11 @@ def build_eicu_events(
             "event_id": f"eicu_{pid}_event_1",
             "cohort": "eicu",
             "patientunitstayid": pid,
+            "uniquepid": (None if "uniquepid" not in meta.index
+                          or pd.isna(meta["uniquepid"]) else str(meta["uniquepid"])),
             "hospital_id": hospital_id,
+            # Fase 1.6c (punto 5): origen de la etiqueta.
+            "label_source": LABEL_SOURCE,
             "t0_minutes": round(t0_h * _MIN_PER_HOUR, 4),
             "t0_source": "first_invasive_adjustment",
             "gap_h": gap_h,
@@ -349,7 +356,13 @@ def run(config: dict, *, with_coverage: bool = True) -> dict:
         raise ValueError(
             "fase1_6b.vent_intervals.gap_h no está fijado: ejecuta antes "
             "scripts/verify/fase1_6b/calibrate_gap_mimic.py")
-    hospitals = set(int(h) for h in cfg.get("eicu", {}).get("hospital_ids", []))
+    # D14 (Fase 1.6c): la cohorte definitiva es eICU-B (hospitales de e2 con
+    # anotación mediana <= 2 h). Si aún no está definida, se usa la de la 1.6b.
+    cfg14 = config.get("fase1_6c", {}).get("eicu_b", {})
+    cohort_cfg = cfg14.get("hospital_ids") or cfg.get("eicu", {}).get("hospital_ids", [])
+    hospitals = set(int(h) for h in cohort_cfg)
+    cohort_source = ("fase1_6c.eicu_b" if cfg14.get("hospital_ids")
+                     else "fase1_6b.eicu")
     reports_dir = repo_root() / cfg.get("reports_dir", "reports/fase1_6b")
 
     out_dir, version = output_root(config)
@@ -374,6 +387,8 @@ def run(config: dict, *, with_coverage: bool = True) -> dict:
     summary["expected_label_error"] = {
         k: v for k, v in load_transferable_error(reports_dir).items()
     }
+    summary["cohort_source"] = cohort_source
+    summary["n_hospitals_cohort"] = len(hospitals)
     summary["version"] = version
     (out_dir / "eicu_cases_index.json").write_text(
         json.dumps(index, ensure_ascii=False), encoding="utf-8")
