@@ -326,11 +326,25 @@ eICU añade `uniquepid`; para los índices anteriores se completaron los campos 
 
 ## 7. Perfiles de disponibilidad
 
-(pendiente de las reconstrucciones; eICU-B ya está)
+Con los índices v0.4.0 (`perfiles.json`), perfil dominante y nº de combinaciones
+distintas por cohorte:
 
-- **eICU-B**: perfil dominante = las **6 variables** presentes (70.6 %), después
-  `HR+SpO2+MAP+RR` (7.9 %, sin FiO2/PEEP), `HR+SpO2+MAP+FiO2+PEEP` (7.0 %) y
-  `HR+SpO2+MAP+RR+FiO2` (5.6 %).
+- **MIMIC**: las **6 variables** en el **88.4 %** (28 combinaciones distintas);
+  después `HR+SpO2+MAP+FiO2+PEEP` 6.1 % y `HR+SpO2+RR+FiO2+PEEP` 2.4 %.
+- **eICU-B**: las **6 variables** en el **72.0 %** (31 combinaciones); después
+  `HR+SpO2+MAP+RR` 8.1 % (sin FiO2/PEEP), `HR+SpO2+MAP+FiO2+PEEP` 7.2 % y
+  `HR+SpO2+MAP+RR+FiO2` 5.9 %.
+- **VitalDB**: `HR+SpO2+MAP+RR` **30.2 %**, `HR+SpO2+MAP+RR+FiO2+PEEP` 22.9 %,
+  `(ninguna)` 19.8 % (11 combinaciones). La mitad de los eventos no llegan a las
+  6 variables: FiO2/PEEP se registran en poco más de un tercio.
+- **Clínic**: `(ninguna)` 100 % — **no válido**, es el índice antiguo con el bug
+  de unidades; queda pendiente de la reconstrucción.
+
+Lo importante para la Fase 2: el modelo usará **ocultamiento aleatorio** de
+variables, así que interesa conservar esta disponibilidad **real** por evento
+(combinaciones heterogéneas, no una tabla rellenada). MIMIC/eICU-B tienen una
+mayoría "completa" pero con una cola larga de perfiles parciales (28 y 31
+combinaciones); VitalDB es mucho más disperso.
 
 ## 8. Tabla final
 
