@@ -31,6 +31,7 @@ from src.create_dataset.mimic_itemids import (
     all_monitor_itemids,
     all_vent_marker_itemids,
     itemid_to_concept,
+    itemids_for,
     iter_all_itemids,
     label_of,
 )
@@ -72,6 +73,39 @@ class TestItemids:
         """Control: 224696 es 'Plateau Pressure' y NO debe mapear a PIP."""
         assert 224696 not in all_vent_marker_itemids()
         assert label_of(224695) == "Peak Insp. Pressure"
+
+
+class TestItemidsFase16c:
+    """Catálogo revisado en la Fase 1.6c (punto 1).
+
+    Estos asserts fallan con el catálogo anterior: faltaba el itemid
+    canónico de PEEP en MetaVision y el volumen tidal observado de CareVue.
+    """
+
+    def test_peep_incluye_metavision(self):
+        """Sin 220339 ('PEEP set') la PEEP solo aparecía en el 39.6 % de los
+        eventos de MIMIC (con el itemid, en el 98.2 %)."""
+        peep = set(itemids_for("PEEP"))
+        for iid in (505, 686, 224700, 220339):
+            assert iid in peep, f"falta el itemid {iid} de PEEP"
+        assert label_of(220339) == "PEEP set"
+        assert label_of(505) == "PEEP"
+        assert label_of(686) == "Total PEEP Level"
+
+    def test_tidal_volume_observado_incluye_carevue(self):
+        assert 682 in set(itemids_for("TV_observed"))
+        assert label_of(682) == "Tidal Volume (Obser)"
+        assert 681 in set(itemids_for("TV_observed"))
+
+    def test_rr_del_ventilador_es_solo_la_total(self):
+        """La FR del ventilador es 224690 ('Respiratory Rate (Total)'):
+        220210/618 son la FR del monitor y 224688 la FR programada, y
+        mezclarlas confundiría tres variables distintas."""
+        assert set(itemids_for("RR_V")) == {224690}
+        assert label_of(224690) == "Respiratory Rate (Total)"
+        mapping = itemid_to_concept()
+        for iid in (220210, 618, 224688):
+            assert mapping.get(iid) != "RR_V"
 
 
 # ── Agregación de CHARTEVENTS ────────────────────────────────────────────────

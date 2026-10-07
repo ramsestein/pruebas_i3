@@ -21,18 +21,26 @@ MIMIC_CHART_ITEMIDS: dict[str, tuple[tuple[int, str], ...]] = {
     # --- Marcadores ESPECÍFICOS de ventilación invasiva (D6, corrección 2) ---
     # "Ventilator Mode" (CareVue) / "Ventilator Mode" (Metavision)
     "VentMode": ((720, "Ventilator Mode"), (223849, "Ventilator Mode")),
-    # "PEEP" (CareVue) / "Total PEEP Level" (CareVue) / "Total PEEP Level" (Metavision)
-    "PEEP": ((505, "PEEP"), (686, "Total PEEP Level"), (224700, "Total PEEP Level")),
+    # "PEEP" (CareVue) / "PEEP Set" (CareVue) / "Total PEEP Level" (CareVue) /
+    # "PEEP set" (Metavision) / "Total PEEP Level" (Metavision).
+    # CORRECCIÓN Fase 1.6c (punto 1): faltaban 506 y 220339, que es el itemid
+    # CANÓNICO de PEEP en MetaVision; sin él la cobertura de PEEP caía al 40 %.
+    "PEEP": ((505, "PEEP"), (506, "PEEP Set"), (686, "Total PEEP Level"),
+             (224700, "Total PEEP Level"), (220339, "PEEP set")),
     # Volumen tidal PAUTADO: "Tidal Volume (Set)" / "Tidal Volume (set)"
     "TV_set": ((683, "Tidal Volume (Set)"), (224684, "Tidal Volume (set)")),
     # Volumen tidal OBSERVADO: "Tidal Volume" / "Tidal Volume (observed)" /
-    # "Tidal Volume (spontaneous)"
-    "TV_observed": ((681, "Tidal Volume"), (224685, "Tidal Volume (observed)"),
+    # "Tidal Volume (spontaneous)" / "Tidal Volume (Obser)" (CareVue)
+    "TV_observed": ((681, "Tidal Volume"), (682, "Tidal Volume (Obser)"),
+                    (224685, "Tidal Volume (observed)"),
                     (224686, "Tidal Volume (spontaneous)")),
     # "PIP" (CareVue) / "Peak Insp. Pressure" (CareVue) / "Peak Insp. Pressure" (Metavision).
     # OJO: 224696 ("Plateau Pressure") NO es PIP.
     "PIP": ((507, "PIP"), (535, "Peak Insp. Pressure"), (224695, "Peak Insp. Pressure")),
-    # FR TOTAL del ventilador (no la del monitor): "Respiratory Rate (Total)"
+    # FR TOTAL del ventilador (no la del monitor): "Respiratory Rate (Total)".
+    # Fase 1.6c (punto 1): se mantienen FUERA 220210/618 ("Respiratory Rate" del
+    # monitor) para no mezclar dos variables distintas; 224688 es la FR PAUTADA
+    # del ventilador y tampoco es la FR total medida.
     "RR_V": ((224690, "Respiratory Rate (Total)"),),
     # --- NO marcan ventilación ---
     # "FIO2" / "Inspired O2 Fraction": se anota también con oxigenoterapia (corrección 2).
