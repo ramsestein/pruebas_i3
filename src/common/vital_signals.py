@@ -28,6 +28,9 @@ import vitaldb
 
 from .episodes import Span
 from .monitor_observation import physiological_extent, range_for_track
+from .track_aliases import HR as _HR_ALIASES
+from .track_aliases import MAP as _MAP_ALIASES
+from .track_aliases import SPO2 as _SPO2_ALIASES
 
 logger = logging.getLogger(__name__)
 
@@ -55,11 +58,11 @@ MONITOR_NUM_TRACKS: tuple[str, ...] = (
     "Intellivue/PLETH_SAT_O2", # "SpO2" (%)
 )
 
-# HR y SpO2 (conjuntos concretos para D4).
-HR_TRACKS: tuple[str, ...] = (
-    "Intellivue/ECG_HR", "Intellivue/HR", "Intellivue/PLETH_HR",
-)
-SPO2_TRACKS: tuple[str, ...] = ("Intellivue/PLETH_SAT_O2",)
+# HR y SpO2 (conjuntos concretos para D4). Los alias son los MISMOS que usan el
+# adaptador y la cobertura (tabla única en ``track_aliases.py``).
+HR_TRACKS: tuple[str, ...] = _HR_ALIASES
+SPO2_TRACKS: tuple[str, ...] = _SPO2_ALIASES
+MAP_TRACKS: tuple[str, ...] = _MAP_ALIASES
 
 # Pistas de monitor de onda (su presencia indica monitor activo; D2).
 MONITOR_WAVE_TRACKS: tuple[str, ...] = (
@@ -361,12 +364,14 @@ def read_death_series(
     return out
 
 
-# Pistas para la cobertura de variables (Fase 1.5, punto 2).
+# Pistas para la cobertura de variables (Fase 1.5, punto 2). Los alias salen de
+# la tabla única (``track_aliases.py``) para que la cobertura de FC y MAP se
+# resuelvan con las MISMAS listas que el adaptador y la observación fisiológica.
 COVERAGE_TRACKS: dict[str, tuple[str, ...]] = {
-    "HR": ("Intellivue/ECG_HR", "Intellivue/HR", "Intellivue/PLETH_HR"),
-    "SpO2": ("Intellivue/PLETH_SAT_O2",),
-    "MAP": ("Intellivue/ART_MEAN", "Intellivue/ABP_MEAN", "Intellivue/NIBP_MEAN"),
-    "RR": ("Intellivue/VENT_RR",),
+    "HR": HR_TRACKS,
+    "SpO2": SPO2_TRACKS,
+    "MAP": MAP_TRACKS,
+    "RR": ("Intellivue/VENT_RR",),  # la FR del ventilador (no la del monitor)
     "FiO2": ("Intellivue/FIO2",),
     "PEEP": ("Intellivue/PEEP_CMH2O",),
 }
@@ -377,6 +382,7 @@ def coverage_fractions(
     vent_spans_h: Sequence[tuple[float, float]],
     *,
     max_age_h: float | None = None,
+    step_min: float = 1.0,
 ) -> dict[str, float]:
     """Cobertura por variable (D8) de series dadas en **horas desde t0**.
 
@@ -384,6 +390,10 @@ def coverage_fractions(
     como los tramos ventilados. Olvidar esta conversión deja la rejilla en
     pasos de 60 h y la cobertura medida deja de tener sentido (Fase 1.6b,
     punto 4).
+
+    ``step_min`` (Fase 1.6d, punto 3): la rejilla de cobertura es **por minuto**
+    (no por hora) para que dos variables distintas no colapsen al mismo valor
+    por cuantización. "FC y MAP no pueden dar valores idénticos".
     """
     from src.common.eicu_levels import LOCF_MAX_AGE_H, hourly_coverage
 
@@ -393,7 +403,7 @@ def coverage_fractions(
     for var, (times, values) in series.items():
         times_min = [float(t) * 60.0 for t in times]
         out[var] = hourly_coverage(times_min, list(values), spans_min,
-                                   max_age_h=age)
+                                   max_age_h=age, step_min=step_min)
     return out
 
 

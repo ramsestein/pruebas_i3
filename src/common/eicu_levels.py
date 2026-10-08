@@ -218,11 +218,18 @@ def hourly_coverage(
     vent_spans_min: Sequence[tuple[float, float]],
     *,
     max_age_h: float = LOCF_MAX_AGE_H,
+    step_min: float = 60.0,
 ) -> float:
-    """Fracción de horas ventiladas con un valor útil (LOCF <= ``max_age_h``).
+    """Fracción de la rejilla ventilada con un valor útil (LOCF <= ``max_age_h``).
 
     ``times_min`` / ``values``: observaciones (min desde la admisión).
     ``vent_spans_min``: intervalos ventilados ``(inicio, fin)`` (min).
+    ``step_min``: paso de la rejilla de cobertura. El valor por defecto (60 min)
+    mantiene la semántica D8 de "horas útiles"; las cohortes de señal usan
+    ``step_min=1`` (minutos) para que la cobertura **no colapse** variables
+    distintas: con una rejilla de 60 min, dos variables presentes en las mismas
+    horas dan el mismo valor aunque sus tramos reales difieran (Fase 1.6d,
+    punto 3: "FC y MAP no pueden dar valores idénticos").
     """
     if not vent_spans_min:
         return 0.0
@@ -233,14 +240,15 @@ def hourly_coverage(
     order = np.argsort(t, kind="stable")
     t, v = t[order], v[order]
     max_age_min = max_age_h * 60.0
+    step = float(step_min) if step_min and step_min > 0 else 60.0
 
     n_total = 0
     n_valid = 0
     for start, end in vent_spans_min:
         if not (np.isfinite(start) and np.isfinite(end)) or end < start:
             continue
-        # Rejilla horaria [start, start+60, ..., end].
-        grid = np.arange(float(start), float(end) + 1e-9, 60.0)
+        # Rejilla [start, start+step, ..., end].
+        grid = np.arange(float(start), float(end) + 1e-9, step)
         for g in grid:
             n_total += 1
             if t.size == 0:

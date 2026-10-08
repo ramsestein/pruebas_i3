@@ -34,13 +34,21 @@ PHYSIOLOGICAL_RANGES: dict[str, tuple[float, float]] = {
 
 
 def range_for_track(track_name: str) -> Optional[tuple[float, float]]:
-    """Rango fisiológico de una pista, o ``None`` si no es una constante vital."""
-    low = track_name.lower()
-    if "sat_o2" in low or "spo2" in low:
-        return SPO2_PHYSIOLOGICAL_RANGE
-    if "hr" in low:
-        return HR_PHYSIOLOGICAL_RANGE
-    return None
+    """Rango fisiológico de una pista, o ``None`` si no es una constante vital.
+
+    Usa la **tabla única de alias** (``track_aliases.py``) que comparten la
+    cobertura por variable y los adaptadores: nada de heurísticas de subcadena
+    (p. ej. ``"hr" in nombre``), que podrían asignar el rango de FC a una pista
+    que no lo es. Acepta el nombre de pista completo (``Intellivue/ECG_HR``) y
+    también la variable (``HR``).
+    """
+    from src.common.track_aliases import variable_of_track
+
+    var = variable_of_track(track_name) or (
+        track_name if track_name in PHYSIOLOGICAL_RANGES else None)
+    if var is None:
+        return None
+    return PHYSIOLOGICAL_RANGES.get(var)
 
 
 def physiological_mask(
