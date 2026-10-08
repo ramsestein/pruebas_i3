@@ -148,15 +148,24 @@ Solución implementada (`src/create_dataset/build_signal_cases.py` +
 - `--boxes` y `--out-dir`: el builder puede reconstruir **un box** por
   invocación (`filter_boxes`).
 - `merge_partial_indices`: fusiona los índices parciales por box.
-- El driver lanza **un subproceso por box con timeout** (`--box-timeout`),
-  **reutiliza** los parciales ya hechos (reanudable) y **salta** el box que se
-  cuelga, de modo que un fallo cuesta un box (27,3 GB como máximo), no la
-  reconstrucción completa.
+- El driver lanza **un subproceso por box con timeout proporcional al tamaño**
+  (`max(--box-timeout, GB × --timeout-per-gb)`, por defecto 240 s/GB) y
+  **reintenta** el box (`--retries`, por defecto 3) en lugar de saltarlo,
+  **reutilizando** los parciales ya hechos (reanudable). Un box solo queda
+  `pendiente` si agota todos los reintentos, y entonces el índice se escribe con
+  nombre `..._INCOMPLETO.json` y el proceso sale con código 2 (nunca un índice
+  incompleto disfrazado de definitivo).
 
 ```
 python scripts/verify/fase1_6d/build_cohort_resumable.py --cohort clinic \
-    --workers 4 --box-timeout 2700
+    --workers 4 --retries 3
 ```
+
+Primer resultado: 13 boxes; box10 (8,7 GB, 828 s), box11 (1,3 GB, 137 s),
+box12 (10,5 GB, 1 343 s), box13 (5,9 GB, 506 s) y box2 (1,7 GB, 283 s)
+reconstruidos. **box14 (27,3 GB) agotó el primer timeout de 2 700 s** — era un
+**falso positivo por lentitud** (~10 MB/s × 27,3 GB ≈ 2 700 s), no un cuelgue; se
+recupera con el timeout proporcional y los reintentos.
 
 > **Pendiente:** no ejecutada en esta sesión. Con el disco `D:` medido a
 > ~67 MB/s (ver Limitaciones) es viable: 263,8 GB en 15 291 `.vital`, ≈1–2 h de
