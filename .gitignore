@@ -33,7 +33,6 @@ src/vitalfileAPI_test.py
 *.npz
 *.parquet
 *.csv
-*.png
 *.pt
 *.log
 !*.keep

@@ -13,6 +13,11 @@
 | `respiraciones_40_PEEP5_FiO2_40.txt` | Tabla de 40 respiraciones (Vb_frac, ratio, dAIC, Pel(Vb)−PEEP) + resumen |
 | `respiraciones_40_PEEP10_FiO2_100.txt` | Íd. para el paciente con PEEP 10 |
 | `seleccion_casos_FiO2_PEEP.txt` | Escaneo de FiO₂/PEEP sobre 1.277 ficheros-hora con onda; de ahí salió el caso ARDS |
+| `tests_output.txt` | Salida completa de los tests 1–4 (ambos pacientes) |
+| `test1_scatter_{ards,ctrl}.png` | TEST 1: Vb vs volumen en el pico de flujo |
+| `test2_decelerante_{ards,ctrl}.png` | TEST 2: histogramas de Vb_frac, método original vs sólo fase decelerante |
+| `test3_histeresis_ards.png` | TEST 3: ramas inspiratoria y espiratoria superpuestas |
+| `test4_sensibilidad_R_{ards,ctrl}.png` | TEST 4: ratio y Vb_frac frente a perturbaciones de R |
 
 ## Datos disponibles en `D:\data` (Etapa 0)
 
@@ -51,3 +56,50 @@ Validación contra los numéricos del propio monitor (misma hora): VT integrado 
 5. PIP medido sale ~2 cmH₂O alto (el máximo incluye el sobrepico inicial); mejor usar la meseta.
 
 > Nota: `.gitignore` ignora `*.png`. Si quieres versionar las figuras: `git add -f test_young_results/*.png`.
+
+## Tests 1–4: ¿la rodilla es un artefacto del transitorio?
+
+### TEST 1 — ¿La rodilla es el pico de flujo?
+
+`r(Vb, V_pico_flujo) = 0.089` (ARDS) y `−0.221` (control), pero **`V_pico` casi no varía** (ARDS: med 65 mL, rango 62–70), así que *r* no es informativo. La métrica útil es la diferencia:
+
+| | ARDS | control |
+|---|---|---|
+| `Vb − V_pico` mediana | **+10,4 mL** | −9,8 mL |
+| `\|Vb − V_pico\| < 25 mL` | **34/40 (85 %)** | 25/40 (62 %) |
+
+Las 6 respiraciones fuera del paquete (idx 0, 2, 26, 29, 31, 38; 36–71 mL de diferencia) son **exactamente** las que formaban el segundo modo de Vb_frac (0,44–0,48). → En las 34 restantes **la rodilla está clavada al pico de flujo**.
+
+### TEST 2 — Sólo fase decelerante (R por modelo lineal, sin E₂)
+
+| | ARDS | control |
+|---|---|---|
+| Vb_frac original → decelerante | 0,26 → **0,36** (p10 0,08 / p90 0,74) | 0,18 → 0,32 (p10 0,21 / p90 0,38) |
+| ratio original → decelerante | 0,59 → 0,62 | **1,21 → 0,49 (el signo se invierte)** |
+| R con E₂ vs R lineal | 15,4 → 13,2 | 14,8 → 11,3 |
+
+- **El codo de ~0,45 NO emerge sistemáticamente**: Vb salta entre ~20, ~150 y ~250 mL.
+- **R estaba inflada un 15–25 %** por el término E₂ → **circularidad confirmada**.
+- En el control el signo **cambia de rigidización a reclutamiento** sólo por quitar el transitorio.
+
+### TEST 3 — Rama espiratoria
+
+- Área de histéresis: **0,48 cmH₂O·L ≈ 47 mJ** (p10 0,42 / p90 0,55).
+- Al mismo volumen, la rama espiratoria queda **1,95 cmH₂O por debajo** de la inspiratoria.
+- Ambas ramas son cóncavas, pero **la inspiratoria bastante más** → parte de la concavidad es del tejido y parte del transitorio/viscoelasticidad.
+
+### TEST 4 — Sensibilidad a R
+
+| R | −30 % | −20 % | −10 % | 0 | +10 % | +20 % | +30 % |
+|---|---|---|---|---|---|---|---|
+| ratio mediano | 0,23 | 0,30 | 0,41 | **0,59** | **1,00** | 3,23 | −5,89 |
+| Vb_frac mediano | 0,33 | 0,33 | 0,34 | 0,26 | 0,24 | 0,20 | 0,20 |
+
+**El ratio cruza 1 (cambio de signo) entre 0 % y +10 %.** → Ni el signo ni la intensidad de la "deflexión" son identificables: los determina el valor supuesto de R, no los datos. La **posición** (Vb_frac) sí es más estable (0,20–0,34).
+
+### Veredicto
+
+1. La rodilla **está anclada al pico de flujo** en el 85 % de las respiraciones → tu sospecha del transitorio se confirma.
+2. Pero **quitar el transitorio no revela una rodilla mejor**: la desestabiliza (Vb salta por todo el rango). El codo de 0,45 no reaparece.
+3. El **índice ratio es tan sensible a R que el signo no es identificable**; cualquier "reclutamiento" o "rigidización" reportado con este método es una afirmación sobre R, no sobre el pulmón.
+4. Lo que **sí** parece robusto: la concavidad de Pel(V) (compliance creciente con V) y una histéresis de ~47 mJ.
