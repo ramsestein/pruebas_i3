@@ -1,0 +1,100 @@
+{
+  "calibracion_mimic": {
+    "chosen_gap_h": 10.0,
+    "candidates": [
+      {
+        "gap_h": 8.0,
+        "eligible": true,
+        "worst_stratum_score": 0.5064390783551962
+      },
+      {
+        "gap_h": 10.0,
+        "eligible": true,
+        "worst_stratum_score": 0.562067331741163
+      },
+      {
+        "gap_h": 12.0,
+        "eligible": true,
+        "worst_stratum_score": 0.5713683282876686
+      }
+    ],
+    "g8": {
+      "gap_h": 8.0,
+      "f1_reintub_1h": 0.39795918367346944,
+      "label48_agreement_1h": 85.24229074889868,
+      "start_pct_2h_1h": 91.93166615210457,
+      "end_pct_2h_1h": 56.78707419985592,
+      "f1_reintub_2h": 0.3944046400545889,
+      "label48_agreement_2h": 83.84361233480176,
+      "start_pct_2h_2h": 91.8693247051456,
+      "end_pct_2h_2h": 52.53105103851372
+    },
+    "g10": {
+      "gap_h": 10.0,
+      "f1_reintub_1h": 0.4398073836276083,
+      "label48_agreement_1h": 85.24229074889868,
+      "start_pct_2h_1h": 91.52350581215924,
+      "end_pct_2h_1h": 56.36251414463532,
+      "f1_reintub_2h": 0.43777867855695174,
+      "label48_agreement_2h": 83.8546255506608,
+      "start_pct_2h_2h": 91.45718160008344,
+      "end_pct_2h_2h": 52.12266611035778
+    }
+  },
+  "eicu_b": {
+    "old_index": "datasets\\eicu_collaborative\\cases_v0.4.0_aa142f35\\eicu_cases_index.json",
+    "new_index": "datasets\\eicu_collaborative\\cases_v0.5.0_eac1eb35\\eicu_cases_index.json",
+    "gap_old": 8.0,
+    "gap_new": 10.0,
+    "old": {
+      "n": 9754,
+      "success_48h": 7419,
+      "censored_48h": 2335,
+      "failure_events": 1093,
+      "d13": 9222,
+      "end_reason": {
+        "extubation_observed": 7948,
+        "transfer_ventilated": 1358,
+        "death_at_vent": 448
+      }
+    },
+    "new": {
+      "n": 9753,
+      "success_48h": 7523,
+      "censored_48h": 2230,
+      "failure_events": 688,
+      "d13": 9340,
+      "end_reason": {
+        "extubation_observed": 7167,
+        "terminal_extubation": 1141,
+        "transfer_ventilated": 900,
+        "death_at_vent": 432,
+        "tracheostomy": 113
+      }
+    },
+    "only_old": 7,
+    "only_new": 6,
+    "n_changed_label": 129,
+    "changed_label_kind": {
+      "censored_transfer_ventilated->successful_extubation": 105,
+      "censored_death_at_vent->censored_terminal_extubation": 12,
+      "successful_extubation->censored_transfer_ventilated": 7,
+      "successful_extubation->censored_terminal_extubation": 2,
+      "censored_death_at_vent->successful_extubation": 1,
+      "censored_trach->successful_extubation": 1,
+      "censored_terminal_extubation->successful_extubation": 1
+    },
+    "examples_changed": [
+      "eicu_3329429_event_1",
+      "eicu_1649733_event_1",
+      "eicu_1713886_event_1",
+      "eicu_1709887_event_1",
+      "eicu_1709295_event_1",
+      "eicu_1597947_event_1",
+      "eicu_2180241_event_1",
+      "eicu_1659893_event_1",
+      "eicu_1339775_event_1",
+      "eicu_1694610_event_1"
+    ]
+  }
+}

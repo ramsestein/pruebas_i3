@@ -243,7 +243,10 @@ def _cap_shifted_ends(spans, discharge_abs_h: float):
     intento siguiente: son estados imposibles, así que se recortan.
     """
     limits = [sp.start_h for sp in spans[1:]] + [discharge_abs_h]
-    return [Span(sp.start_h, min(sp.end_h, limit))
+    # El fin corregido no puede quedar antes del inicio (si el límite, p. ej. el
+    # alta, es anterior al inicio de un tramo, el tramo se colapsa a duración 0
+    # en vez de invertirse).
+    return [Span(sp.start_h, max(sp.start_h, min(sp.end_h, limit)))
             for sp, limit in zip(spans, limits)]
 
 
@@ -285,14 +288,18 @@ def build_eicu_events(
             continue
 
         # Los offsets de eICU vienen en MINUTOS; el algoritmo usa HORAS.
-        spans = intervals_from_annotations(
-            [float(a) / _MIN_PER_HOUR for a in adj], gap_h, keep_singletons=False)
-        if not spans:
-            continue
+        # Se descartan los ajustes posteriores al alta: son anotaciones
+        # espurias que caen fuera de la estancia (aparecen al ampliar G y
+        # creaban tramos que empezaban después del alta).
         discharge = float(meta["unitdischargeoffset"])
         died = str(meta["unitdischargestatus"]).strip().lower() == "expired"
-        t0_h = spans[0].start_h
         discharge_abs_h = discharge / _MIN_PER_HOUR
+        adj_h = [float(a) / _MIN_PER_HOUR for a in adj
+                 if float(a) <= discharge + 1e-6]
+        spans = intervals_from_annotations(adj_h, gap_h, keep_singletons=False)
+        if not spans:
+            continue
+        t0_h = spans[0].start_h
         if discharge_abs_h <= t0_h:
             continue
 
@@ -489,24 +496,37 @@ def run(config: dict, *, with_coverage: bool = True) -> dict:
     eicu_dir = config_path(config, "paths", "eicu_dir")
     cfg = config.get("fase1_6b", {})
     gaps = cfg.get("vent_intervals", {})
-    gap_h = gaps.get("gap_h")
+    # Fase 1.6d (punto 1): G = 10 h si está fijado en `fase1_6d`. Si no, el de la
+    # 1.6b (G = 8 h).
+    gap_h = (config.get("fase1_6d", {}).get("vent_intervals", {}).get("gap_h")
+             or gaps.get("gap_h"))
     if gap_h is None:
         raise ValueError(
             "fase1_6b.vent_intervals.gap_h no está fijado: ejecuta antes "
             "scripts/verify/fase1_6b/calibrate_gap_mimic.py")
     # D14 (Fase 1.6c): la cohorte definitiva es eICU-B (hospitales de e2 con
     # anotación mediana <= 2 h). Si aún no está definida, se usa la de la 1.6b.
+    # Fase 1.6d: los 27 hospitales de eICU-B se pueden redefinir en `fase1_6d`.
     cfg14 = config.get("fase1_6c", {}).get("eicu_b", {})
-    cohort_cfg = cfg14.get("hospital_ids") or cfg.get("eicu", {}).get("hospital_ids", [])
+    cfg16d = config.get("fase1_6d", {}).get("eicu_b", {})
+    cohort_cfg = (cfg16d.get("hospital_ids") or cfg14.get("hospital_ids")
+                  or cfg.get("eicu", {}).get("hospital_ids", []))
     hospitals = set(int(h) for h in cohort_cfg)
-    cohort_source = ("fase1_6c.eicu_b" if cfg14.get("hospital_ids")
-                     else "fase1_6b.eicu")
+    if cfg16d.get("hospital_ids"):
+        cohort_source = "fase1_6d.eicu_b"
+    elif cfg14.get("hospital_ids"):
+        cohort_source = "fase1_6c.eicu_b"
+    else:
+        cohort_source = "fase1_6b.eicu"
     reports_dir = repo_root() / cfg.get("reports_dir", "reports/fase1_6b")
     # Fase 1.6c: la calibración vive en reports/fase1_6c (con respaldo 1.6b) y su
     # corrección del fin por estrato solo se aplica si el veredicto la aprueba.
+    # Fase 1.6d: se prefiere reports/fase1_6d (calibración con G = 10).
     reports_16c = repo_root() / config.get("fase1_6c", {}).get(
         "reports_dir", "reports/fase1_6c")
-    calib = calib_path_for(reports_16c, reports_dir)
+    reports_16d = repo_root() / config.get("fase1_6d", {}).get(
+        "reports_dir", "reports/fase1_6d")
+    calib = calib_path_for(reports_16d, reports_16c, reports_dir)
     correction = load_end_correction(calib)
     end_shift = (correction["shifts_por_estrato"] if correction["aplicada"] else {})
 

@@ -292,3 +292,33 @@ class TestCorreccionDelFin:
         att = idx["events"][0]["attempts"]
         assert len(att) == 2
         assert att[0]["vent_end_h"] == att[1]["vent_start_h"] == 4.0
+
+
+class TestAnotacionesFueraDeLaEstancia:
+    """Fase 1.6d (punto 1): al ampliar G aparecían tramos que empezaban después
+    del alta. Se descartan los ajustes posteriores al alta y el recorte del fin
+    corregido nunca invierte un intervalo.
+    """
+
+    def test_ajuste_posterior_al_alta_se_ignora(self):
+        patients = _patients([(1, 10, 1000, "Alive")])
+        # Ajuste a 5000 min (muy después del alta a 1000 min).
+        idx, _ = build_eicu_events(
+            patients, {1: [0.0, 60.0, 5000.0]}, {}, {},
+            gap_h=10.0, with_coverage=False)
+        ev = idx["events"][0]
+        assert len(ev["attempts"]) == 1
+        assert ev["attempts"][-1]["vent_end_h"] <= 1000 / 60.0 + 1e-6
+        assert ev["n_attempts"] == 1
+
+    def test_la_correccion_no_invierte_el_intervalo(self):
+        patients = _patients([(1, 10, 600, "Alive")])
+        meta = {10: {"inter_adj_median_min": 90.0}}  # estrato 1_2h
+        # Un tramo después del alta sin filtrar rompería _cap_shifted_ends.
+        idx, _ = build_eicu_events(
+            patients, {1: [0.0, 60.0, 5000.0]}, {}, {}, gap_h=10.0,
+            hospital_meta=meta, with_coverage=False,
+            end_shift_by_stratum={"1_2h": 4.0})
+        for att in idx["events"][0]["attempts"]:
+            assert att["vent_end_h"] >= att["vent_start_h"]
+            assert att["vent_end_h"] <= 600 / 60.0 + 1e-6
