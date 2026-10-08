@@ -5,7 +5,7 @@
 # Todos los parámetros vienen de aquí.
 # =============================================================================
 
-version: "0.4.0"
+version: "0.5.0"
 
 # ── Rutas ──────────────────────────────────────────────────────────────────────
 paths:
@@ -383,6 +383,46 @@ fase1_6c:
   d13:
     core_variables: ["HR", "SpO2"]
     min_coverage: 0.5
+
+# ── Fase 1.6d: cierre definitivo de cohortes ─────────────────────────────────
+fase1_6d:
+  reports_dir: "reports/fase1_6d"
+  # Punto 1: G = 10 h para el algoritmo de intervalos desde anotaciones.
+  vent_intervals:
+    gap_h: 10
+  eicu_b:
+    # Mismos 27 hospitales que la 1.6c, reconstruidos con G = 10.
+    hospital_ids:
+      [
+        67, 148, 152, 157, 171, 227, 254, 259, 264, 266, 301, 303, 307, 312,
+        336, 383, 384, 386, 387, 388, 389, 390, 392, 394, 405, 458, 459,
+      ]
+    max_annotation_median_min: 120
+  # Punto 4: variables derivadas de las ondas del ventilador.
+  wave_derived:
+    fs_hz: 125.0
+    # Margen de acuerdo (absoluto; TV relativo) y sesgo máximo admitido.
+    agreement_margin: { PIP: 2.0, PEEP: 2.0, RR: 2.0, TV: 0.10 }
+    max_abs_bias: { PIP: 1.0, PEEP: 1.0, RR: 1.0, TV: 0.05 }
+    min_fraction_within: 0.80
+  # Punto 7: particiones propuestas (NO se aplican en la Fase 1.6d).
+  partitions:
+    mimic_test_fraction: 0.15
+    mimic_folds: 5
+    eicu_test_hospitals: [67, 171, 227, 301, 303, 336, 392, 405]
+    eicu_folds: 5
+    clinic_test_fraction: 0.40
+    clinic_train_blocks: 2
+  # Punto 6: vocabulario único de `end_reason` en las 4 cohortes.
+  end_reasons:
+    [
+      extubation_observed,
+      transfer_ventilated,
+      death_at_vent,
+      terminal_extubation,
+      tracheostomy,
+      end_of_record,
+    ]
 
 # ── Reproducibilidad ──────────────────────────────────────────────────────────
 random_seed: 42

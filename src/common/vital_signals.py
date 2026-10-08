@@ -434,6 +434,64 @@ def read_coverage_series(
     return out
 
 
+def read_track_series(
+    paths: Sequence[str | Path],
+    track_names: Sequence[str],
+    *,
+    t0_unix: float | None = None,
+) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    """Series crudas ``{pista: (t, valores)}`` leyendo los ``.vital`` dados.
+
+    Reconstruye la rejilla temporal de las **ondas** (``type == 1``): cada
+    registro ``dt`` es el inicio de un bloque de ``len(val)`` muestras a
+    ``srate`` Hz. Las pistas numéricas se devuelven como un punto por registro.
+
+    ``t0_unix`` (segundos epoch, opcional) desplaza el tiempo a **segundos
+    desde t0**; si es ``None`` se conserva el tiempo epoch.
+    """
+    track_names = list(track_names)
+    acc: dict[str, tuple[list[float], list[float]]] = {
+        n: ([], []) for n in track_names
+    }
+    for p in paths:
+        try:
+            vf = vitaldb.VitalFile(str(p), track_names=track_names)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("[vital_signals] series: no se pudo leer %s: %s", p, exc)
+            continue
+        if vf is None:
+            continue
+        for n in track_names:
+            trk = (getattr(vf, "trks", None) or {}).get(n)
+            if not trk or not trk.recs:
+                continue
+            srate = float(trk.srate or 0.0)
+            times, vals = acc[n]
+            for r in trk.recs:
+                if "dt" not in r or r.get("val") is None:
+                    continue
+                dt = float(r["dt"])
+                arr = np.asarray(r["val"], dtype=np.float64).ravel()
+                if arr.size == 0:
+                    continue
+                if trk.type == 1 and srate > 0:
+                    tt = dt + np.arange(arr.size, dtype=np.float64) / srate
+                    times.extend(tt.tolist())
+                    vals.extend(arr.tolist())
+                else:
+                    times.append(dt)
+                    vals.append(float(arr[0]))
+            trk.recs = None
+    out: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    for n, (t, v) in acc.items():
+        t_arr = np.asarray(t, dtype=np.float64)
+        v_arr = np.asarray(v, dtype=np.float64)
+        if t0_unix is not None and t_arr.size:
+            t_arr = t_arr - float(t0_unix)
+        out[n] = (t_arr, v_arr)
+    return out
+
+
 def merge_event_files(
     files: Sequence[str | Path],
     out_path: str | Path,
