@@ -339,7 +339,9 @@ class TestMimicD5:
         ev = build_stay_events(stay)[0]
         assert ev["excluded"] is True
         assert ev["exclusion_reason"] == "trach_preexisting"
-        assert ev["end_reason"] == "excluded_trach_preexisting"
+        # Vocabulario único de `end_reason`: la exclusión va en
+        # ``exclusion_reason``; el motivo de fin es la traqueostomía.
+        assert ev["end_reason"] == "tracheostomy"
 
 
 class TestCommonExtubationRule:

@@ -49,6 +49,7 @@ from src.common.episodes import (
     merge_spans,
     spans_from_points,
 )
+from src.common.end_reasons import end_reason_from_causes
 from src.common.extubation import ExtubationDecision, resolve_extubation
 from src.common.labels import (
     FAILURE_WINDOWS_H,
@@ -355,22 +356,19 @@ def _mimic_d5_censor(stay: StayInputs, ep, failure_window_h: float) -> CensorDec
 
 
 def _mimic_end_reason(d5_by_window: dict, ext: ExtubationDecision) -> str:
-    """Motivo de fin del evento (regla común de extubación + D5).
+    """Motivo de fin del evento (vocabulario único de las 4 cohortes).
 
     Ya NO existe la tolerancia de 30 s frente al ``OUTTIME``: un fin de
     ventilación a menos de 1 h del alta se censura como
-    ``transfer_ventilated`` (punto 0 de la Fase 1.5).
+    ``transfer_ventilated`` (punto 0 de la Fase 1.5). El motivo sale del
+    vocabulario canónico (``src/common/end_reasons.py``): la traqueostomía
+    previa se marca además con ``excluded``/``exclusion_reason``, pero su
+    ``end_reason`` es ``tracheostomy`` (no ``excluded_trach_preexisting``).
     """
     causes = {v.get("censor_cause") for v in d5_by_window.values()}
-    if "trach_preexisting" in causes:
-        return "excluded_trach_preexisting"
-    if any(c in ("terminal_extubation", "death_at_vent") for c in causes):
-        return "death"
-    if any(c in ("trach", "trach_time_unknown") for c in causes):
-        return "tracheostomy"
-    if not ext.is_extubation:
-        return ext.censor_cause or "end_of_record"
-    return "extubation_observed"
+    return end_reason_from_causes(
+        causes, is_extubation=ext.is_extubation,
+        fallback=ext.censor_cause or "end_of_record")
 
 
 def build_stay_events(stay: StayInputs) -> list[dict]:

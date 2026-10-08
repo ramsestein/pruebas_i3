@@ -1,0 +1,56 @@
+{
+  "vocabulario": [
+    "extubation_observed",
+    "transfer_ventilated",
+    "death_at_vent",
+    "terminal_extubation",
+    "tracheostomy",
+    "end_of_record"
+  ],
+  "cohortes": {
+    "mimic": {
+      "index": "datasets\\mimic3wdb\\cases_v0.4.0_aa142f35\\mimic_cases_index.json",
+      "n_events": 9093,
+      "end_reason": {
+        "extubation_observed": 7027,
+        "death": 1297,
+        "transfer_ventilated": 459,
+        "tracheostomy": 310
+      },
+      "unknown": [
+        "death"
+      ]
+    },
+    "eicu": {
+      "index": "datasets\\eicu_collaborative\\cases_v0.4.0_aa142f35\\eicu_cases_index.json",
+      "n_events": 9754,
+      "end_reason": {
+        "extubation_observed": 7948,
+        "transfer_ventilated": 1358,
+        "death_at_vent": 448
+      },
+      "unknown": []
+    },
+    "clinic": {
+      "index": "datasets\\clinic\\cases_v0.1.0_a225d21b\\clinic_cases_index.json",
+      "n_events": 181,
+      "end_reason": {
+        "extubation_observed": 139,
+        "end_of_record": 41,
+        "death_signal": 1
+      },
+      "unknown": [
+        "death_signal"
+      ]
+    },
+    "vitaldb": {
+      "index": "datasets\\vitaldb\\cases_v0.4.0_aa142f35\\vitaldb_cases_index.json",
+      "n_events": 96,
+      "end_reason": {
+        "end_of_record": 60,
+        "extubation_observed": 36
+      },
+      "unknown": []
+    }
+  }
+}

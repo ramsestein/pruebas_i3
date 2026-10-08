@@ -43,6 +43,7 @@ import pandas as pd
 
 from src.common.d5_events import d5_censor_for_window, is_trach_text, trach_time_from_offset_rows
 from src.common.eicu_levels import hourly_coverage
+from src.common.end_reasons import end_reason_from_causes
 from src.common.episodes import Span
 from src.common.extubation import resolve_extubation
 from src.common.labels import FAILURE_WINDOWS_H, assign_label, attempts_from_pairs, labels_to_dict
@@ -368,8 +369,10 @@ def build_eicu_events(
             "duration_seconds": int(round((end_h - start_h) * 3600.0)),
             "n_attempts": len(pairs),
             "attempts": attempts,
-            "end_reason": ("extubation_observed" if ext.is_extubation
-                           else (ext.censor_cause or "end_of_record")),
+            "end_reason": end_reason_from_causes(
+                (v.get("censor_cause") for v in d5_by_window.values()),
+                is_extubation=ext.is_extubation,
+                fallback=ext.censor_cause or "end_of_record"),
             "extubation_rule": ext.reason,
             "labels": labels_to_dict(labels),
             "d5": d5_by_window,

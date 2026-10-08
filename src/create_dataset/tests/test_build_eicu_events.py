@@ -120,12 +120,23 @@ class TestRule0AndD5:
     def test_ultimo_ajuste_antes_del_alta_es_traslado(self):
         # Convencion de la regla 0: si el ultimo ajuste es anterior al alta y no
         # hay >= 1 h de cola, la estancia se censura como traslado ventilado
-        # (el fin por anotacion se queda corto respecto al fin real).
-        patients = _patients([(1, 10, 2000, "Expired")])
+        # (el fin por anotacion se queda corto respecto al fin real). El alta
+        # es de un paciente VIVO (traslado), no una muerte.
+        patients = _patients([(1, 10, 2000, "Alive")])
         idx, _ = build_eicu_events(
             patients, {1: [0.0, 60.0, 1900.0, 1980.0]}, {}, {},
             gap_h=8.0, with_coverage=False)
         assert idx["events"][0]["end_reason"] == "transfer_ventilated"
+
+    def test_muerte_tardia_tras_desconexion_es_extubacion_terminal(self):
+        # Muerte dentro de la ventana de fallo tras la ultima desconexion ->
+        # extubacion terminal (vocabulario unico de end_reason, Fase 1.6d).
+        patients = _patients([(1, 10, 2000, "Expired")])
+        idx, _ = build_eicu_events(
+            patients, {1: [0.0, 60.0, 1900.0, 1980.0]}, {}, {},
+            gap_h=8.0, with_coverage=False)
+        ev = idx["events"][0]
+        assert ev["end_reason"] == "terminal_extubation"
 
     def test_traqueostomia_previa_excluye(self):
         patients = _patients([(1, 10, 2880, "Alive")])

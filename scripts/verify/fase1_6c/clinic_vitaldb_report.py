@@ -46,11 +46,10 @@ sys.path.insert(0, str(ROOT))
 D13_CORE = ("HR", "SpO2")
 D13_MIN_COVERAGE = 0.5
 LABEL_ERROR = "no aplica (señal continua)"
-# Vocabulario canónico de ``end_reason`` en las cohortes de señal. Los índices
-# antiguos arrastraban motivos retirados (``death_signal``, ``death_or_transfer``):
-# la pérdida de constantes al final no es un motivo de fin, y la muerte se
-# anota como ``death_at_vent``.
-END_REASON_VOCAB = {"extubation_observed", "end_of_record", "death_at_vent"}
+# Vocabulario canónico de ``end_reason`` (Fase 1.6d: único en las 4 cohortes).
+from src.common.end_reasons import END_REASONS as _END_REASONS  # noqa: E402
+
+END_REASON_VOCAB = set(_END_REASONS)
 WINDOWS = ("48h", "72h")
 
 

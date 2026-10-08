@@ -46,6 +46,7 @@ from src.common.d5_events import (
     threshold_simultaneous_shutdown,
 )
 from src.common.eicu_levels import hourly_coverage
+from src.common.end_reasons import end_reason_from_causes
 from src.common.episodes import (
     Episode,
     Span,
@@ -565,14 +566,10 @@ def build_event_record(
         "n_attempts": episode.n_attempts,
         "attempts": attempts,
         "extubation_rule": ext_dec.reason,
-        "end_reason": (
-            # Vocabulario ÚNICO compartido por las 4 cohortes (Fase 1.6b,
-            # punto 4): la pérdida de constantes al final NO es un motivo de
-            # fin por sí misma. Si no hay muerte por señal y la observación
-            # fisiológica sin ventilador no alcanza 1 h, el evento es
-            # ``end_of_record``. ``signal_loss_at_end`` se conserva como QC.
-            "death_at_vent" if died
-            else ("extubation_observed" if ext_dec.is_extubation else "end_of_record")
+        "end_reason": end_reason_from_causes(
+            (["death_at_vent"] if died else []),
+            is_extubation=ext_dec.is_extubation,
+            fallback=ext_dec.censor_cause or "end_of_record",
         ),
         "d5": d5_by_window,
         "death_signal": {
