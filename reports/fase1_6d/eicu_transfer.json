@@ -1,0 +1,362 @@
+{
+  "index": "datasets\\eicu_collaborative\\cases_v0.4.0_aa142f35\\eicu_cases_index.json",
+  "n_events": 9754,
+  "episodios_transfer_ventilated_corregido": 969,
+  "con_evidencia_de_confort": 943,
+  "tabla_destino_x_causa": {
+    "con_correccion": {
+      "Other Hospital": {
+        "transfer_ventilated": 128,
+        "trach": 11
+      },
+      "Death": {
+        "death_at_vent": 439,
+        "terminal_extubation": 830,
+        "trach": 8
+      },
+      "Step-Down Unit (SDU)": {
+        "transfer_ventilated": 124,
+        "trach": 16
+      },
+      "Other External": {
+        "transfer_ventilated": 108,
+        "trach": 3
+      },
+      "ICU": {
+        "transfer_ventilated": 42
+      },
+      "nan": {
+        "transfer_ventilated": 7,
+        "trach": 1
+      },
+      "Skilled Nursing Facility": {
+        "transfer_ventilated": 60,
+        "trach": 8
+      },
+      "Home": {
+        "transfer_ventilated": 25,
+        "trach": 8
+      },
+      "Acute Care/Floor": {
+        "transfer_ventilated": 68
+      },
+      "Floor": {
+        "transfer_ventilated": 242,
+        "trach": 17
+      },
+      "Other ICU": {
+        "transfer_ventilated": 109,
+        "trach": 5
+      },
+      "Operating Room": {
+        "transfer_ventilated": 1
+      },
+      "Telemetry": {
+        "transfer_ventilated": 4,
+        "trach": 3
+      },
+      "Other": {
+        "transfer_ventilated": 26
+      },
+      "Other Internal": {
+        "transfer_ventilated": 2
+      },
+      "Nursing Home": {
+        "transfer_ventilated": 21,
+        "trach": 13
+      },
+      "Rehabilitation": {
+        "trach": 4,
+        "transfer_ventilated": 2
+      }
+    },
+    "sin_correccion": {
+      "Other Hospital": {
+        "transfer_ventilated": 61,
+        "trach": 11
+      },
+      "Death": {
+        "terminal_extubation": 1106,
+        "death_at_vent": 63,
+        "trach": 8
+      },
+      "Other External": {
+        "transfer_ventilated": 37,
+        "trach": 3
+      },
+      "nan": {
+        "transfer_ventilated": 5,
+        "trach": 1
+      },
+      "Step-Down Unit (SDU)": {
+        "transfer_ventilated": 79,
+        "trach": 16
+      },
+      "Skilled Nursing Facility": {
+        "transfer_ventilated": 24,
+        "trach": 8
+      },
+      "Floor": {
+        "transfer_ventilated": 222,
+        "trach": 17
+      },
+      "ICU": {
+        "transfer_ventilated": 18
+      },
+      "Other ICU": {
+        "transfer_ventilated": 61,
+        "trach": 5
+      },
+      "Acute Care/Floor": {
+        "transfer_ventilated": 60
+      },
+      "Home": {
+        "transfer_ventilated": 8,
+        "trach": 8
+      },
+      "Telemetry": {
+        "transfer_ventilated": 4,
+        "trach": 3
+      },
+      "Other": {
+        "transfer_ventilated": 14
+      },
+      "Other Internal": {
+        "transfer_ventilated": 2
+      },
+      "Nursing Home": {
+        "transfer_ventilated": 12,
+        "trach": 13
+      },
+      "Rehabilitation": {
+        "trach": 4
+      }
+    }
+  },
+  "transfer_ventilated_destino_incompatible": {
+    "n": 293,
+    "pct_del_total_transfer": 30.24,
+    "ejemplos": [
+      {
+        "event_id": "eicu_569756_event_1",
+        "destination": "Home",
+        "gap_last_adj_h": 1.88,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_589799_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -37.9,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy",
+          "care limitation do not resuscitate"
+        ]
+      },
+      {
+        "event_id": "eicu_590021_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -4.52,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_684362_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": 0.5,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_688553_event_1",
+        "destination": "Home",
+        "gap_last_adj_h": 1.2,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_703528_event_1",
+        "destination": "Home",
+        "gap_last_adj_h": 1.15,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy",
+          "care limitation do not resuscitate"
+        ]
+      },
+      {
+        "event_id": "eicu_929625_event_1",
+        "destination": "Home",
+        "gap_last_adj_h": 2.23,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_1314469_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -66.77,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_1315098_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -132.87,
+        "unitdischargestatus": "Alive",
+        "careplan": []
+      },
+      {
+        "event_id": "eicu_1316487_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -7.15,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_1316774_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -72.68,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_1316991_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -62.38,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_1318267_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -69.87,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_1319234_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -70.48,
+        "unitdischargestatus": "Alive",
+        "careplan": []
+      },
+      {
+        "event_id": "eicu_1320240_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -88.17,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_1320248_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -45.85,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_1321192_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -22.18,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_1321639_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -17.55,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_1321640_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -52.27,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      },
+      {
+        "event_id": "eicu_1321753_event_1",
+        "destination": "Floor",
+        "gap_last_adj_h": -36.77,
+        "unitdischargestatus": "Alive",
+        "careplan": [
+          "care limitation full therapy"
+        ]
+      }
+    ]
+  },
+  "regla_propuesta_reclasificaria": {
+    "n": 48,
+    "ejemplos": [
+      "eicu_569756_event_1",
+      "eicu_688553_event_1",
+      "eicu_703528_event_1",
+      "eicu_929625_event_1",
+      "eicu_1333755_event_1",
+      "eicu_1338147_event_1",
+      "eicu_1342956_event_1",
+      "eicu_1349532_event_1",
+      "eicu_1358288_event_1",
+      "eicu_1364166_event_1",
+      "eicu_1364423_event_1",
+      "eicu_1651329_event_1",
+      "eicu_1660726_event_1",
+      "eicu_1667021_event_1",
+      "eicu_1669511_event_1",
+      "eicu_1675340_event_1",
+      "eicu_2157183_event_1",
+      "eicu_2224924_event_1",
+      "eicu_2696511_event_1",
+      "eicu_2699085_event_1"
+    ]
+  },
+  "propuesta": {
+    "regla_propuesta": "Si la causa de censura a 48 h es `transfer_ventilated` y `unitDischargeLocation` es incompatible con seguir ventilado (casa/planta/hospicio/otro) y el último ajuste invasivo es >= 1 h anterior al alta, la estancia NO estaba ventilada al alta: se reclasifica como `end_of_record` (sin extubación observada).",
+    "aplicada": false,
+    "destinos_incompatibles": [
+      "assisted living",
+      "floor",
+      "floor bed",
+      "home",
+      "home w/ home health",
+      "home with home health",
+      "home with hospice",
+      "hospice",
+      "other",
+      "psychiatric hospital",
+      "residential facility"
+    ]
+  }
+}
