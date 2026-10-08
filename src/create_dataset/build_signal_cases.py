@@ -742,6 +742,77 @@ def _segment_box_task(args: tuple[str, list[SourceFile]]) -> tuple[str, BoxSegme
     return box, segment_box(box, files)
 
 
+def filter_boxes(
+    boxes: dict[str, list[SourceFile]],
+    only: Optional[Sequence[str]] = None,
+) -> dict[str, list[SourceFile]]:
+    """Restringe el escaneo a una lista de boxes (reconstrucciones resumibles).
+
+    Fase 1.6d (punto 5): el disco puede colgar una lectura durante minutos; con
+    ``only`` se puede reconstruir la cohorte **box a box** con un timeout por
+    box, de modo que un cuelgue cueste un box y no la reconstrucción completa.
+    ``only`` vacío o ``None`` no filtra nada.
+    """
+    if not only:
+        return dict(boxes)
+    want = {str(b) for b in only}
+    return {b: files for b, files in boxes.items() if b in want}
+
+
+def merge_partial_indices(parts: Sequence[tuple[str, dict]], *, cohort: str) -> dict:
+    """Fusiona índices parciales (uno por box) en un índice de cohorte.
+
+    Fase 1.6d (punto 5): cada box se reconstruye por separado (con timeout) y
+    sus eventos se concatenan aquí. Las etiquetas, los intentos y la cobertura
+    de cada evento NO se recalculan: se copian tal cual del parcial.
+    """
+    events: list[dict] = []
+    excluded: list[dict] = []
+    n_missing = 0
+    levels: dict[str, int] = {}
+    vars_ok_50 = vars_ok_80 = 0
+    n_covered = n_signal_loss = n_shutdown = n_deaths = 0
+    for _box, idx in parts:
+        events += list(idx.get("events", []))
+        excluded += list(idx.get("excluded_events", []))
+        n_missing += int(idx.get("n_missing_files") or 0)
+        for k, v in (idx.get("levels") or {}).items():
+            levels[k] = levels.get(k, 0) + int(v)
+        vars_ok_50 += int(idx.get("vars_ok_50") or 0)
+        vars_ok_80 += int(idx.get("vars_ok_80") or 0)
+        n_covered += int(idx.get("levels_coverage_measured") or 0)
+        n_signal_loss += int(idx.get("n_signal_loss_at_end") or 0)
+        n_shutdown += int(idx.get("n_simultaneous_shutdown") or 0)
+        n_deaths += int(idx.get("n_death_signal") or 0)
+    events.sort(key=lambda e: e.get("event_id", ""))
+    excluded.sort(key=lambda e: e.get("event_id", ""))
+    return {
+        "source": (parts[0][1].get("source") if parts
+                   else f"{cohort}_source_vital"),
+        "description": (
+            "Índice de cohorte fusionado a partir de parciales por box "
+            "(reconstrucción resumible, Fase 1.6d punto 5)."
+        ),
+        "method": ("build_signal_cases por box con timeout + fusión "
+                   "(build_cohort_resumable.py)."),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "merged": False,
+        "total_boxes": len(parts),
+        "total_events": len(events),
+        "total_excluded_events": len(excluded),
+        "n_missing_files": n_missing,
+        "levels": levels,
+        "levels_coverage_measured": n_covered,
+        "vars_ok_50": vars_ok_50,
+        "vars_ok_80": vars_ok_80,
+        "n_signal_loss_at_end": n_signal_loss,
+        "n_simultaneous_shutdown": n_shutdown,
+        "n_death_signal": n_deaths,
+        "events": events,
+        "excluded_events": excluded,
+    }
+
+
 def run_cohort(
     config: dict,
     cohort: str,
@@ -751,15 +822,20 @@ def run_cohort(
     workers: int = 1,
     coverage: bool = False,
     probe_fn: Optional[Callable[[Path], Optional[VitalProbe]]] = None,
+    only_boxes: Optional[Sequence[str]] = None,
+    out_dir_override: Optional[str | Path] = None,
 ) -> dict:
     """Ejecuta el pipeline completo de una cohorte con señal."""
     spec = SPECS[cohort]
     raw_dir = config_path(config, "paths", f"{cohort}_raw_dir")
     out_dir, version = output_root(config, cohort)
+    if out_dir_override is not None:
+        out_dir = Path(out_dir_override)
     index_path = out_dir / f"{cohort}_cases_index.json"
 
     logger.info("[%s] origen=%s salida=%s workers=%d", cohort, raw_dir, out_dir, workers)
     boxes = scan_source_files(raw_dir, spec)
+    boxes = filter_boxes(boxes, only_boxes)
     if limit_boxes:
         boxes = dict(list(boxes.items())[:limit_boxes])
 
@@ -827,6 +903,11 @@ def main() -> None:
     p.add_argument("--config", default="src/stage0/config/harmonize.yaml")
     p.add_argument("--no-merge", action="store_true", help="Solo segmentar e índice")
     p.add_argument("--limit-boxes", type=int, default=None)
+    p.add_argument("--boxes", default=None,
+                   help="Lista de boxes separada por comas (reconstrucción "
+                        "resumible box a box)")
+    p.add_argument("--out-dir", default=None,
+                   help="Carpeta de salida alternativa (p. ej. parciales)")
     p.add_argument("--workers", type=int, default=1,
                    help="Procesos en paralelo (un box por tarea)")
     p.add_argument("--coverage", action="store_true",
@@ -853,6 +934,9 @@ def main() -> None:
         workers=args.workers,
         coverage=args.coverage,
         probe_fn=probe_fn,
+        only_boxes=([b.strip() for b in args.boxes.split(",") if b.strip()]
+                    if args.boxes else None),
+        out_dir_override=args.out_dir,
     )
     print(json.dumps(
         {

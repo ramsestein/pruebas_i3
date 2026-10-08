@@ -135,6 +135,29 @@ python scripts/verify/fase1_6c/coverage_parallel.py --cohort clinic --workers 10
 python scripts/verify/fase1_6c/clinic_vitaldb_report.py --cohorts clinic vitaldb
 ```
 
+### Reconstrucción **resumible** (necesaria en Clínic)
+
+El primer intento (10 workers, 10:53) quedó **colgado**: el disco bloqueó una
+lectura y, como `ProcessPoolExecutor.map` consume los resultados **en orden**,
+los otros 9 workers se quedaron ociosos (medido: **+178 s de CPU en 3 h 20 min**,
+0,01 MB/s; ya había leído **~80,5 GB** de 101,5 GB). No terminó ni creó la salida.
+
+Solución implementada (`src/create_dataset/build_signal_cases.py` +
+`scripts/verify/fase1_6d/build_cohort_resumable.py`, con tests):
+
+- `--boxes` y `--out-dir`: el builder puede reconstruir **un box** por
+  invocación (`filter_boxes`).
+- `merge_partial_indices`: fusiona los índices parciales por box.
+- El driver lanza **un subproceso por box con timeout** (`--box-timeout`),
+  **reutiliza** los parciales ya hechos (reanudable) y **salta** el box que se
+  cuelga, de modo que un fallo cuesta un box (27,3 GB como máximo), no la
+  reconstrucción completa.
+
+```
+python scripts/verify/fase1_6d/build_cohort_resumable.py --cohort clinic \
+    --workers 4 --box-timeout 2700
+```
+
 > **Pendiente:** no ejecutada en esta sesión. Con el disco `D:` medido a
 > ~67 MB/s (ver Limitaciones) es viable: 263,8 GB en 15 291 `.vital`, ≈1–2 h de
 > E/S más parseo. El único índice de Clínic disponible sigue siendo el antiguo

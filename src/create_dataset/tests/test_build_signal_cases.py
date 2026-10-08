@@ -18,6 +18,8 @@ from src.create_dataset.build_signal_cases import (
     CLINIC_SPEC,
     VITALDB_SPEC,
     build_cohort_index,
+    filter_boxes,
+    merge_partial_indices,
     run_cohort,
     scan_source_files,
     segment_box,
@@ -435,3 +437,69 @@ class TestIndexAndMerge:
         # Volver a construir la misma versión debe abortar (inmutable).
         with pytest.raises(FileExistsError):
             run_cohort(cfg, "clinic", do_merge=True)
+
+
+class TestReconstruccionResumible:
+    """Fase 1.6d (punto 5): reconstrucción box a box (un cuelgue de disco cuesta
+    un box, no la reconstrucción completa).
+    """
+
+    def _config(self, tmp_path: Path) -> dict:
+        return {
+            "version": "0.2.0",
+            "paths": {
+                "clinic_raw_dir": str(tmp_path / "raw"),
+                "clinic_cases_out": str(tmp_path / "out"),
+            },
+        }
+
+    def test_filter_boxes(self):
+        boxes = {"box2": [1], "box3": [2]}
+        assert set(filter_boxes(boxes, None)) == {"box2", "box3"}
+        assert set(filter_boxes(boxes, [])) == {"box2", "box3"}
+        assert set(filter_boxes(boxes, ["box3"])) == {"box3"}
+        assert filter_boxes(boxes, ["no_existe"]) == {}
+
+    def test_only_boxes_restringe_el_indice(self, tmp_path: Path):
+        make_box(tmp_path / "raw", "box2", [0, 1], [0])
+        make_box(tmp_path / "raw", "box3", [0, 1], [0])
+        cfg = self._config(tmp_path)
+        res = run_cohort(cfg, "clinic", do_merge=False, only_boxes=["box3"])
+        assert res["index"]["total_boxes"] == 1
+        assert {e["box"] for e in res["index"]["events"]} == {"box3"}
+
+    def test_parciales_por_box_en_carpetas_distintas(self, tmp_path: Path):
+        make_box(tmp_path / "raw", "box2", [0, 1], [0])
+        make_box(tmp_path / "raw", "box3", [0, 1], [0])
+        cfg = self._config(tmp_path)
+        r2 = run_cohort(cfg, "clinic", do_merge=False, only_boxes=["box2"],
+                        out_dir_override=str(tmp_path / "p2"))
+        r3 = run_cohort(cfg, "clinic", do_merge=False, only_boxes=["box3"],
+                        out_dir_override=str(tmp_path / "p3"))
+        assert r2["index"]["total_events"] == r3["index"]["total_events"] == 1
+        assert Path(r2["output_dir"]) != Path(r3["output_dir"])
+        assert (tmp_path / "p2" / "clinic_cases_index.json").exists()
+        assert (tmp_path / "p3" / "clinic_cases_index.json").exists()
+
+    def test_fusion_de_parciales(self, tmp_path: Path):
+        make_box(tmp_path / "raw", "box2", [0, 1], [0])
+        make_box(tmp_path / "raw", "box3", [0, 1], [0])
+        cfg = self._config(tmp_path)
+        r2 = run_cohort(cfg, "clinic", do_merge=False, only_boxes=["box2"],
+                        out_dir_override=str(tmp_path / "p2"))
+        r3 = run_cohort(cfg, "clinic", do_merge=False, only_boxes=["box3"],
+                        out_dir_override=str(tmp_path / "p3"))
+        merged = merge_partial_indices(
+            [("box2", r2["index"]), ("box3", r3["index"])], cohort="clinic")
+        assert merged["total_boxes"] == 2
+        assert merged["total_events"] == 2
+        assert {e["box"] for e in merged["events"]} == {"box2", "box3"}
+        assert merged["levels"]["A"] == 2
+        assert merged["total_events"] == (r2["index"]["total_events"]
+                                          + r3["index"]["total_events"])
+
+    def test_fusion_sin_parciales(self):
+        merged = merge_partial_indices([], cohort="clinic")
+        assert merged["total_boxes"] == 0
+        assert merged["total_events"] == 0
+        assert merged["source"] == "clinic_source_vital"
