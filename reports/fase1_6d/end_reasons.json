@@ -22,12 +22,14 @@
       ]
     },
     "eicu": {
-      "index": "datasets\\eicu_collaborative\\cases_v0.4.0_aa142f35\\eicu_cases_index.json",
-      "n_events": 9754,
+      "index": "datasets\\eicu_collaborative\\cases_v0.5.0_eac1eb35\\eicu_cases_index.json",
+      "n_events": 9753,
       "end_reason": {
-        "extubation_observed": 7948,
-        "transfer_ventilated": 1358,
-        "death_at_vent": 448
+        "extubation_observed": 7167,
+        "terminal_extubation": 1141,
+        "transfer_ventilated": 900,
+        "death_at_vent": 432,
+        "tracheostomy": 113
       },
       "unknown": []
     },

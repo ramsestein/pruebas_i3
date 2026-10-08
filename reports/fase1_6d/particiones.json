@@ -62,47 +62,47 @@
     ],
     "train_hospitals": 19,
     "test": {
-      "n": 1781,
-      "success": 1332,
-      "censored": 449,
-      "failures": 335
+      "n": 1780,
+      "success": 1372,
+      "censored": 408,
+      "failures": 195
     },
     "train": {
       "n": 7973,
-      "success": 6087,
-      "censored": 1886,
-      "failures": 758
+      "success": 6151,
+      "censored": 1822,
+      "failures": 493
     },
     "folds_train": [
       {
         "n": 2821,
-        "success": 2175,
-        "censored": 646,
-        "failures": 317
+        "success": 2201,
+        "censored": 620,
+        "failures": 164
       },
       {
-        "n": 1122,
-        "success": 907,
-        "censored": 215,
-        "failures": 65
+        "n": 1120,
+        "success": 909,
+        "censored": 211,
+        "failures": 50
       },
       {
-        "n": 2639,
-        "success": 2018,
-        "censored": 621,
-        "failures": 231
+        "n": 2642,
+        "success": 2031,
+        "censored": 611,
+        "failures": 178
       },
       {
-        "n": 841,
-        "success": 609,
-        "censored": 232,
-        "failures": 96
+        "n": 840,
+        "success": 620,
+        "censored": 220,
+        "failures": 78
       },
       {
         "n": 550,
-        "success": 378,
-        "censored": 172,
-        "failures": 49
+        "success": 390,
+        "censored": 160,
+        "failures": 23
       }
     ]
   },

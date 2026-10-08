@@ -11,9 +11,9 @@
 ## eicu_b
 
 - Criterio: test = 8 hospitales (fijos) + 5 pliegues por hospital del resto
-- Test: {'n': 1781, 'success': 1332, 'censored': 449, 'failures': 335}
-- Train: {'n': 7973, 'success': 6087, 'censored': 1886, 'failures': 758}
-- Pliegues de train: n=2821 (éx 2175/cens 646), n=1122 (éx 907/cens 215), n=2639 (éx 2018/cens 621), n=841 (éx 609/cens 232), n=550 (éx 378/cens 172)
+- Test: {'n': 1780, 'success': 1372, 'censored': 408, 'failures': 195}
+- Train: {'n': 7973, 'success': 6151, 'censored': 1822, 'failures': 493}
+- Pliegues de train: n=2821 (éx 2201/cens 620), n=1120 (éx 909/cens 211), n=2642 (éx 2031/cens 611), n=840 (éx 620/cens 220), n=550 (éx 390/cens 160)
 - Hospitales: test [67, 171, 227, 301, 303, 336, 392, 405], train 19
 
 ## clinic
