@@ -84,7 +84,10 @@ def bandpass_filter(
         return values.copy()
 
     try:
-        filtered = sosfiltfilt(sos, values_filled.astype(np.float64), padlen=padlen)
+        if len(values_filled) > _CHUNK_SIZE:
+            filtered = _chunked_sosfiltfilt(sos, values_filled.astype(np.float64))
+        else:
+            filtered = sosfiltfilt(sos, values_filled.astype(np.float64), padlen=padlen)
     except Exception as e:
         logger.warning("Error en sosfiltfilt: %s; devolviendo señal sin filtrar", e)
         return values.copy()
@@ -96,6 +99,24 @@ def bandpass_filter(
         filtered[nan_mask] = np.nan
 
     return filtered
+
+
+_CHUNK_SIZE = 2_000_000  # muestras por bloque para filtrar señales muy largas
+
+
+def _chunked_sosfiltfilt(sos, x: np.ndarray, chunk: int = _CHUNK_SIZE) -> np.ndarray:
+    """sosfiltfilt por bloques con solape para evitar OOM en señales largas."""
+    n = len(x)
+    pad = 3 * (sos.shape[0] * 6)
+    out = np.empty(n, dtype=np.float64)
+    for start in range(0, n, chunk):
+        lo = max(0, start - pad)
+        hi = min(n, start + chunk + pad)
+        fseg = sosfiltfilt(sos, x[lo:hi])
+        o_lo = start - lo
+        o_hi = o_lo + min(chunk, n - start)
+        out[start:start + (o_hi - o_lo)] = fseg[o_lo:o_hi]
+    return out
 
 
 def _fill_nan(arr: np.ndarray) -> np.ndarray:

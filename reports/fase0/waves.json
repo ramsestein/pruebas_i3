@@ -1,0 +1,1074 @@
+{
+  "raw": {
+    "clinic": {
+      "box10_250414_121109_to_250417_031058.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ART": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ECG_III": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/CO2": {
+          "present": true,
+          "srate": 62.5,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "box10_250720_171817_to_250723_181919.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ART": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ECG_III": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/CO2": {
+          "present": true,
+          "srate": 62.5,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "box10_250919_185645_to_250920_154707.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ART": {
+          "present": false
+        },
+        "Intellivue/ECG_III": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/CO2": {
+          "present": true,
+          "srate": 62.5,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "box10_250930_232400_to_251001_110438.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ART": {
+          "present": false
+        },
+        "Intellivue/ECG_III": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/CO2": {
+          "present": true,
+          "srate": 62.5,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "box10_251126_082226_to_251126_112635.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ART": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ECG_III": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/CO2": {
+          "present": true,
+          "srate": 62.5,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "box11_250620_201707_to_250622_064843.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ART": {
+          "present": false
+        },
+        "Intellivue/ECG_III": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/CO2": {
+          "present": true,
+          "srate": 62.5,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "box12_250321_174145_to_250401_055059.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ART": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ECG_III": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/CO2": {
+          "present": true,
+          "srate": 62.5,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "box12_250526_201912_to_250526_231151.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ART": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ECG_III": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/CO2": {
+          "present": true,
+          "srate": 62.5,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "box12_250704_122755_to_250705_193229.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ART": {
+          "present": false
+        },
+        "Intellivue/ECG_III": {
+          "present": false
+        },
+        "Intellivue/CO2": {
+          "present": true,
+          "srate": 62.5,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "box12_250707_193241_to_250709_060158.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ART": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ECG_III": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/CO2": {
+          "present": true,
+          "srate": 62.5,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      }
+    },
+    "vitaldb": {
+      "SICU1_01_250101_000010_to_250201_000010.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": false
+        },
+        "Intellivue/ABP": {
+          "present": false
+        },
+        "Intellivue/ECG_II_WAV": {
+          "present": true,
+          "srate": 250.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "SICU1_01_250218_110000_to_250218_130000.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ABP": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ECG_II_WAV": {
+          "present": true,
+          "srate": 250.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "SICU1_02_250101_000010_to_250201_000011.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ABP": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ECG_II_WAV": {
+          "present": true,
+          "srate": 250.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "SICU1_02_250206_104957_to_250212_110000.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 295680
+          }
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 73920
+          }
+        },
+        "Intellivue/ABP": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 73920
+          }
+        },
+        "Intellivue/ECG_II_WAV": {
+          "present": true,
+          "srate": 250.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 147904
+          }
+        }
+      },
+      "SICU1_02_250214_160000_to_250214_180000.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ABP": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ECG_II_WAV": {
+          "present": true,
+          "srate": 250.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "SICU1_02_250217_140000_to_250217_160000.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 177408
+          }
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 44352
+          }
+        },
+        "Intellivue/ABP": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 44352
+          }
+        },
+        "Intellivue/ECG_II_WAV": {
+          "present": true,
+          "srate": 250.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 88768
+          }
+        }
+      },
+      "SICU1_02_250221_180000_to_250221_200000.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ABP": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        },
+        "Intellivue/ECG_II_WAV": {
+          "present": true,
+          "srate": 250.0,
+          "fmt": 6,
+          "n_recs": 0,
+          "first_val": null
+        }
+      },
+      "SICU1_03_250101_000010_to_250201_000010.vital": {
+        "Intellivue/ECG_II": {
+          "present": false
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 447200
+          }
+        },
+        "Intellivue/ABP": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 447200
+          }
+        },
+        "Intellivue/ECG_II_WAV": {
+          "present": false
+        }
+      },
+      "SICU1_03_250207_100000_to_250207_120000.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 140544
+          }
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 35136
+          }
+        },
+        "Intellivue/ABP": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 35136
+          }
+        },
+        "Intellivue/ECG_II_WAV": {
+          "present": true,
+          "srate": 250.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 70336
+          }
+        }
+      },
+      "SICU1_03_250211_110000_to_250211_130000.vital": {
+        "Intellivue/ECG_II": {
+          "present": true,
+          "srate": 500.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 264860
+          }
+        },
+        "Intellivue/PLETH": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 66215
+          }
+        },
+        "Intellivue/ABP": {
+          "present": true,
+          "srate": 125.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 63136
+          }
+        },
+        "Intellivue/ECG_II_WAV": {
+          "present": true,
+          "srate": 250.0,
+          "fmt": 6,
+          "n_recs": 1,
+          "first_val": {
+            "type": "ndarray",
+            "len": 132494
+          }
+        }
+      }
+    }
+  },
+  "adapter": {
+    "clinic": [
+      {
+        "patient_id": "box10_250414_121109_to_250417_031058",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "box10_250720_171817_to_250723_181919",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "box10_250919_185645_to_250920_154707",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "box10_250930_232400_to_251001_110438",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "box10_251126_082226_to_251126_112635",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "box11_250620_201707_to_250622_064843",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "box12_250321_174145_to_250401_055059",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "box12_250526_201912_to_250526_231151",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "box12_250704_122755_to_250705_193229",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "box12_250707_193241_to_250709_060158",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      }
+    ],
+    "vitaldb": [
+      {
+        "patient_id": "SICU1_01_event_1",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "SICU1_01_event_2",
+        "error": "[vitaldb] Archivo no encontrado: datasets\\vitaldb_sicu\\vitaldb_full_cases\\SICU1_01_250214_110000_to_250214_130000.vital"
+      },
+      {
+        "patient_id": "SICU1_01_event_3",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "SICU1_02_event_1",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "SICU1_02_event_2",
+        "ECG": {
+          "available": true,
+          "n_samples": 1,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": true,
+          "n_samples": 1,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": true,
+          "n_samples": 1,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "SICU1_02_event_3",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "SICU1_02_event_4",
+        "ECG": {
+          "available": true,
+          "n_samples": 1,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": true,
+          "n_samples": 1,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": true,
+          "n_samples": 1,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "SICU1_02_event_5",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "SICU1_03_event_1",
+        "ECG": {
+          "available": false,
+          "n_samples": 0,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": true,
+          "n_samples": 1,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": true,
+          "n_samples": 1,
+          "fs_native": 0.0
+        }
+      },
+      {
+        "patient_id": "SICU1_03_event_2",
+        "ECG": {
+          "available": true,
+          "n_samples": 1,
+          "fs_native": 0.0
+        },
+        "PPG": {
+          "available": true,
+          "n_samples": 1,
+          "fs_native": 0.0
+        },
+        "ABP": {
+          "available": true,
+          "n_samples": 1,
+          "fs_native": 0.0
+        }
+      }
+    ]
+  },
+  "summary": {
+    "clinic": {
+      "n_patients": 10,
+      "n_patient_errors": 0,
+      "n_waveforms_available": 0,
+      "n_waveforms_expected": 30,
+      "total_waveform_samples": 0
+    },
+    "vitaldb": {
+      "n_patients": 10,
+      "n_patient_errors": 1,
+      "n_waveforms_available": 11,
+      "n_waveforms_expected": 27,
+      "total_waveform_samples": 11
+    },
+    "mimic": {
+      "n_patients": 10,
+      "n_waveforms_available": 2,
+      "n_waveforms_expected": 30
+    },
+    "eicu": {
+      "n_patients": 10,
+      "n_waveforms_available": 0,
+      "n_waveforms_expected": 30
+    }
+  }
+}

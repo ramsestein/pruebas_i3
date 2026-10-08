@@ -1,0 +1,309 @@
+{
+  "old_index": "C:\\Users\\Ramsés\\Desktop\\Proyectos\\iprove3\\datasets\\vitaldb\\cases_v0.2.0_a805771c\\vitaldb_cases_index.json",
+  "new_index": null,
+  "old_end_reason": {
+    "extubation_observed": 51,
+    "death_or_transfer": 26,
+    "end_of_record": 19
+  },
+  "old_labels_48h": {
+    "successful_extubation": 75,
+    "censored_end_of_record": 21
+  },
+  "projected_end_reason": {
+    "extubation_observed": 75,
+    "end_of_record": 21
+  },
+  "n_death_or_transfer": 26,
+  "death_or_transfer_mapping": [
+    {
+      "event_id": "vitaldb_SICU1_01_event_2",
+      "box": "SICU1_01",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 206.2868
+    },
+    {
+      "event_id": "vitaldb_SICU1_02_event_5",
+      "box": "SICU1_02",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 67.9884
+    },
+    {
+      "event_id": "vitaldb_SICU1_02_event_6",
+      "box": "SICU1_02",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 127.0148
+    },
+    {
+      "event_id": "vitaldb_SICU1_03_event_2",
+      "box": "SICU1_03",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 95.0928
+    },
+    {
+      "event_id": "vitaldb_SICU1_03_event_3",
+      "box": "SICU1_03",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 72.8023
+    },
+    {
+      "event_id": "vitaldb_SICU1_03_event_4",
+      "box": "SICU1_03",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 73.873
+    },
+    {
+      "event_id": "vitaldb_SICU1_03_event_5",
+      "box": "SICU1_03",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 60.1118
+    },
+    {
+      "event_id": "vitaldb_SICU1_04_event_1",
+      "box": "SICU1_04",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "end_of_record",
+      "death_signal": false,
+      "old_label_48h": "censored_end_of_record",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 0.0
+    },
+    {
+      "event_id": "vitaldb_SICU1_06_event_4",
+      "box": "SICU1_06",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 180.7486
+    },
+    {
+      "event_id": "vitaldb_SICU1_07_event_2",
+      "box": "SICU1_07",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 108.6285
+    },
+    {
+      "event_id": "vitaldb_SICU1_08_event_1",
+      "box": "SICU1_08",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 337.5032
+    },
+    {
+      "event_id": "vitaldb_SICU1_08_event_2",
+      "box": "SICU1_08",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 87.7288
+    },
+    {
+      "event_id": "vitaldb_SICU1_08_event_3",
+      "box": "SICU1_08",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 134.2705
+    },
+    {
+      "event_id": "vitaldb_SICU1_09_event_3",
+      "box": "SICU1_09",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "end_of_record",
+      "death_signal": false,
+      "old_label_48h": "censored_end_of_record",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 0.0
+    },
+    {
+      "event_id": "vitaldb_SICU1_11_event_4",
+      "box": "SICU1_11",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 113.1094
+    },
+    {
+      "event_id": "vitaldb_SICU2_02_event_2",
+      "box": "SICU2_02",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 103.6761
+    },
+    {
+      "event_id": "vitaldb_SICU2_05_event_2",
+      "box": "SICU2_05",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 0.0
+    },
+    {
+      "event_id": "vitaldb_SICU2_07_event_2",
+      "box": "SICU2_07",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 106.643
+    },
+    {
+      "event_id": "vitaldb_SICU2_08_event_3",
+      "box": "SICU2_08",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 0.0
+    },
+    {
+      "event_id": "vitaldb_SICU2_09_event_3",
+      "box": "SICU2_09",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "end_of_record",
+      "death_signal": false,
+      "old_label_48h": "censored_end_of_record",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 0.0
+    },
+    {
+      "event_id": "vitaldb_SICU2_09_event_4",
+      "box": "SICU2_09",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 49.1511
+    },
+    {
+      "event_id": "vitaldb_SICU2_11_event_1",
+      "box": "SICU2_11",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 47.7198
+    },
+    {
+      "event_id": "vitaldb_SICU2_11_event_3",
+      "box": "SICU2_11",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 91.9889
+    },
+    {
+      "event_id": "vitaldb_SICU2_12_event_3",
+      "box": "SICU2_12",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 8.5755
+    },
+    {
+      "event_id": "vitaldb_SICU2_13_event_1",
+      "box": "SICU2_13",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 275.3303
+    },
+    {
+      "event_id": "vitaldb_SICU2_19_event_2",
+      "box": "SICU2_19",
+      "old_end_reason": "death_or_transfer",
+      "new_end_reason": "extubation_observed",
+      "death_signal": false,
+      "old_label_48h": "successful_extubation",
+      "signal_loss_at_end": true,
+      "monitor_tail_h": 464.0084
+    }
+  ],
+  "death_or_transfer_new_reasons": {
+    "extubation_observed": 23,
+    "end_of_record": 3
+  },
+  "candidates_physiological_change": [
+    "vitaldb_SICU1_11_event_3",
+    "vitaldb_SICU2_16_event_1",
+    "vitaldb_SICU2_16_event_2",
+    "vitaldb_SICU2_16_event_3",
+    "vitaldb_SICU2_16_event_4",
+    "vitaldb_SICU2_16_event_7",
+    "vitaldb_SICU2_16_event_8",
+    "vitaldb_SICU2_16_event_11",
+    "vitaldb_SICU2_16_event_15"
+  ],
+  "monitor_profile": {
+    "n_events": 96,
+    "n_without_HR": 4,
+    "pct_without_HR": 4.2,
+    "without_HR_but_with_SpO2": 0,
+    "without_HR_but_with_wave": 0,
+    "without_HR_and_without_any_monitor": 4,
+    "examples": [
+      "vitaldb_SICU1_08_event_4",
+      "vitaldb_SICU1_12_event_4",
+      "vitaldb_SICU2_05_event_4",
+      "vitaldb_SICU2_16_event_15"
+    ]
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "clinic": [
+    {
+      "patient_id": "box10_250414_121109_to_250417_031058",
+      "file": "box10_250414_121109_to_250417_031058.vital",
+      "t0_unix_adapter": 1744632669.0,
+      "first_sample_epoch": 1744625469.713816,
+      "offset_hours": -1.9998,
+      "vital_dgmt_min": -120,
+      "record_end_hours": 62.997
+    },
+    {
+      "patient_id": "box10_250720_171817_to_250723_181919",
+      "file": "box10_250720_171817_to_250723_181919.vital",
+      "t0_unix_adapter": 1753031897.0,
+      "first_sample_epoch": 1753024696.817205,
+      "offset_hours": -2.0001,
+      "vital_dgmt_min": -120,
+      "record_end_hours": 73.017
+    },
+    {
+      "patient_id": "box10_250919_185645_to_250920_154707",
+      "file": "box10_250919_185645_to_250920_154707.vital",
+      "t0_unix_adapter": 1758308205.0,
+      "first_sample_epoch": 1758301005.525951,
+      "offset_hours": -1.9999,
+      "vital_dgmt_min": -120,
+      "record_end_hours": 20.839
+    },
+    {
+      "patient_id": "box10_250930_232400_to_251001_110438",
+      "file": "box10_250930_232400_to_251001_110438.vital",
+      "t0_unix_adapter": 1759274640.0,
+      "first_sample_epoch": 1759267438.268329,
+      "offset_hours": -2.0005,
+      "vital_dgmt_min": -120,
+      "record_end_hours": 11.677
+    },
+    {
+      "patient_id": "box10_251126_082226_to_251126_112635",
+      "file": "box10_251126_082226_to_251126_112635.vital",
+      "t0_unix_adapter": 1764145346.0,
+      "first_sample_epoch": 1764141746.290621,
+      "offset_hours": -0.9999,
+      "vital_dgmt_min": -60,
+      "record_end_hours": 3.069
+    }
+  ],
+  "vitaldb": [
+    {
+      "patient_id": "SICU1_01_event_1",
+      "file": "SICU1_01_250101_000010_to_250201_000010.vital",
+      "t0_unix_adapter": 1735689610.0,
+      "first_sample_epoch": 1735657216.7735105,
+      "offset_hours": -8.9981,
+      "vital_dgmt_min": -540,
+      "record_end_hours": 744.0
+    },
+    {
+      "patient_id": "SICU1_01_event_2",
+      "error": "archivo no localizado para SICU1_01_event_2"
+    },
+    {
+      "patient_id": "SICU1_01_event_3",
+      "file": "SICU1_01_250218_110000_to_250218_130000.vital",
+      "t0_unix_adapter": 1739876400.0,
+      "first_sample_epoch": 1739844647.661906,
+      "offset_hours": -8.8201,
+      "vital_dgmt_min": -540,
+      "record_end_hours": 2.0
+    },
+    {
+      "patient_id": "SICU1_02_event_1",
+      "file": "SICU1_02_250101_000010_to_250201_000011.vital",
+      "t0_unix_adapter": 1735689610.0,
+      "first_sample_epoch": 1735657221.626238,
+      "offset_hours": -8.9968,
+      "vital_dgmt_min": -540,
+      "record_end_hours": 744.0
+    },
+    {
+      "patient_id": "SICU1_02_event_2",
+      "file": "SICU1_02_250206_104957_to_250212_110000.vital",
+      "t0_unix_adapter": 1738838997.0,
+      "first_sample_epoch": 1738806608.0277138,
+      "offset_hours": -8.9969,
+      "vital_dgmt_min": -540,
+      "record_end_hours": 144.167
+    }
+  ],
+  "mimic": [
+    {
+      "patient_id": "mimic_124",
+      "file": "mimic_124_21660113_001200_to_21660201_105200.vital",
+      "t0_unix_adapter": 6186208320.0,
+      "first_sample_epoch": 6186208320.0,
+      "offset_hours": 0.0,
+      "vital_dgmt_min": -540,
+      "record_end_hours": 466.667
+    },
+    {
+      "patient_id": "mimic_16275",
+      "file": "mimic_16275_21131210_072000_to_21140107_141000.vital",
+      "t0_unix_adapter": 4542301200.0,
+      "first_sample_epoch": 4542301200.0,
+      "offset_hours": 0.0,
+      "vital_dgmt_min": -540,
+      "record_end_hours": 678.833
+    },
+    {
+      "patient_id": "mimic_21151",
+      "file": "mimic_21151_21930326_211100_to_21930429_161000.vital",
+      "t0_unix_adapter": 7044581460.0,
+      "first_sample_epoch": 7044581460.0,
+      "offset_hours": 0.0,
+      "vital_dgmt_min": -540,
+      "record_end_hours": 810.983
+    },
+    {
+      "patient_id": "mimic_23450",
+      "file": "mimic_23450_21670317_201900_to_21670430_011100.vital",
+      "t0_unix_adapter": 6223259940.0,
+      "first_sample_epoch": 6223259940.0,
+      "offset_hours": 0.0,
+      "vital_dgmt_min": -540,
+      "record_end_hours": 1036.867
+    },
+    {
+      "patient_id": "mimic_27172",
+      "file": "mimic_27172_21090826_190000_to_21090917_162200.vital",
+      "t0_unix_adapter": 4406954400.0,
+      "first_sample_epoch": 4406954400.0,
+      "offset_hours": 0.0,
+      "vital_dgmt_min": -540,
+      "record_end_hours": 525.367
+    }
+  ],
+  "mimic_death_check": {
+    "clinical_dir_exists": false,
+    "admissions_exists": false,
+    "procedureevents_exists": false,
+    "icustays_exists": false,
+    "note": "Si clinical_dir no existe, los tiempos de muerte de MIMIC NO se pueden verificar."
+  },
+  "summary": {
+    "clinic": {
+      "n_patients": 5,
+      "offset_hours_sample": [
+        -1.9998,
+        -2.0001,
+        -1.9999,
+        -2.0005,
+        -0.9999
+      ],
+      "median_offset_hours": -2.0
+    },
+    "vitaldb": {
+      "n_patients": 5,
+      "offset_hours_sample": [
+        -8.9981,
+        -8.8201,
+        -8.9968,
+        -8.9969
+      ],
+      "median_offset_hours": -8.997
+    },
+    "mimic": {
+      "n_patients": 5,
+      "offset_hours_sample": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "median_offset_hours": 0.0
+    }
+  }
+}

@@ -43,6 +43,7 @@ from .base import (
     NumericsRecord,
     WaveformRecord,
 )
+from ...common.timeutils import to_epoch_utc
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,38 @@ STANDARD_NUMERIC_COLS = [
     "vasopressor_dopamine", "lactate",
     "SOFA_respiratory", "SOFA_cardiovascular", "SOFA_total",
 ]
+
+
+def _flatten_track(trk) -> tuple[np.ndarray, np.ndarray]:
+    """Devuelve (times, values) 1D para una pista VitalFile.
+
+    En esta versión de vitaldb, cada rec WAV tiene `val` como array de nsamp
+    muestras; hay que concatenarlos y expandir los timestamps por muestra.
+    Las pistas NUM tienen `val` escalar y se tratan como 1 muestra.
+    """
+    if trk is None or not trk.recs:
+        return np.empty(0, dtype=np.float64), np.empty(0, dtype=np.float32)
+
+    srate = float(trk.srate) if trk.srate and trk.srate > 0 else 0.0
+    times_list: list[np.ndarray] = []
+    vals_list: list[np.ndarray] = []
+    for r in trk.recs:
+        v = np.asarray(r['val'], dtype=np.float32)
+        if v.ndim == 0:
+            v = v.reshape(1)
+        n = len(v)
+        if n == 0:
+            continue
+        dt = float(r['dt'])
+        vals_list.append(v)
+        if srate > 0:
+            times_list.append(dt + np.arange(n, dtype=np.float64) / srate)
+        else:
+            times_list.append(np.full(n, dt, dtype=np.float64))
+
+    if not vals_list:
+        return np.empty(0, dtype=np.float64), np.empty(0, dtype=np.float32)
+    return np.concatenate(times_list), np.concatenate(vals_list)
 
 # Tolerancia temporal para comparar vent_end con DEATHTIME (5 minutos)
 DEATH_TOLERANCE_S = 5 * 60
@@ -120,8 +153,8 @@ class MimicAdapter(CohortAdapter):
                 "path": path,
                 "start_dt": start_dt,
                 "end_dt": end_dt,
-                "t0_unix": start_dt.timestamp(),
-                "tend_unix": end_dt.timestamp(),
+                "t0_unix": to_epoch_utc(start_dt),
+                "tend_unix": to_epoch_utc(end_dt),
             }
         return meta
 
@@ -225,8 +258,7 @@ class MimicAdapter(CohortAdapter):
                 trk = vf.trks.get(track_name)
                 if not trk or not trk.recs:
                     raise ValueError("track vacío o no encontrado")
-                times = np.array([r['dt'] for r in trk.recs], dtype=np.float64)
-                values = np.array([r['val'] for r in trk.recs], dtype=np.float32)
+                times, values = _flatten_track(trk)
             except Exception as e:
                 logger.warning("[mimic] patient=%s canal=%s error: %s",
                                patient_id, track_name, e)
@@ -296,14 +328,13 @@ class MimicAdapter(CohortAdapter):
                 data=pd.DataFrame(columns=STANDARD_NUMERIC_COLS),
             )
 
-        dfs = [
-            pd.DataFrame(
-                {canonical: values},
-                index=pd.Index(times, name="time_rel_s"),
-            )
-            for canonical, (times, values) in series_dict.items()
-        ]
-        df = pd.concat(dfs, axis=1).sort_index()
+        # Alinear a rejilla de 1 s (promediar duplicados por timestamp redondeado).
+        grid: dict[str, pd.Series] = {}
+        for canonical, (times, values) in series_dict.items():
+            t = np.round(times).astype(np.float64)
+            s = pd.Series(values, index=t)
+            grid[canonical] = s.groupby(level=0).mean()
+        df = pd.DataFrame(grid).sort_index()
         for col in STANDARD_NUMERIC_COLS:
             if col not in df.columns:
                 df[col] = np.nan
@@ -381,7 +412,7 @@ class MimicAdapter(CohortAdapter):
         for _, row in pat_adm.iterrows():
             if pd.isna(row.get("deathtime")):
                 continue
-            death_unix = pd.Timestamp(row["deathtime"]).timestamp()
+            death_unix = to_epoch_utc(pd.Timestamp(row["deathtime"]))
             if abs(death_unix - tend_unix) <= DEATH_TOLERANCE_S:
                 return True, "death_at_vent_end"
 
@@ -423,12 +454,12 @@ class MimicAdapter(CohortAdapter):
         # El siguiente inicio es la reintubación → fallo
         attempts: list[ExtubationAttempt] = []
         for i in range(len(pat)):
-            end_unix = pat.loc[i, "endtime"].timestamp()
+            end_unix = to_epoch_utc(pat.loc[i, "endtime"])
             attempt_hours = (end_unix - t0_unix) / 3600.0
 
             if i < len(pat) - 1:
                 # Hay un episodio siguiente → este intento fue un fallo
-                next_start_unix = pat.loc[i + 1, "starttime"].timestamp()
+                next_start_unix = to_epoch_utc(pat.loc[i + 1, "starttime"])
                 reintub_hours = (next_start_unix - t0_unix) / 3600.0
                 attempts.append(ExtubationAttempt(
                     attempt_index=i,

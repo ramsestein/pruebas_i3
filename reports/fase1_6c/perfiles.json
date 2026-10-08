@@ -1,0 +1,447 @@
+{
+  "mimic": {
+    "n_events": 9093,
+    "combinaciones_top": [
+      {
+        "variables": "HR+SpO2+MAP+RR+FiO2+PEEP",
+        "events": 8035,
+        "pct": 88.4
+      },
+      {
+        "variables": "HR+SpO2+MAP+FiO2+PEEP",
+        "events": 558,
+        "pct": 6.1
+      },
+      {
+        "variables": "HR+SpO2+RR+FiO2+PEEP",
+        "events": 220,
+        "pct": 2.4
+      },
+      {
+        "variables": "HR+SpO2+MAP",
+        "events": 71,
+        "pct": 0.8
+      },
+      {
+        "variables": "HR+SpO2+MAP+FiO2",
+        "events": 36,
+        "pct": 0.4
+      },
+      {
+        "variables": "HR+MAP+RR+FiO2+PEEP",
+        "events": 31,
+        "pct": 0.3
+      },
+      {
+        "variables": "(ninguna)",
+        "events": 27,
+        "pct": 0.3
+      },
+      {
+        "variables": "RR+FiO2+PEEP",
+        "events": 25,
+        "pct": 0.3
+      }
+    ],
+    "combinaciones_distintas": 28,
+    "estado_por_variable": {
+      "HR": {
+        "ausente_todo": {
+          "events": 16,
+          "pct": 0.2
+        },
+        "completa": {
+          "events": 5234,
+          "pct": 57.6
+        },
+        "intermitente": {
+          "events": 3843,
+          "pct": 42.3
+        }
+      },
+      "SpO2": {
+        "ausente_todo": {
+          "events": 26,
+          "pct": 0.3
+        },
+        "completa": {
+          "events": 4789,
+          "pct": 52.7
+        },
+        "intermitente": {
+          "events": 4278,
+          "pct": 47.0
+        }
+      },
+      "MAP": {
+        "ausente_todo": {
+          "events": 61,
+          "pct": 0.7
+        },
+        "completa": {
+          "events": 3536,
+          "pct": 38.9
+        },
+        "intermitente": {
+          "events": 5496,
+          "pct": 60.4
+        }
+      },
+      "RR": {
+        "ausente_todo": {
+          "events": 231,
+          "pct": 2.5
+        },
+        "completa": {
+          "events": 3950,
+          "pct": 43.4
+        },
+        "intermitente": {
+          "events": 4912,
+          "pct": 54.0
+        }
+      },
+      "FiO2": {
+        "ausente_todo": {
+          "events": 39,
+          "pct": 0.4
+        },
+        "completa": {
+          "events": 5856,
+          "pct": 64.4
+        },
+        "intermitente": {
+          "events": 3198,
+          "pct": 35.2
+        }
+      },
+      "PEEP": {
+        "ausente_todo": {
+          "events": 43,
+          "pct": 0.5
+        },
+        "completa": {
+          "events": 5658,
+          "pct": 62.2
+        },
+        "intermitente": {
+          "events": 3392,
+          "pct": 37.3
+        }
+      }
+    }
+  },
+  "eicu": {
+    "n_events": 9754,
+    "combinaciones_top": [
+      {
+        "variables": "HR+SpO2+MAP+RR+FiO2+PEEP",
+        "events": 7021,
+        "pct": 72.0
+      },
+      {
+        "variables": "HR+SpO2+MAP+RR",
+        "events": 789,
+        "pct": 8.1
+      },
+      {
+        "variables": "HR+SpO2+MAP+FiO2+PEEP",
+        "events": 705,
+        "pct": 7.2
+      },
+      {
+        "variables": "HR+SpO2+MAP+RR+FiO2",
+        "events": 575,
+        "pct": 5.9
+      },
+      {
+        "variables": "(ninguna)",
+        "events": 243,
+        "pct": 2.5
+      },
+      {
+        "variables": "FiO2+PEEP",
+        "events": 166,
+        "pct": 1.7
+      },
+      {
+        "variables": "HR+MAP+RR+FiO2+PEEP",
+        "events": 54,
+        "pct": 0.6
+      },
+      {
+        "variables": "HR+SpO2+MAP+FiO2",
+        "events": 41,
+        "pct": 0.4
+      }
+    ],
+    "combinaciones_distintas": 31,
+    "estado_por_variable": {
+      "HR": {
+        "ausente_todo": {
+          "events": 101,
+          "pct": 1.0
+        },
+        "completa": {
+          "events": 416,
+          "pct": 4.3
+        },
+        "intermitente": {
+          "events": 9237,
+          "pct": 94.7
+        }
+      },
+      "SpO2": {
+        "ausente_todo": {
+          "events": 142,
+          "pct": 1.5
+        },
+        "completa": {
+          "events": 369,
+          "pct": 3.8
+        },
+        "intermitente": {
+          "events": 9243,
+          "pct": 94.8
+        }
+      },
+      "MAP": {
+        "ausente_todo": {
+          "events": 97,
+          "pct": 1.0
+        },
+        "completa": {
+          "events": 773,
+          "pct": 7.9
+        },
+        "intermitente": {
+          "events": 8884,
+          "pct": 91.1
+        }
+      },
+      "RR": {
+        "ausente_todo": {
+          "events": 356,
+          "pct": 3.6
+        },
+        "completa": {
+          "events": 350,
+          "pct": 3.6
+        },
+        "intermitente": {
+          "events": 9048,
+          "pct": 92.8
+        }
+      },
+      "FiO2": {
+        "ausente_todo": {
+          "events": 671,
+          "pct": 6.9
+        },
+        "completa": {
+          "events": 3157,
+          "pct": 32.4
+        },
+        "intermitente": {
+          "events": 5926,
+          "pct": 60.8
+        }
+      },
+      "PEEP": {
+        "ausente_todo": {
+          "events": 1132,
+          "pct": 11.6
+        },
+        "completa": {
+          "events": 2285,
+          "pct": 23.4
+        },
+        "intermitente": {
+          "events": 6337,
+          "pct": 65.0
+        }
+      }
+    }
+  },
+  "clinic": {
+    "n_events": 181,
+    "combinaciones_top": [
+      {
+        "variables": "(ninguna)",
+        "events": 181,
+        "pct": 100.0
+      }
+    ],
+    "combinaciones_distintas": 1,
+    "estado_por_variable": {
+      "HR": {
+        "ausente_todo": {
+          "events": 181,
+          "pct": 100.0
+        }
+      },
+      "SpO2": {
+        "ausente_todo": {
+          "events": 181,
+          "pct": 100.0
+        }
+      },
+      "MAP": {
+        "ausente_todo": {
+          "events": 181,
+          "pct": 100.0
+        }
+      },
+      "RR": {
+        "ausente_todo": {
+          "events": 181,
+          "pct": 100.0
+        }
+      },
+      "FiO2": {
+        "ausente_todo": {
+          "events": 181,
+          "pct": 100.0
+        }
+      },
+      "PEEP": {
+        "ausente_todo": {
+          "events": 181,
+          "pct": 100.0
+        }
+      }
+    }
+  },
+  "vitaldb": {
+    "n_events": 96,
+    "combinaciones_top": [
+      {
+        "variables": "HR+SpO2+MAP+RR",
+        "events": 29,
+        "pct": 30.2
+      },
+      {
+        "variables": "HR+SpO2+MAP+RR+FiO2+PEEP",
+        "events": 22,
+        "pct": 22.9
+      },
+      {
+        "variables": "(ninguna)",
+        "events": 19,
+        "pct": 19.8
+      },
+      {
+        "variables": "HR+SpO2+MAP+RR+FiO2",
+        "events": 7,
+        "pct": 7.3
+      },
+      {
+        "variables": "RR",
+        "events": 6,
+        "pct": 6.2
+      },
+      {
+        "variables": "HR+SpO2+MAP",
+        "events": 6,
+        "pct": 6.2
+      },
+      {
+        "variables": "HR+SpO2+MAP+FiO2",
+        "events": 2,
+        "pct": 2.1
+      },
+      {
+        "variables": "SpO2+RR",
+        "events": 2,
+        "pct": 2.1
+      }
+    ],
+    "combinaciones_distintas": 11,
+    "estado_por_variable": {
+      "HR": {
+        "ausente_todo": {
+          "events": 15,
+          "pct": 15.6
+        },
+        "completa": {
+          "events": 20,
+          "pct": 20.8
+        },
+        "intermitente": {
+          "events": 61,
+          "pct": 63.5
+        }
+      },
+      "SpO2": {
+        "ausente_todo": {
+          "events": 14,
+          "pct": 14.6
+        },
+        "completa": {
+          "events": 22,
+          "pct": 22.9
+        },
+        "intermitente": {
+          "events": 60,
+          "pct": 62.5
+        }
+      },
+      "MAP": {
+        "ausente_todo": {
+          "events": 14,
+          "pct": 14.6
+        },
+        "completa": {
+          "events": 19,
+          "pct": 19.8
+        },
+        "intermitente": {
+          "events": 63,
+          "pct": 65.6
+        }
+      },
+      "RR": {
+        "ausente_todo": {
+          "events": 17,
+          "pct": 17.7
+        },
+        "completa": {
+          "events": 27,
+          "pct": 28.1
+        },
+        "intermitente": {
+          "events": 52,
+          "pct": 54.2
+        }
+      },
+      "FiO2": {
+        "ausente_todo": {
+          "events": 60,
+          "pct": 62.5
+        },
+        "completa": {
+          "events": 2,
+          "pct": 2.1
+        },
+        "intermitente": {
+          "events": 34,
+          "pct": 35.4
+        }
+      },
+      "PEEP": {
+        "ausente_todo": {
+          "events": 72,
+          "pct": 75.0
+        },
+        "completa": {
+          "events": 2,
+          "pct": 2.1
+        },
+        "intermitente": {
+          "events": 22,
+          "pct": 22.9
+        }
+      }
+    }
+  }
+}

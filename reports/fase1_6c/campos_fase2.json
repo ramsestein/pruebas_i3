@@ -1,0 +1,63 @@
+{
+  "mimic": {
+    "index": "datasets\\mimic3wdb\\cases_v0.2.0_a805771c\\mimic_cases_index.json",
+    "n_events": 9093,
+    "missing_counts": {
+      "label_source": 9093
+    },
+    "complete": false,
+    "applied": 9093,
+    "after": {
+      "index": "datasets\\mimic3wdb\\cases_v0.2.0_a805771c\\mimic_cases_index.json",
+      "n_events": 9093,
+      "missing_counts": {},
+      "complete": true
+    }
+  },
+  "eicu": {
+    "index": "datasets\\eicu_collaborative\\cases_v0.3.0_37558586\\eicu_cases_index.json",
+    "n_events": 23362,
+    "missing_counts": {
+      "label_source": 23362,
+      "uniquepid": 23362
+    },
+    "complete": false,
+    "applied": 46724,
+    "after": {
+      "index": "datasets\\eicu_collaborative\\cases_v0.3.0_37558586\\eicu_cases_index.json",
+      "n_events": 23362,
+      "missing_counts": {},
+      "complete": true
+    }
+  },
+  "clinic": {
+    "index": "datasets\\clinic\\cases_v0.1.0_a225d21b\\clinic_cases_index.json",
+    "n_events": 181,
+    "missing_counts": {
+      "label_source": 181
+    },
+    "complete": false,
+    "applied": 181,
+    "after": {
+      "index": "datasets\\clinic\\cases_v0.1.0_a225d21b\\clinic_cases_index.json",
+      "n_events": 181,
+      "missing_counts": {},
+      "complete": true
+    }
+  },
+  "vitaldb": {
+    "index": "datasets\\vitaldb\\cases_v0.2.0_a805771c\\vitaldb_cases_index.json",
+    "n_events": 96,
+    "missing_counts": {
+      "label_source": 96
+    },
+    "complete": false,
+    "applied": 96,
+    "after": {
+      "index": "datasets\\vitaldb\\cases_v0.2.0_a805771c\\vitaldb_cases_index.json",
+      "n_events": 96,
+      "missing_counts": {},
+      "complete": true
+    }
+  }
+}

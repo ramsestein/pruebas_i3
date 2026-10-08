@@ -1,0 +1,154 @@
+{
+  "mimic": {
+    "criterio": "test 15% por subject_id + 5 pliegues por paciente",
+    "n_pacientes": 8160,
+    "test_pacientes": 1224,
+    "test": {
+      "n": 1359,
+      "success": 1113,
+      "censored": 246,
+      "failures": 66
+    },
+    "train": {
+      "n": 7734,
+      "success": 6342,
+      "censored": 1392,
+      "failures": 405
+    },
+    "folds_train": [
+      {
+        "n": 1564,
+        "success": 1279,
+        "censored": 285,
+        "failures": 80
+      },
+      {
+        "n": 1550,
+        "success": 1267,
+        "censored": 283,
+        "failures": 80
+      },
+      {
+        "n": 1536,
+        "success": 1251,
+        "censored": 285,
+        "failures": 81
+      },
+      {
+        "n": 1542,
+        "success": 1253,
+        "censored": 289,
+        "failures": 83
+      },
+      {
+        "n": 1542,
+        "success": 1292,
+        "censored": 250,
+        "failures": 81
+      }
+    ]
+  },
+  "eicu_b": {
+    "criterio": "test = 8 hospitales (fijos) + 5 pliegues por hospital del resto",
+    "test_hospitals": [
+      67,
+      171,
+      227,
+      301,
+      303,
+      336,
+      392,
+      405
+    ],
+    "train_hospitals": 19,
+    "test": {
+      "n": 1780,
+      "success": 1372,
+      "censored": 408,
+      "failures": 195
+    },
+    "train": {
+      "n": 7973,
+      "success": 6151,
+      "censored": 1822,
+      "failures": 493
+    },
+    "folds_train": [
+      {
+        "n": 2821,
+        "success": 2201,
+        "censored": 620,
+        "failures": 164
+      },
+      {
+        "n": 1120,
+        "success": 909,
+        "censored": 211,
+        "failures": 50
+      },
+      {
+        "n": 2642,
+        "success": 2031,
+        "censored": 611,
+        "failures": 178
+      },
+      {
+        "n": 840,
+        "success": 620,
+        "censored": 220,
+        "failures": 78
+      },
+      {
+        "n": 550,
+        "success": 390,
+        "censored": 160,
+        "failures": 23
+      }
+    ]
+  },
+  "clinic": {
+    "criterio": "test = último 40% del tiempo; train en 2 bloques temporales (ventana creciente: entrenar con el bloque 1, validar con el 2)",
+    "test": {
+      "n": 72,
+      "success": 58,
+      "censored": 14,
+      "failures": 6
+    },
+    "train": {
+      "n": 109,
+      "success": 82,
+      "censored": 27,
+      "failures": 1
+    },
+    "bloques_train": [
+      {
+        "n": 54,
+        "success": 44,
+        "censored": 10,
+        "failures": 0
+      },
+      {
+        "n": 55,
+        "success": 38,
+        "censored": 17,
+        "failures": 1
+      }
+    ],
+    "fecha_corte": "2025-07-01T23:22:16.708311"
+  },
+  "vitaldb": {
+    "criterio": "los 96 eventos = test (test externo; sin ajuste fino ni validación cruzada)",
+    "test": {
+      "n": 96,
+      "success": 40,
+      "censored": 56,
+      "failures": 5
+    },
+    "train": {
+      "n": 0,
+      "success": 0,
+      "censored": 0,
+      "failures": 0
+    }
+  }
+}

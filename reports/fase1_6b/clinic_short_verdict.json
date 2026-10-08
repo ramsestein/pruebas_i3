@@ -1,0 +1,344 @@
+{
+  "n_events": 16,
+  "fase1_5_plausible": 0,
+  "fase1_6b_plausible": 12,
+  "fase1_6b_artifact": 4,
+  "by_evidence": {
+    "ninguna": 4,
+    "ajustes": 6,
+    "onda": 6
+  },
+  "events": [
+    {
+      "event_id": "clinic_box10_event_2",
+      "box": "box10",
+      "duration_min": 14.55,
+      "n_files_found": 2,
+      "vent_tracks_present": [],
+      "marker_counts": {},
+      "has_wave": false,
+      "n_marker_tracks": 0,
+      "classification_fase1_6b": "artefacto",
+      "classification_fase1_5": "artefacto",
+      "evidence": "ninguna"
+    },
+    {
+      "event_id": "clinic_box13_event_4",
+      "box": "box13",
+      "duration_min": 19.42,
+      "n_files_found": 1,
+      "vent_tracks_present": [
+        "Intellivue/FIO2",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "marker_counts": {
+        "Intellivue/VENT_RR": 1139,
+        "Intellivue/TV_EXP": 1139,
+        "Intellivue/PIP_CMH2O": 1139,
+        "Intellivue/PEEP_CMH2O": 1139
+      },
+      "has_wave": false,
+      "n_marker_tracks": 4,
+      "classification_fase1_6b": "ventilacion_invasiva_plausible",
+      "classification_fase1_5": "artefacto",
+      "evidence": "ajustes"
+    },
+    {
+      "event_id": "clinic_box13_event_5",
+      "box": "box13",
+      "duration_min": 0.93,
+      "n_files_found": 11,
+      "vent_tracks_present": [
+        "Intellivue/FIO2",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "marker_counts": {
+        "Intellivue/VENT_RR": 56,
+        "Intellivue/TV_EXP": 56,
+        "Intellivue/PIP_CMH2O": 56,
+        "Intellivue/PEEP_CMH2O": 56
+      },
+      "has_wave": false,
+      "n_marker_tracks": 4,
+      "classification_fase1_6b": "ventilacion_invasiva_plausible",
+      "classification_fase1_5": "artefacto",
+      "evidence": "ajustes"
+    },
+    {
+      "event_id": "clinic_box14_event_1",
+      "box": "box14",
+      "duration_min": 9.27,
+      "n_files_found": 0,
+      "vent_tracks_present": [],
+      "marker_counts": {},
+      "has_wave": false,
+      "n_marker_tracks": 0,
+      "classification_fase1_6b": "artefacto",
+      "classification_fase1_5": "artefacto",
+      "evidence": "ninguna"
+    },
+    {
+      "event_id": "clinic_box14_event_2",
+      "box": "box14",
+      "duration_min": 8.57,
+      "n_files_found": 8,
+      "vent_tracks_present": [
+        "Intellivue/AWP_WAV",
+        "Intellivue/FIO2",
+        "Intellivue/FLOW_WAV",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "marker_counts": {
+        "Intellivue/VENT_RR": 446,
+        "Intellivue/TV_EXP": 446,
+        "Intellivue/PIP_CMH2O": 446,
+        "Intellivue/PEEP_CMH2O": 446
+      },
+      "has_wave": true,
+      "n_marker_tracks": 4,
+      "classification_fase1_6b": "ventilacion_invasiva_plausible",
+      "classification_fase1_5": "artefacto",
+      "evidence": "onda"
+    },
+    {
+      "event_id": "clinic_box14_event_3",
+      "box": "box14",
+      "duration_min": 0.38,
+      "n_files_found": 2,
+      "vent_tracks_present": [
+        "Intellivue/AWP_WAV",
+        "Intellivue/FLOW_WAV"
+      ],
+      "marker_counts": {},
+      "has_wave": true,
+      "n_marker_tracks": 0,
+      "classification_fase1_6b": "ventilacion_invasiva_plausible",
+      "classification_fase1_5": "artefacto",
+      "evidence": "onda"
+    },
+    {
+      "event_id": "clinic_box14_event_7",
+      "box": "box14",
+      "duration_min": 50.8,
+      "n_files_found": 2,
+      "vent_tracks_present": [
+        "Intellivue/AWP_WAV",
+        "Intellivue/FLOW_WAV"
+      ],
+      "marker_counts": {},
+      "has_wave": true,
+      "n_marker_tracks": 0,
+      "classification_fase1_6b": "ventilacion_invasiva_plausible",
+      "classification_fase1_5": "artefacto",
+      "evidence": "onda"
+    },
+    {
+      "event_id": "clinic_box14_event_25",
+      "box": "box14",
+      "duration_min": 18.93,
+      "n_files_found": 0,
+      "vent_tracks_present": [],
+      "marker_counts": {},
+      "has_wave": false,
+      "n_marker_tracks": 0,
+      "classification_fase1_6b": "artefacto",
+      "classification_fase1_5": "artefacto",
+      "evidence": "ninguna"
+    },
+    {
+      "event_id": "clinic_box14_event_30",
+      "box": "box14",
+      "duration_min": 18.95,
+      "n_files_found": 5,
+      "vent_tracks_present": [
+        "Intellivue/AWP_WAV",
+        "Intellivue/FLOW_WAV"
+      ],
+      "marker_counts": {},
+      "has_wave": true,
+      "n_marker_tracks": 0,
+      "classification_fase1_6b": "ventilacion_invasiva_plausible",
+      "classification_fase1_5": "artefacto",
+      "evidence": "onda"
+    },
+    {
+      "event_id": "clinic_box14_event_35",
+      "box": "box14",
+      "duration_min": 0.25,
+      "n_files_found": 1,
+      "vent_tracks_present": [
+        "Intellivue/AWP_WAV",
+        "Intellivue/FIO2",
+        "Intellivue/FLOW_WAV",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "marker_counts": {
+        "Intellivue/VENT_RR": 14,
+        "Intellivue/TV_EXP": 14,
+        "Intellivue/PIP_CMH2O": 14,
+        "Intellivue/PEEP_CMH2O": 14
+      },
+      "has_wave": true,
+      "n_marker_tracks": 4,
+      "classification_fase1_6b": "ventilacion_invasiva_plausible",
+      "classification_fase1_5": "artefacto",
+      "evidence": "onda"
+    },
+    {
+      "event_id": "clinic_box14_event_37",
+      "box": "box14",
+      "duration_min": 59.42,
+      "n_files_found": 1,
+      "vent_tracks_present": [
+        "Intellivue/AWP_WAV",
+        "Intellivue/FIO2",
+        "Intellivue/FLOW_WAV",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "marker_counts": {
+        "Intellivue/VENT_RR": 3476,
+        "Intellivue/TV_EXP": 3476,
+        "Intellivue/PIP_CMH2O": 3476,
+        "Intellivue/PEEP_CMH2O": 3476
+      },
+      "has_wave": true,
+      "n_marker_tracks": 4,
+      "classification_fase1_6b": "ventilacion_invasiva_plausible",
+      "classification_fase1_5": "artefacto",
+      "evidence": "onda"
+    },
+    {
+      "event_id": "clinic_box2_event_6",
+      "box": "box2",
+      "duration_min": 13.7,
+      "n_files_found": 1,
+      "vent_tracks_present": [
+        "Intellivue/FIO2",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "marker_counts": {
+        "Intellivue/VENT_RR": 804,
+        "Intellivue/TV_EXP": 804,
+        "Intellivue/PIP_CMH2O": 804,
+        "Intellivue/PEEP_CMH2O": 804
+      },
+      "has_wave": false,
+      "n_marker_tracks": 4,
+      "classification_fase1_6b": "ventilacion_invasiva_plausible",
+      "classification_fase1_5": "artefacto",
+      "evidence": "ajustes"
+    },
+    {
+      "event_id": "clinic_box4_event_1",
+      "box": "box4",
+      "duration_min": 3.73,
+      "n_files_found": 1,
+      "vent_tracks_present": [
+        "Intellivue/FIO2"
+      ],
+      "marker_counts": {},
+      "has_wave": false,
+      "n_marker_tracks": 0,
+      "classification_fase1_6b": "artefacto",
+      "classification_fase1_5": "artefacto",
+      "evidence": "ninguna"
+    },
+    {
+      "event_id": "clinic_box5_event_6",
+      "box": "box5",
+      "duration_min": 4.1,
+      "n_files_found": 1,
+      "vent_tracks_present": [
+        "Intellivue/FIO2",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "marker_counts": {
+        "Intellivue/VENT_RR": 241,
+        "Intellivue/TV_EXP": 241,
+        "Intellivue/PIP_CMH2O": 241,
+        "Intellivue/PEEP_CMH2O": 241
+      },
+      "has_wave": false,
+      "n_marker_tracks": 4,
+      "classification_fase1_6b": "ventilacion_invasiva_plausible",
+      "classification_fase1_5": "artefacto",
+      "evidence": "ajustes"
+    },
+    {
+      "event_id": "clinic_box5_event_7",
+      "box": "box5",
+      "duration_min": 47.95,
+      "n_files_found": 1,
+      "vent_tracks_present": [
+        "Intellivue/FIO2",
+        "Intellivue/MV_EXP",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "marker_counts": {
+        "Intellivue/VENT_RR": 48,
+        "Intellivue/TV_EXP": 48,
+        "Intellivue/PIP_CMH2O": 48,
+        "Intellivue/PEEP_CMH2O": 48
+      },
+      "has_wave": false,
+      "n_marker_tracks": 4,
+      "classification_fase1_6b": "ventilacion_invasiva_plausible",
+      "classification_fase1_5": "artefacto",
+      "evidence": "ajustes"
+    },
+    {
+      "event_id": "clinic_box8_event_2",
+      "box": "box8",
+      "duration_min": 59.23,
+      "n_files_found": 1,
+      "vent_tracks_present": [
+        "Intellivue/FIO2",
+        "Intellivue/PEEP_CMH2O",
+        "Intellivue/PIP_CMH2O",
+        "Intellivue/TV_EXP",
+        "Intellivue/VENT_RR"
+      ],
+      "marker_counts": {
+        "Intellivue/VENT_RR": 3470,
+        "Intellivue/TV_EXP": 3470,
+        "Intellivue/PIP_CMH2O": 3470,
+        "Intellivue/PEEP_CMH2O": 3470
+      },
+      "has_wave": false,
+      "n_marker_tracks": 4,
+      "classification_fase1_6b": "ventilacion_invasiva_plausible",
+      "classification_fase1_5": "artefacto",
+      "evidence": "ajustes"
+    }
+  ]
+}

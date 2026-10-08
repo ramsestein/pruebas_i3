@@ -22,6 +22,10 @@ from pathlib import Path
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from src.common.timeutils import to_epoch_utc  # noqa: E402
+
 load_dotenv()
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
@@ -107,9 +111,7 @@ def write_vital_from_df(df: pd.DataFrame, out_path: Path, device_prefix: str = "
         return False
 
     # Convert Time to unix timestamp seconds (int)
-    time_sec = df["Time"].apply(
-        lambda dt: int(dt.replace(tzinfo=timezone.utc).timestamp()) if dt.tzinfo is None else int(dt.timestamp())
-    ).values
+    time_sec = df["Time"].apply(lambda dt: int(to_epoch_utc(dt))).values
 
     vf = vitaldb.VitalFile()
 

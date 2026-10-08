@@ -59,6 +59,10 @@ import pandas as pd
 import vitaldb
 from scipy.signal import savgol_filter, find_peaks
 
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from src.common.timeutils import to_epoch_utc  # noqa: E402
+
 # ── Constantes ────────────────────────────────────────────────────────────────
 CO2_SRATE   = 62.5
 ART_SRATE   = 125.0
@@ -87,7 +91,7 @@ def to_array(vf, tname, srate):
     df = vf.to_pandas([tname], interval=1.0 / srate, return_datetime=True)
     if df is None or tname not in df.columns:
         return None, None
-    times = df["Time"].apply(lambda x: x.timestamp()).values
+    times = df["Time"].apply(to_epoch_utc).values
     vals  = df[tname].values.astype(np.float32)
     return times, vals
 
@@ -357,7 +361,7 @@ def compute_numeric_waveform_derived(vf):
     if df is None or len(df) == 0:
         return {}
 
-    times = df["Time"].apply(lambda x: x.timestamp()).values
+    times = df["Time"].apply(to_epoch_utc).values
     srate = 1.0
     derived = {}
 
@@ -419,7 +423,7 @@ def compute_numeric_derived(vf):
     if df is None or len(df) == 0:
         return {}
 
-    times = df["Time"].apply(lambda x: x.timestamp()).values
+    times = df["Time"].apply(to_epoch_utc).values
 
     def col(name):
         return df[name].values.astype(np.float32) if name in df.columns else None

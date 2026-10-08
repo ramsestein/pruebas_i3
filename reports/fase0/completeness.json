@@ -1,0 +1,108 @@
+{
+  "C1_clinic_index": {
+    "passed": true,
+    "n_events_index": 50,
+    "n_files_disk": 50,
+    "missing_on_disk": [],
+    "missing_in_index": []
+  },
+  "C2_clinic_t0_fields": {
+    "passed": true,
+    "n_events": 50,
+    "bad_events": []
+  },
+  "C3_clinic_t0_vs_file": {
+    "passed": true,
+    "n": 50,
+    "max_abs_offset_s": 0.0,
+    "tolerance_s": 300.0,
+    "errors": []
+  },
+  "V1_vitaldb_index": {
+    "passed": true,
+    "n_events_index": 83,
+    "n_files_disk": 83,
+    "missing_on_disk": [],
+    "missing_in_index": []
+  },
+  "V2_vitaldb_t0_fields": {
+    "passed": true,
+    "n_events": 83,
+    "bad_events": []
+  },
+  "V3_vitaldb_t0_vs_file": {
+    "passed": true,
+    "n": 83,
+    "max_abs_offset_s": 0.0,
+    "tolerance_s": 300.0,
+    "errors": []
+  },
+  "M1_mimic_clinical_tables": {
+    "passed": true,
+    "clinical_dir": "C:\\Users\\Ramsés\\Desktop\\Proyectos\\iprove3\\datasets\\mimic3wdb\\clinical",
+    "missing_files": []
+  },
+  "M2_mimic_labels": {
+    "passed": true,
+    "n_patients": 82,
+    "n_censored": 0,
+    "errors": []
+  },
+  "G1_harmonized_outputs": {
+    "passed": true,
+    "version": "v0.1.0_df652b7b",
+    "missing_files": [],
+    "cohorts_in_survival_48h": [
+      "clinic",
+      "mimic",
+      "vitaldb"
+    ],
+    "missing_cohorts": []
+  },
+  "G2_channel_availability": {
+    "passed": true,
+    "version": "v0.1.0_df652b7b",
+    "thresholds": {
+      "wave": 90.0,
+      "vitals": 95.0,
+      "vent": 90.0
+    },
+    "availability_pct": {
+      "clinic": {
+        "ecg_waveform": 94.0,
+        "ppg_waveform": 100.0,
+        "abp_waveform": 92.0,
+        "HR": 100.0,
+        "SBP": 100.0,
+        "DBP": 100.0,
+        "MAP": 100.0,
+        "SpO2": 100.0,
+        "RR": 100.0
+      },
+      "vitaldb": {
+        "ecg_waveform": 98.8,
+        "ppg_waveform": 98.8,
+        "abp_waveform": 90.4,
+        "HR": 97.6,
+        "SBP": 96.4,
+        "DBP": 96.4,
+        "MAP": 96.4,
+        "SpO2": 97.6,
+        "RR": 96.4
+      },
+      "mimic": {
+        "FiO2": 100.0,
+        "PEEP": 98.8,
+        "TV": 100.0,
+        "MV": 100.0,
+        "PIP": 100.0
+      }
+    },
+    "low_availability": {}
+  },
+  "summary": {
+    "all_green": true,
+    "n_checks": 10,
+    "n_failed": 0
+  }
+}

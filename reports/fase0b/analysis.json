@@ -1,0 +1,184 @@
+{
+  "mimic_monitor": {
+    "raw_wfdb_dir_exists": false,
+    "n_base_vital": 82,
+    "n_enriched_vital": 82,
+    "n_base_parquet": 0,
+    "n_enriched_parquet": 0,
+    "base_tracks_empty_sample": {
+      "HR": {
+        "n_files_with_track": 10,
+        "n_empty": 10
+      },
+      "PULSE": {
+        "n_files_with_track": 10,
+        "n_empty": 10
+      },
+      "RESP": {
+        "n_files_with_track": 10,
+        "n_empty": 10
+      },
+      "SpO2": {
+        "n_files_with_track": 10,
+        "n_empty": 10
+      },
+      "ABP_S": {
+        "n_files_with_track": 6,
+        "n_empty": 6
+      },
+      "ABP_D": {
+        "n_files_with_track": 6,
+        "n_empty": 6
+      },
+      "ABP_M": {
+        "n_files_with_track": 6,
+        "n_empty": 6
+      }
+    },
+    "enriched_tracks_empty_sample": {
+      "HR": {
+        "n_files_with_track": 10,
+        "n_empty": 10
+      },
+      "PULSE": {
+        "n_files_with_track": 10,
+        "n_empty": 10
+      },
+      "RESP": {
+        "n_files_with_track": 10,
+        "n_empty": 10
+      },
+      "SpO2": {
+        "n_files_with_track": 10,
+        "n_empty": 10
+      },
+      "ABP_S": {
+        "n_files_with_track": 6,
+        "n_empty": 6
+      },
+      "ABP_D": {
+        "n_files_with_track": 6,
+        "n_empty": 6
+      },
+      "ABP_M": {
+        "n_files_with_track": 6,
+        "n_empty": 6
+      }
+    }
+  },
+  "mimic_labels": {
+    "admissions_exists": true,
+    "icustays_exists": true,
+    "procedureevents_exists": true,
+    "n_mv_225792_total": 10749,
+    "n_mv_subjects_total": 8182,
+    "n_subjects_with_gt1_225792": 1504,
+    "n_current_cases": 82,
+    "n_current_with_mv": 82,
+    "n_current_with_deathtime": 29,
+    "current_episodes_per_subject": {
+      "1": 31,
+      "2": 14,
+      "3": 17,
+      "4": 10,
+      "5": 5,
+      "6": 1,
+      "7": 1,
+      "11": 1,
+      "13": 1,
+      "16": 1
+    },
+    "current_subjects_with_gt1_episode": 51,
+    "current_subjects_with_gt1_hadm": 20,
+    "current_mv_duration_summary_h": {
+      "min": 0.0,
+      "median": 147.87,
+      "max": 2254.45
+    },
+    "why_zero_failures": "El campo event_type de las tablas de supervivencia solo toma dos valores ('successful_extubation' y 'censored_no_extubation'): nunca 'failure'. Los fallos existen en n_failed_attempts (mimic: 33/82 con >=1 fallo a 48h en v0.1.0_df652b7b) y en extubation_attempts (169 intentos 'failure').",
+    "why_zero_censored": "censored_no_extubation solo se activa para 'death_at_vent_end' (DEATHTIME dentro de +/-5 min del vent_end del fichero). Ninguno de los 82 sujetos cumple esa coincidencia; las demás reglas de censura de D3 (fin de monitor/datos <=15 min o seguimiento < ventana) no están implementadas."
+  },
+  "vitaldb_tracks": {
+    "raw_dir": "D:\\data\\vitaldb_sicu",
+    "source_vent_tracks": {},
+    "merge_track_names": [
+      "Intellivue/ECG_II",
+      "Intellivue/PLETH",
+      "Intellivue/ABP",
+      "Intellivue/ECG_HR",
+      "Intellivue/ABP_SYS",
+      "Intellivue/ABP_DIA",
+      "Intellivue/ABP_MEAN",
+      "Intellivue/PLETH_SAT_O2",
+      "Intellivue/RR",
+      "Intellivue/TV_EXP",
+      "Intellivue/MV_EXP"
+    ],
+    "source_vent_tracks_sample300": {
+      "Intellivue/FIO2": 29,
+      "Intellivue/VENT_RR": 102,
+      "Intellivue/TV_EXP": 103,
+      "Intellivue/MV_EXP": 103,
+      "Intellivue/PIP_CMH2O": 26,
+      "Intellivue/PEEP_CMH2O": 26,
+      "Intellivue/FLOW_WAV": 65,
+      "Intellivue/AWP_WAV": 54
+    },
+    "kept_by_merge": {
+      "Intellivue/TV_EXP": 103,
+      "Intellivue/MV_EXP": 103
+    },
+    "lost_by_merge": {
+      "Intellivue/FIO2": 29,
+      "Intellivue/VENT_RR": 102,
+      "Intellivue/PIP_CMH2O": 26,
+      "Intellivue/PEEP_CMH2O": 26,
+      "Intellivue/FLOW_WAV": 65,
+      "Intellivue/AWP_WAV": 54
+    },
+    "n_vent_tracks_in_source": 8,
+    "n_vent_tracks_lost": 6
+  },
+  "eicu_reintubations": {
+    "n_patients_with_mv": 44772,
+    "n_patients_with_gt1_episode": 1373,
+    "n_reintubation_gaps": 1417,
+    "gap_le_48h": 1182,
+    "gap_48_72h": 59,
+    "gap_gt_72h": 176,
+    "gap_min_h": 2.02,
+    "gap_median_h": 4.93,
+    "gap_max_h": 8988.25,
+    "duration_summary_h": {
+      "min": 0.02,
+      "median": 36.78,
+      "max": 25713.52
+    }
+  },
+  "selection_bias": {
+    "mimic_all_mv_episodes": {
+      "n": 10749,
+      "duration_summary_h": {
+        "min": -0.03,
+        "p5": 2.75,
+        "median": 26.83,
+        "p95": 305.5,
+        "max": 2254.45
+      },
+      "n_lost_by_min_12h": 3067,
+      "note_top150": "El selector actual toma los 150 episodios más largos (>=12h) de la cohorte matched; de ellos quedan 82 casos."
+    },
+    "eicu_merged_episodes": {
+      "n": 46189,
+      "duration_summary_h": {
+        "min": 0.02,
+        "p5": 4.02,
+        "median": 36.78,
+        "p95": 346.12,
+        "max": 25713.52
+      },
+      "n_lost_by_min_2h": 1104
+    },
+    "clinic_note": "La distribución pre-filtro de Clínic/VitalDB requiere re-ejecutar la detección sin MIN_EVENT_SECONDS=7200 (Fase 1)."
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "mimic": {
+    "n_events": 9093,
+    "success": 7455,
+    "censored": 1638,
+    "causes": {
+      "death_at_vent": 556,
+      "trach": 226,
+      "terminal_extubation": 418,
+      "transfer_ventilated": 438
+    },
+    "failure_events_48h": 471,
+    "vars_ok_50": 1932,
+    "vars_ok_80": 551,
+    "n_measured": 9093,
+    "label_error": {
+      "end_error_median_h": 0.0,
+      "label48_agreement_pct": 100.0,
+      "source": "referencia"
+    }
+  },
+  "eicu": {
+    "n_events": 23362,
+    "n_hospitals": 53,
+    "success": 19720,
+    "censored": 3642,
+    "success_72h": 19636,
+    "censored_72h": 3726,
+    "causes": {
+      "terminal_extubation": 4496,
+      "transfer_ventilated": 1936,
+      "trach": 746,
+      "death_at_vent": 190
+    },
+    "failure_events_48h": 2775,
+    "vars_ok_50": 15999,
+    "vars_ok_80": 10819,
+    "n_measured": 23362,
+    "label_error": {
+      "end_error_median_h": -2.053585823139842,
+      "label48_agreement_pct": 78.89967310142944,
+      "source": "calibracion MIMIC ponderada por estrato",
+      "strata": {
+        "1_2h": 6612,
+        "gt2h": 14340,
+        "le1h": 2410
+      }
+    }
+  },
+  "clinic": {
+    "n_events": 181,
+    "n_excluded": 4,
+    "index": "datasets\\clinic\\cases_v0.1.0_a225d21b\\clinic_cases_index.json",
+    "success": 140,
+    "censored": 41,
+    "causes": {
+      "end_of_record": 40,
+      "terminal_extubation": 1
+    },
+    "failure_events_48h": 7,
+    "vars_ok_50": 0,
+    "vars_ok_80": 0,
+    "n_measured": 0,
+    "levels": null,
+    "end_reason": {
+      "extubation_observed": 139,
+      "end_of_record": 41,
+      "death_signal": 1
+    },
+    "label_error": {
+      "end_error_median_h": null,
+      "label48_agreement_pct": null,
+      "source": "no aplica (señal continua)",
+      "nota": "Etiqueta derivada de la señal continua (onda AWP/FLOW): no existe el error de temporalidad de las anotaciones de enfermería de MIMIC/eICU."
+    },
+    "label_error_correccion": {
+      "fase": "1.6c punto 4",
+      "antes": {
+        "end_error_median_h": -1.275000000023283,
+        "label48_agreement_pct": 85.18722466960352,
+        "source": "calibracion MIMIC, estrato 1 h",
+        "annotation_median_min": 60.0
+      }
+    }
+  },
+  "vitaldb": {
+    "n_events": 96,
+    "n_excluded": 18,
+    "index": "datasets\\vitaldb\\cases_v0.2.0_a805771c\\vitaldb_cases_index.json",
+    "success": 75,
+    "censored": 21,
+    "causes": {
+      "end_of_record": 21
+    },
+    "failure_events_48h": 5,
+    "vars_ok_50": 5,
+    "vars_ok_80": 2,
+    "n_measured": 96,
+    "levels": {
+      "A": 96,
+      "B": 0,
+      "D": 0
+    },
+    "end_reason": {
+      "extubation_observed": 51,
+      "death_or_transfer": 26,
+      "end_of_record": 19
+    },
+    "label_error": {
+      "end_error_median_h": null,
+      "label48_agreement_pct": null,
+      "source": "no aplica (señal continua)",
+      "nota": "Etiqueta derivada de la señal continua (onda AWP/FLOW): no existe el error de temporalidad de las anotaciones de enfermería de MIMIC/eICU."
+    },
+    "label_error_correccion": {
+      "fase": "1.6c punto 4",
+      "antes": {
+        "end_error_median_h": -1.275000000023283,
+        "label48_agreement_pct": 85.18722466960352,
+        "source": "calibracion MIMIC, estrato 1 h",
+        "annotation_median_min": 60.0
+      }
+    }
+  }
+}

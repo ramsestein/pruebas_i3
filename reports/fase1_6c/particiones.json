@@ -1,0 +1,252 @@
+{
+  "indices": {
+    "mimic": "datasets\\mimic3wdb\\cases_v0.4.0_aa142f35\\mimic_cases_index.json",
+    "eicu": "datasets\\eicu_collaborative\\cases_v0.4.0_aa142f35\\eicu_cases_index.json",
+    "clinic": "datasets\\clinic\\cases_v0.1.0_a225d21b\\clinic_cases_index.json",
+    "vitaldb": "datasets\\vitaldb\\cases_v0.4.0_aa142f35\\vitaldb_cases_index.json"
+  },
+  "mimic": {
+    "n_events": 9093,
+    "n_patients": 8160,
+    "pacientes_con_mas_de_una_estancia": 695,
+    "pct_pacientes_multi_estancia": 8.5,
+    "test_15_por_paciente": {
+      "pacientes": 1224,
+      "pct_pacientes": 15.0
+    },
+    "cinco_pliegues": {
+      "pacientes_por_pliegue": 1632.0,
+      "test_por_pliegue": 6528
+    },
+    "aviso": "partición por PACIENTE (subject_id): un mismo paciente puede tener varias estancias y no debe cruzar train/test"
+  },
+  "eicu_b": {
+    "proposal_hospital_level": {
+      "n_hospitals": 27,
+      "test_hospitals": [
+        67,
+        171,
+        227,
+        301,
+        303,
+        336,
+        392,
+        405
+      ],
+      "test_pct_hospitals": 29.6,
+      "test_events": 1781,
+      "test_pct_events": 18.3,
+      "train_hospitals": 19,
+      "train_events": 7973,
+      "estratificado_por": "region (y tamaño dentro de cada región)"
+    },
+    "viable_hospital_level": true,
+    "sesgo_tamano": "el test se elige de menor a mayor volumen para acercarse al 25 % de eventos; con 27 hospitales el reparto por hospitales NO puede dar a la vez 25 % de hospitales y 25 % de eventos (los grandes concentran la muestra). Reportar ambos porcentajes y vigilar el sesgo por tamaño.",
+    "plan_alternativo": "partición por PACIENTE (uniquepid) estratificada por hospital: cada hospital aporta pacientes a train y test, sin fuga entre estancias del mismo paciente y con todos los hospitales representados",
+    "razon_alternativa": "test=8 hospitales, train=19"
+  },
+  "clinic": {
+    "n_events": 181,
+    "meses": {
+      "2024-06": {
+        "events": 1,
+        "fallos": 0
+      },
+      "2024-10": {
+        "events": 2,
+        "fallos": 0
+      },
+      "2024-11": {
+        "events": 2,
+        "fallos": 0
+      },
+      "2024-12": {
+        "events": 8,
+        "fallos": 0
+      },
+      "2025-02": {
+        "events": 5,
+        "fallos": 0
+      },
+      "2025-03": {
+        "events": 27,
+        "fallos": 0
+      },
+      "2025-04": {
+        "events": 15,
+        "fallos": 0
+      },
+      "2025-05": {
+        "events": 30,
+        "fallos": 0
+      },
+      "2025-06": {
+        "events": 18,
+        "fallos": 1
+      },
+      "2025-07": {
+        "events": 31,
+        "fallos": 5
+      },
+      "2025-08": {
+        "events": 3,
+        "fallos": 0
+      },
+      "2025-09": {
+        "events": 3,
+        "fallos": 0
+      },
+      "2025-10": {
+        "events": 20,
+        "fallos": 1
+      },
+      "2025-11": {
+        "events": 2,
+        "fallos": 0
+      },
+      "2025-12": {
+        "events": 5,
+        "fallos": 0
+      },
+      "2026-01": {
+        "events": 3,
+        "fallos": 0
+      },
+      "2026-02": {
+        "events": 6,
+        "fallos": 0
+      }
+    },
+    "corte_60_40": {
+      "train_meses": [
+        "2024-06",
+        "2024-10",
+        "2024-11",
+        "2024-12",
+        "2025-02",
+        "2025-03",
+        "2025-04",
+        "2025-05",
+        "2025-06"
+      ],
+      "train_events": 108,
+      "test_meses": [
+        "2025-07",
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12",
+        "2026-01",
+        "2026-02"
+      ],
+      "test_events": 73
+    },
+    "bloques_train": [
+      {
+        "bloque": 1,
+        "meses": [
+          "2024-06",
+          "2024-10",
+          "2024-11"
+        ],
+        "events": 5,
+        "fallos": 0
+      },
+      {
+        "bloque": 2,
+        "meses": [
+          "2024-12",
+          "2025-02"
+        ],
+        "events": 13,
+        "fallos": 0
+      },
+      {
+        "bloque": 3,
+        "meses": [
+          "2025-03",
+          "2025-04"
+        ],
+        "events": 42,
+        "fallos": 0
+      },
+      {
+        "bloque": 4,
+        "meses": [
+          "2025-05",
+          "2025-06"
+        ],
+        "events": 48,
+        "fallos": 1
+      }
+    ]
+  },
+  "vitaldb": {
+    "n_events": 96,
+    "meses": {
+      "2024-12": {
+        "events": 10,
+        "fallos": 0
+      },
+      "2025-01": {
+        "events": 15,
+        "fallos": 0
+      },
+      "2025-02": {
+        "events": 71,
+        "fallos": 5
+      }
+    },
+    "corte_60_40": {
+      "train_meses": [
+        "2024-12",
+        "2025-01",
+        "2025-02"
+      ],
+      "train_events": 96,
+      "test_meses": [],
+      "test_events": 0
+    },
+    "bloques_train": [
+      {
+        "bloque": 1,
+        "meses": [
+          "2024-12"
+        ],
+        "events": 10,
+        "fallos": 0
+      },
+      {
+        "bloque": 2,
+        "meses": [
+          "2025-01"
+        ],
+        "events": 15,
+        "fallos": 0
+      },
+      {
+        "bloque": 3,
+        "meses": [
+          "2025-02"
+        ],
+        "events": 71,
+        "fallos": 5
+      }
+    ],
+    "alternativa": {
+      "motivo": "todos los eventos caen en 3 meses: no hay corte temporal",
+      "propuesta": "partición aleatoria fija (semilla 42) 75/25",
+      "train": {
+        "events": 72,
+        "fallos": 5,
+        "censura": 46
+      },
+      "test": {
+        "events": 24,
+        "fallos": 0,
+        "censura": 10
+      }
+    }
+  }
+}

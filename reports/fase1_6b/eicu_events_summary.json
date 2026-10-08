@@ -1,0 +1,140 @@
+{
+  "gap_h": 8.0,
+  "n_events": 9754,
+  "n_hospitals": 27,
+  "labels_cambiados_por_correccion": {
+    "48h": 815,
+    "72h": 825
+  },
+  "censor_causes_sin_correccion": {
+    "48h": {
+      "transfer_ventilated": 607,
+      "terminal_extubation": 1106,
+      "death_at_vent": 63,
+      "trach": 97
+    },
+    "72h": {
+      "transfer_ventilated": 630,
+      "terminal_extubation": 1127,
+      "death_at_vent": 63,
+      "trach": 98
+    }
+  },
+  "success_48h": 7419,
+  "censored_48h": 2335,
+  "success_72h": 7367,
+  "censored_72h": 2387,
+  "failure_events_48h": 1093,
+  "vars_ok_50": 7021,
+  "vars_ok_80": 5157,
+  "duration": {
+    "median_h": 37.375,
+    "p25_h": 13.266666666666667,
+    "p75_h": 103.29583333333333
+  },
+  "censor_causes": {
+    "transfer_ventilated": 1965,
+    "death_at_vent": 881,
+    "terminal_extubation": 1680,
+    "trach": 196
+  },
+  "by_annotation_stratum": {
+    "1_2h": {
+      "events": 3866,
+      "success_48h": 3011,
+      "censored_48h": 855,
+      "failure_events_48h": 324,
+      "vars_ok_50": 2746,
+      "duration": {
+        "median_h": 29.983333333333334,
+        "p25_h": 12.016666666666667,
+        "p75_h": 88.8375
+      }
+    },
+    "le1h": {
+      "events": 5888,
+      "success_48h": 4408,
+      "censored_48h": 1480,
+      "failure_events_48h": 769,
+      "vars_ok_50": 4275,
+      "duration": {
+        "median_h": 41.825,
+        "p25_h": 14.225,
+        "p75_h": 116.38333333333333
+      }
+    }
+  },
+  "expected_label_error": {
+    "1.0": {
+      "subsample_h": 1.0,
+      "end_error_median_h": -1.2332999999634922,
+      "end_error_iqr_h": 2.550000000046566,
+      "end_error_p90_abs_h": 12.383366666734219,
+      "end_within_1h_pct": 36.82748688406542,
+      "end_within_2h_pct": 56.36251414463532,
+      "end_within_4h_pct": 78.23269210986524,
+      "start_within_2h_pct": 91.52350581215924,
+      "lost_pct": 3.0324189526184537,
+      "extra_minutes_pct": 8.241846620610215,
+      "reintub_sensitivity": 0.5879828326180258,
+      "reintub_ppv": 0.35128205128205126,
+      "reintub_f1": 0.4398073836276083,
+      "label48_agreement_pct": 85.24229074889868,
+      "extubation_diff_median_h": -1.0333333332557224
+    },
+    "2.0": {
+      "subsample_h": 2.0,
+      "end_error_median_h": -1.5,
+      "end_error_iqr_h": 2.5,
+      "end_error_p90_abs_h": 12.806659999862276,
+      "end_within_1h_pct": 29.216647543548557,
+      "end_within_2h_pct": 52.12266611035778,
+      "end_within_4h_pct": 77.21915093355585,
+      "start_within_2h_pct": 91.45718160008344,
+      "lost_pct": 4.369077306733167,
+      "extra_minutes_pct": 8.227754170418168,
+      "reintub_sensitivity": 0.5793991416309013,
+      "reintub_ppv": 0.3517915309446254,
+      "reintub_f1": 0.43777867855695174,
+      "label48_agreement_pct": 83.8546255506608,
+      "extubation_diff_median_h": -1.3666999999534344
+    },
+    "4.0": {
+      "subsample_h": 4.0,
+      "end_error_median_h": -2.3083333333488554,
+      "end_error_iqr_h": 3.1499999999068677,
+      "end_error_p90_abs_h": 14.789973333291764,
+      "end_within_1h_pct": 19.273934951901055,
+      "end_within_2h_pct": 36.944571690334406,
+      "end_within_4h_pct": 67.79661016949152,
+      "start_within_2h_pct": 90.67796610169492,
+      "lost_pct": 12.897755610972569,
+      "extra_minutes_pct": 8.11502718657453,
+      "reintub_sensitivity": 0.5643776824034334,
+      "reintub_ppv": 0.3219094247246022,
+      "reintub_f1": 0.4099766173031956,
+      "label48_agreement_pct": 75.79295154185021,
+      "extubation_diff_median_h": -2.133300000000003
+    }
+  },
+  "end_correccion": {
+    "aplicada": true,
+    "shifts_por_estrato_h": {
+      "le1h": 1.2332999999634922,
+      "1_2h": 1.5,
+      "gt2h": 2.3083333333488554
+    },
+    "fuente": "calibracion_mimic.json",
+    "veredicto_mimic": {
+      "approved": true,
+      "gains_pct": {
+        "1.0": 2.092511013215855,
+        "2.0": 2.533039647577084
+      },
+      "mean_gain_pct": 2.3127753303964695
+    }
+  },
+  "cohort_source": "fase1_6c.eicu_b",
+  "n_hospitals_cohort": 27,
+  "version": "v0.4.0_aa142f35"
+}

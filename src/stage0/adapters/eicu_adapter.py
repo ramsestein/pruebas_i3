@@ -32,8 +32,22 @@ from .base import (
     NumericsRecord,
     WaveformRecord,
 )
+from ...common.d5_events import is_trach_text, trach_decision, trach_time_from_offset_rows
+from ...common.eicu_rules import (
+    eicu_t0_minutes,
+    merge_vent_episodes,
+    pick_map_source,
+    sanitize_vent_episodes,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def _rel_hours(offset_min: Optional[float], t0_min: float) -> Optional[float]:
+    """Convierte un offset de eICU (min) a horas desde t0."""
+    if offset_min is None:
+        return None
+    return (float(offset_min) - float(t0_min)) / 60.0
 
 
 class EicuAdapter(CohortAdapter):
@@ -84,7 +98,7 @@ class EicuAdapter(CohortAdapter):
                 
             self._respcare_df = pd.read_csv(
                 path, compression='gzip',
-                usecols=['patientunitstayid', 'ventstartoffset', 'ventendoffset', 'respcarestatusoffset']
+                usecols=['patientunitstayid', 'ventstartoffset', 'ventendoffset', 'respcarestatusoffset', 'airwaytype']
             )
             self._respcare_df.dropna(subset=['ventstartoffset'], inplace=True)
             self._respcare_df['patient_id'] = 'eicu_' + self._respcare_df['patientunitstayid'].astype(str)
@@ -146,11 +160,17 @@ class EicuAdapter(CohortAdapter):
         for canon_name, source_track in self._channel_map.items():
             if source_track is None:
                 continue
-                
+
             track_name = source_track
             if isinstance(source_track, list):
-                track_name = source_track[0] # Tomamos la configuracion vital
-                
+                track_name = source_track[0]
+
+            # D7: MAP invasiva -> no invasiva, según las pistas presentes.
+            if canon_name == "MAP":
+                chosen = pick_map_source(vf.trks.keys())
+                if chosen is not None:
+                    track_name = chosen
+
             try:
                 trk = vf.trks.get(track_name)
                 if trk and trk.recs:
@@ -195,6 +215,13 @@ class EicuAdapter(CohortAdapter):
         censored_no_extubation = False
         censored_reason = None
         attempts = []
+        # D5 (Fase 1, corrección 3)
+        trach_time_hours = None
+        trach_time_unknown = False
+        death_time_hours = None
+        died_ventilated = False
+        excluded = False
+        exclusion_reason = None
         
         if patient_id in self._patients_df.index:
             pt_meta = self._patients_df.loc[patient_id]
@@ -206,23 +233,26 @@ class EicuAdapter(CohortAdapter):
             if not self._respcare_df.empty:
                 pt_vent = self._respcare_df[self._respcare_df['patient_id'] == patient_id].copy()
                 pt_vent.sort_values('ventstartoffset', inplace=True)
-                
-                # Asumimos que T0 es el fin del primer episodio de ventilación que encontramos
-                # O podríamos evaluar todos. Para compatibilidad con IP-ROVE 3, T0 es el inicio de la desconexión
-                # Es decir, T0 = ventendoffset del primer episodio
+
                 if not pt_vent.empty:
-                    # Fusionar episodios solapados o muy cercanos (< 2h) para evitar fragmentación
-                    # Filtrar episodios inválidos o de duración cero
-                    pt_vent = pt_vent[pt_vent['ventendoffset'] > pt_vent['ventstartoffset']].copy()
-                    
-                    merged = self._merge_vent_episodes(pt_vent)
-                    
-                    if len(merged) > 0:
-                        first_episode = merged.iloc[0]
-                        # T0 es el inicio de la ventilación para coincidir con la arquitectura del resto de la fase 0
-                        t0_minutes = first_episode['ventstartoffset']
-                        t0_unix = t0_minutes * 60.0  # Guardamos el t0 en segundos como pseudo-epoch
-                        
+                    # Reglas explícitas para offsets fuera de la estancia (Fase 1.4):
+                    # se recortan y se registran, nunca se silencian.
+                    san = sanitize_vent_episodes(
+                        pt_vent[['patientunitstayid', 'ventstartoffset', 'ventendoffset']],
+                        float(pt_meta['unitdischargeoffset']),
+                    )
+                    for a in san.anomalies:
+                        logger.warning(
+                            "[eicu] patient=%s anomalía %s: %s", patient_id, a.kind, a.detail
+                        )
+                    merged = merge_vent_episodes(san.episodes)
+
+                    # t0 = inicio de la ventilación (función compartida con el builder).
+                    t0_minutes = eicu_t0_minutes(san.episodes)
+
+                    if t0_minutes is not None and len(merged) > 0:
+                        t0_unix = t0_minutes * 60.0  # pseudo-epoch (segundos)
+
                         record_end_hours = (pt_meta['unitdischargeoffset'] - t0_minutes) / 60.0
                         
                         # Cada episodio subsecuente es una reintubación
@@ -239,19 +269,16 @@ class EicuAdapter(CohortAdapter):
                             if i + 1 < len(merged):
                                 next_episode = merged.iloc[i+1]
                                 reintub_time = (next_episode['ventstartoffset'] - t0_minutes) / 60.0
-                                
-                                # Si la reintubación ocurrió en < 48h desde esta extubación, es failure
-                                gap = reintub_time - extub_time
-                                if gap <= 48.0:
-                                    outcome = 'failure'
-                                else:
-                                    outcome = 'success'
-                                    
+
+                                # NO se aplica aquí la ventana de fallo (D3): la
+                                # clasificación por ventanas la hace `classify_attempts`.
+                                outcome = 'failure'
+
                             attempts.append(ExtubationAttempt(
                                 attempt_index=i,
                                 time_rel_hours=extub_time,
                                 outcome=outcome,
-                                reintubation_time_rel_hours=reintub_time if outcome == 'failure' else None
+                                reintubation_time_rel_hours=reintub_time
                             ))
                             
                         # Si el último episodio termina en muerte o alta, es censored
@@ -268,6 +295,31 @@ class EicuAdapter(CohortAdapter):
                                 extubation_confirmed = True
                                 extub_confirmed_hours = last_att.time_rel_hours
 
+                        # ── D5: traqueostomía y extubación terminal ──────────
+                        if 'airwaytype' in pt_vent.columns:
+                            trach_mask = pt_vent['airwaytype'].astype(str).map(is_trach_text)
+                            trach_time_hours = _rel_hours(
+                                trach_time_from_offset_rows(
+                                    pt_vent.loc[trach_mask, 'respcarestatusoffset']
+                                ), t0_minutes,
+                            )
+                        if str(pt_meta['unitdischargestatus']).strip().lower() == 'expired':
+                            death_time_hours = _rel_hours(pt_meta['unitdischargeoffset'], t0_minutes)
+                            last_end_off = float(merged.iloc[-1]['ventendoffset'])
+                            died_ventilated = (
+                                float(pt_meta['unitdischargeoffset']) - last_end_off
+                            ) <= 1.0
+
+                        # Traqueostomía previa a t0 → exclusión de inicio (ajuste 3).
+                        tdec = trach_decision(
+                            [trach_time_hours] if trach_time_hours is not None else [],
+                            icd9_marked_without_time=False,
+                            last_vent_end_h=0.0,
+                        )
+                        if tdec.excluded:
+                            excluded = True
+                            exclusion_reason = tdec.censor_cause
+
         return ClinicalEvents(
             patient_id=patient_id,
             cohort=self.cohort_name,
@@ -277,32 +329,17 @@ class EicuAdapter(CohortAdapter):
             extubation_confirmed=extubation_confirmed,
             extubation_attempts=attempts,
             censored_no_extubation=censored_no_extubation,
-            censored_reason=censored_reason
+            censored_reason=censored_reason,
+            trach_time_hours=trach_time_hours,
+            trach_time_unknown=trach_time_unknown,
+            death_time_hours=death_time_hours,
+            died_ventilated=died_ventilated,
+            excluded=excluded,
+            exclusion_reason=exclusion_reason,
         )
 
     def _merge_vent_episodes(self, df: pd.DataFrame, gap_tolerance_mins: float = 120.0) -> pd.DataFrame:
-        """
-        Fusiona episodios de ventilación que están separados por menos de gap_tolerance_mins.
-        Esto evita contabilizar cambios de tubo u otros registros fragmentados como extubaciones.
-        """
+        """Compatibilidad: delega en ``src.common.eicu_rules.merge_vent_episodes``."""
         if df.empty:
             return df
-            
-        merged = []
-        curr_start = df.iloc[0]['ventstartoffset']
-        curr_end = df.iloc[0]['ventendoffset']
-        
-        for i in range(1, len(df)):
-            nxt_start = df.iloc[i]['ventstartoffset']
-            nxt_end = df.iloc[i]['ventendoffset']
-            
-            # Si se solapan o están muy cerca
-            if nxt_start <= curr_end + gap_tolerance_mins:
-                curr_end = max(curr_end, nxt_end)
-            else:
-                merged.append({'ventstartoffset': curr_start, 'ventendoffset': curr_end})
-                curr_start = nxt_start
-                curr_end = nxt_end
-                
-        merged.append({'ventstartoffset': curr_start, 'ventendoffset': curr_end})
-        return pd.DataFrame(merged)
+        return merge_vent_episodes(df, gap_tolerance_min=gap_tolerance_mins)

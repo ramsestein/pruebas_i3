@@ -1,0 +1,143 @@
+{
+  "generated_at": "2026-10-05T04:39:03.831241+00:00",
+  "umbral_rc_sobre_icu": 0.6,
+  "umbral_frac_sin_intubacion": 0.5,
+  "investigados": {
+    "413": {
+      "icu_stays_total": 2411,
+      "rc_invasive_stays": 2320,
+      "rc_over_icu": 0.962,
+      "rc_over_intub": 3.586,
+      "frac_without_intub": 0.728,
+      "frac_without_intub_nor_cpg": 0.694,
+      "plausibility": "implausible_permeable",
+      "implausible": true
+    },
+    "412": {
+      "icu_stays_total": 308,
+      "rc_invasive_stays": 294,
+      "rc_over_icu": 0.955,
+      "rc_over_intub": 4.141,
+      "frac_without_intub": 0.769,
+      "frac_without_intub_nor_cpg": 0.728,
+      "plausibility": "implausible_permeable",
+      "implausible": true
+    },
+    "411": {
+      "icu_stays_total": 3199,
+      "rc_invasive_stays": 2917,
+      "rc_over_icu": 0.912,
+      "rc_over_intub": 7.596,
+      "frac_without_intub": 0.875,
+      "frac_without_intub_nor_cpg": 0.811,
+      "plausibility": "implausible_permeable",
+      "implausible": true
+    },
+    "273": {
+      "icu_stays_total": 171,
+      "rc_invasive_stays": 150,
+      "rc_over_icu": 0.877,
+      "rc_over_intub": 1.546,
+      "frac_without_intub": 0.36,
+      "frac_without_intub_nor_cpg": 0.22,
+      "plausibility": "concentrado_concordante",
+      "implausible": false
+    },
+    "131": {
+      "icu_stays_total": 131,
+      "rc_invasive_stays": 84,
+      "rc_over_icu": 0.641,
+      "rc_over_intub": 1.091,
+      "frac_without_intub": 0.083,
+      "frac_without_intub_nor_cpg": 0.0,
+      "plausibility": "concentrado_concordante",
+      "implausible": false
+    },
+    "259": {
+      "icu_stays_total": 586,
+      "rc_invasive_stays": 356,
+      "rc_over_icu": 0.608,
+      "rc_over_intub": 1.113,
+      "frac_without_intub": 0.115,
+      "frac_without_intub_nor_cpg": 0.056,
+      "plausibility": "concentrado_concordante",
+      "implausible": false
+    }
+  },
+  "implausible_hospitals": [
+    411,
+    412,
+    413
+  ],
+  "dense_hospitals": [
+    131,
+    259,
+    273,
+    411,
+    412,
+    413
+  ],
+  "permeable_hospitals": [
+    411,
+    412,
+    413
+  ],
+  "diagnostico_etiquetas": {
+    "259": {
+      "rc_invasive_stays": 356,
+      "n_without_apache_intub": 41,
+      "n_without_cpg_vent": 25,
+      "n_without_both": 20,
+      "frac_without_intub": 0.115,
+      "top_invasive_labels": {
+        "Total RR": 42152,
+        "PEEP": 41014,
+        "Tidal Volume (set)": 37575,
+        "Peak Insp. Pressure": 27846,
+        "Exhaled MV": 7075,
+        "Exhaled TV (machine)": 242
+      }
+    },
+    "411": {
+      "rc_invasive_stays": 2917,
+      "n_without_apache_intub": 2552,
+      "n_without_cpg_vent": 2382,
+      "n_without_both": 2366,
+      "frac_without_intub": 0.875,
+      "top_invasive_labels": {
+        "Total RR": 236541,
+        "f Total": 37274,
+        "PEEP": 30400,
+        "Set Vt (Servo,LTV)": 21763,
+        "Set Vt (Drager)": 11274
+      }
+    },
+    "412": {
+      "rc_invasive_stays": 294,
+      "n_without_apache_intub": 226,
+      "n_without_cpg_vent": 215,
+      "n_without_both": 214,
+      "frac_without_intub": 0.769,
+      "top_invasive_labels": {
+        "Total RR": 18134,
+        "PEEP": 3604,
+        "f Total": 1343,
+        "Set Vt (Servo,LTV)": 1297
+      }
+    },
+    "413": {
+      "rc_invasive_stays": 2320,
+      "n_without_apache_intub": 1690,
+      "n_without_cpg_vent": 1641,
+      "n_without_both": 1609,
+      "frac_without_intub": 0.728,
+      "top_invasive_labels": {
+        "Total RR": 189159,
+        "PEEP": 38472,
+        "f Total": 35670,
+        "Set Vt (Servo,LTV)": 26765,
+        "Set Vt (Drager)": 5795
+      }
+    }
+  }
+}

@@ -1,0 +1,2350 @@
+{
+  "clinical_dir_exists": false,
+  "track_inventory": {
+    "mimic_124_21660113_001200_to_21660201_105200.vital": {
+      "MIMIC/FiO2": {
+        "srate": 0.0,
+        "n_recs": 9,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/MV": {
+        "srate": 0.0,
+        "n_recs": 119,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PEEP": {
+        "srate": 0.0,
+        "n_recs": 13,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PIP": {
+        "srate": 0.0,
+        "n_recs": 69,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/RR_V": {
+        "srate": 0.0,
+        "n_recs": 454,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/TV": {
+        "srate": 0.0,
+        "n_recs": 124,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/HR": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/CVP": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PULSE": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/RESP": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/SpO2": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ART": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP_S": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP_D": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP_M": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP Sys": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP Dias": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP_M": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Temp Rect": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PVC Rate per Minute": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Rhythm Status": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Ectopic Status": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Ectopic Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_d1": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_d2": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_filtered": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_residual": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_d1": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_d2": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_filtered": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_residual": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_d1": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_d2": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_filtered": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_residual": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_d1": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_d2": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_filtered": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_residual": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_d1": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_d2": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_filtered": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_residual": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_d1": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_d2": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_filtered": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_residual": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/driving_pressure": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/compliance_dyn": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/rsbi": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/mechanical_power": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/peep_pip_ratio": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_pip": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_peep": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_tv": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_tv": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_mv": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_pip": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_peep": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_rr": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_fio2": {
+        "srate": 1.0,
+        "n_recs": 28002,
+        "fmt": 1,
+        "unit": ""
+      }
+    },
+    "mimic_16275_21131210_072000_to_21140107_141000.vital": {
+      "MIMIC/FiO2": {
+        "srate": 0.0,
+        "n_recs": 7,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/MV": {
+        "srate": 0.0,
+        "n_recs": 176,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PEEP": {
+        "srate": 0.0,
+        "n_recs": 39,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PIP": {
+        "srate": 0.0,
+        "n_recs": 70,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/RR_V": {
+        "srate": 0.0,
+        "n_recs": 607,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/TV": {
+        "srate": 0.0,
+        "n_recs": 182,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/HR": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PULSE": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP Sys": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP Dias": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP_M": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/RESP": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ST III": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ST V": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/SpO2": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PVC Rate per Minute": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Rhythm Status": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Ectopic Status": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Ectopic Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP_S": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP_D": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP_M": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/CVP": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_d1": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_d2": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_filtered": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_residual": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_d1": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_d2": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_filtered": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_residual": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_d1": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_d2": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_filtered": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_residual": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_d1": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_d2": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_filtered": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_residual": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_d1": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_d2": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_filtered": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_residual": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_d1": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_d2": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_filtered": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_residual": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/driving_pressure": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/compliance_dyn": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/rsbi": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/mechanical_power": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/peep_pip_ratio": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_pip": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_peep": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_tv": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_tv": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_mv": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_pip": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_peep": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_rr": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_fio2": {
+        "srate": 1.0,
+        "n_recs": 40732,
+        "fmt": 1,
+        "unit": ""
+      }
+    },
+    "mimic_21151_21930326_211100_to_21930429_161000.vital": {
+      "MIMIC/FiO2": {
+        "srate": 0.0,
+        "n_recs": 37,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/MV": {
+        "srate": 0.0,
+        "n_recs": 212,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PEEP": {
+        "srate": 0.0,
+        "n_recs": 66,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PIP": {
+        "srate": 0.0,
+        "n_recs": 99,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/RR_V": {
+        "srate": 0.0,
+        "n_recs": 625,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/TV": {
+        "srate": 0.0,
+        "n_recs": 213,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/HR": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PULSE": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP SYS": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP DIAS": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP MEAN": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/RESP": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ST-III": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ST-V": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/SpO2": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/[63131]": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Atrial Paced Beat Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Vent Paced Beat Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Dual Paced Beat Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Paced Beat Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Normal Beat Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/SVPB Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PVC Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/SV Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Missed Beat Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/All Beat Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/SVPB Run Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/S Rate Max": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/S Rate Min": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Paced Run Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/P Rate Max": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/P Rate Min": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/VQ Run Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PVC Run Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/V Rate Max": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/V Rate Min": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Max PVC Run": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/R On T Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PVC Pair Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Pacer Not Pace Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Pacer Not Capture Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Multiform Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Irregular HR Percent": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/pNN50 Percent": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/HR Variability": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Poor Signal": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Trigeminy Percent": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Bigeminy Percent": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Paced Beat Percent": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Atrial Paced Percent": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Dual Paced Percent": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Vent Paced Percent": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_d1": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_d2": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_filtered": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_residual": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_d1": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_d2": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_filtered": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_residual": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_d1": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_d2": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_filtered": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_residual": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_d1": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_d2": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_filtered": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_residual": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_d1": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_d2": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_filtered": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_residual": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_d1": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_d2": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_filtered": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_residual": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/driving_pressure": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/compliance_dyn": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/rsbi": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/mechanical_power": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/peep_pip_ratio": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_pip": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_peep": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_tv": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_tv": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_mv": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_pip": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_peep": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_rr": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_fio2": {
+        "srate": 1.0,
+        "n_recs": 48662,
+        "fmt": 1,
+        "unit": ""
+      }
+    },
+    "mimic_23450_21670317_201900_to_21670430_011100.vital": {
+      "MIMIC/FiO2": {
+        "srate": 0.0,
+        "n_recs": 22,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/MV": {
+        "srate": 0.0,
+        "n_recs": 266,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PEEP": {
+        "srate": 0.0,
+        "n_recs": 15,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PIP": {
+        "srate": 0.0,
+        "n_recs": 76,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/RR_V": {
+        "srate": 0.0,
+        "n_recs": 1057,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/TV": {
+        "srate": 0.0,
+        "n_recs": 256,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/HR": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PULSE": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP": {
+        "srate": 1.0,
+        "n_recs": 1,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP_S": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP_D": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP_M": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP Sys": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP Dias": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP_M": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/RESP": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ST III": {
+        "srate": 1.0,
+        "n_recs": 1,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ST V": {
+        "srate": 1.0,
+        "n_recs": 1,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/SpO2": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PVC Rate per Minute": {
+        "srate": 1.0,
+        "n_recs": 1,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Rhythm Status": {
+        "srate": 1.0,
+        "n_recs": 1,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Ectopic Status": {
+        "srate": 1.0,
+        "n_recs": 1,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Ectopic Count": {
+        "srate": 1.0,
+        "n_recs": 1,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_d1": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_d2": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_filtered": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_residual": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_d1": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_d2": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_filtered": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_residual": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_d1": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_d2": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_filtered": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_residual": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_d1": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_d2": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_filtered": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_residual": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_d1": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_d2": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_filtered": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_residual": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_d1": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_d2": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_filtered": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_residual": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/driving_pressure": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/compliance_dyn": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/rsbi": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/mechanical_power": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/peep_pip_ratio": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_pip": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_peep": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_tv": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_tv": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_mv": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_pip": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_peep": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_rr": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_fio2": {
+        "srate": 1.0,
+        "n_recs": 62215,
+        "fmt": 1,
+        "unit": ""
+      }
+    },
+    "mimic_27172_21090826_190000_to_21090917_162200.vital": {
+      "MIMIC/FiO2": {
+        "srate": 0.0,
+        "n_recs": 23,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/MV": {
+        "srate": 0.0,
+        "n_recs": 116,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PEEP": {
+        "srate": 0.0,
+        "n_recs": 2,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PIP": {
+        "srate": 0.0,
+        "n_recs": 12,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/RR_V": {
+        "srate": 0.0,
+        "n_recs": 532,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/TV": {
+        "srate": 0.0,
+        "n_recs": 108,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/HR": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PULSE": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP_S": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP_D": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/ABP_M": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP Sys": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP Dias": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/NBP_M": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/RESP": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/SpO2": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/PVC Rate per Minute": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Rhythm Status": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Ectopic Status": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "MIMIC/Ectopic Count": {
+        "srate": 1.0,
+        "n_recs": 0,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_d1": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_d2": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_filtered": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_residual": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PEEP_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_d1": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_d2": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_filtered": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_residual": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/PIP_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_d1": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_d2": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_filtered": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_residual": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/TV_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_d1": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_d2": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_filtered": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_residual": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/MV_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_d1": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_d2": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_filtered": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_residual": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/RR_V_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_d1": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_d2": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_filtered": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_residual": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/FiO2_auc_cum": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/driving_pressure": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/compliance_dyn": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/rsbi": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/mechanical_power": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/peep_pip_ratio": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_pip": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_peep": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/delta_tv": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_tv": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_mv": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_pip": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_peep": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_rr": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      },
+      "Derived/trend_fio2": {
+        "srate": 1.0,
+        "n_recs": 31524,
+        "fmt": 1,
+        "unit": ""
+      }
+    }
+  },
+  "adapter_numerics": {
+    "mimic_124": {
+      "n_timestamps": 127,
+      "non_null_counts": {
+        "HR": 0,
+        "SBP": 0,
+        "DBP": 0,
+        "MAP": 0,
+        "SpO2": 0,
+        "RR": 0,
+        "FiO2": 9,
+        "PEEP": 13,
+        "TV": 124,
+        "MV": 119,
+        "PIP": 69,
+        "vasopressor_norepinephrine": 0,
+        "vasopressor_epinephrine": 0,
+        "vasopressor_dopamine": 0,
+        "lactate": 0,
+        "SOFA_respiratory": 0,
+        "SOFA_cardiovascular": 0,
+        "SOFA_total": 0
+      }
+    },
+    "mimic_16275": {
+      "n_timestamps": 190,
+      "non_null_counts": {
+        "HR": 0,
+        "SBP": 0,
+        "DBP": 0,
+        "MAP": 0,
+        "SpO2": 0,
+        "RR": 0,
+        "FiO2": 7,
+        "PEEP": 39,
+        "TV": 182,
+        "MV": 176,
+        "PIP": 70,
+        "vasopressor_norepinephrine": 0,
+        "vasopressor_epinephrine": 0,
+        "vasopressor_dopamine": 0,
+        "lactate": 0,
+        "SOFA_respiratory": 0,
+        "SOFA_cardiovascular": 0,
+        "SOFA_total": 0
+      }
+    },
+    "mimic_21151": {
+      "n_timestamps": 246,
+      "non_null_counts": {
+        "HR": 0,
+        "SBP": 0,
+        "DBP": 0,
+        "MAP": 0,
+        "SpO2": 0,
+        "RR": 0,
+        "FiO2": 37,
+        "PEEP": 66,
+        "TV": 213,
+        "MV": 212,
+        "PIP": 99,
+        "vasopressor_norepinephrine": 0,
+        "vasopressor_epinephrine": 0,
+        "vasopressor_dopamine": 0,
+        "lactate": 0,
+        "SOFA_respiratory": 0,
+        "SOFA_cardiovascular": 0,
+        "SOFA_total": 0
+      }
+    },
+    "mimic_23450": {
+      "n_timestamps": 283,
+      "non_null_counts": {
+        "HR": 0,
+        "SBP": 0,
+        "DBP": 0,
+        "MAP": 0,
+        "SpO2": 0,
+        "RR": 0,
+        "FiO2": 22,
+        "PEEP": 15,
+        "TV": 256,
+        "MV": 266,
+        "PIP": 76,
+        "vasopressor_norepinephrine": 0,
+        "vasopressor_epinephrine": 0,
+        "vasopressor_dopamine": 0,
+        "lactate": 0,
+        "SOFA_respiratory": 0,
+        "SOFA_cardiovascular": 0,
+        "SOFA_total": 0
+      }
+    },
+    "mimic_27172": {
+      "n_timestamps": 132,
+      "non_null_counts": {
+        "HR": 0,
+        "SBP": 0,
+        "DBP": 0,
+        "MAP": 0,
+        "SpO2": 0,
+        "RR": 0,
+        "FiO2": 23,
+        "PEEP": 2,
+        "TV": 108,
+        "MV": 116,
+        "PIP": 12,
+        "vasopressor_norepinephrine": 0,
+        "vasopressor_epinephrine": 0,
+        "vasopressor_dopamine": 0,
+        "lactate": 0,
+        "SOFA_respiratory": 0,
+        "SOFA_cardiovascular": 0,
+        "SOFA_total": 0
+      }
+    }
+  },
+  "summary": {
+    "n_patients_sampled": 5,
+    "patients_with_data_per_column": {
+      "HR": 0,
+      "SBP": 0,
+      "DBP": 0,
+      "MAP": 0,
+      "SpO2": 0,
+      "RR": 0,
+      "FiO2": 5,
+      "PEEP": 5,
+      "TV": 5,
+      "MV": 5,
+      "PIP": 5
+    }
+  }
+}

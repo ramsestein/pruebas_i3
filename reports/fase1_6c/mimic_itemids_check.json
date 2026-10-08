@@ -1,0 +1,240 @@
+{
+  "n_catalogo": 29,
+  "n_en_parquet": 29,
+  "faltantes": [],
+  "etiquetas_distintas": [],
+  "detalle": [
+    {
+      "itemid": 40,
+      "concept": "AirwayType",
+      "label_catalogo": "Airway Type",
+      "en_parquet": true,
+      "label_ditems": "Airway Type",
+      "label_coincide": true
+    },
+    {
+      "itemid": 211,
+      "concept": "HR",
+      "label_catalogo": "Heart Rate",
+      "en_parquet": true,
+      "label_ditems": "Heart Rate",
+      "label_coincide": true
+    },
+    {
+      "itemid": 448,
+      "concept": "MV",
+      "label_catalogo": "Minute Volume",
+      "en_parquet": true,
+      "label_ditems": "Minute Volume",
+      "label_coincide": true
+    },
+    {
+      "itemid": 505,
+      "concept": "PEEP",
+      "label_catalogo": "PEEP",
+      "en_parquet": true,
+      "label_ditems": "PEEP",
+      "label_coincide": true
+    },
+    {
+      "itemid": 506,
+      "concept": "PEEP",
+      "label_catalogo": "PEEP Set",
+      "en_parquet": true,
+      "label_ditems": "PEEP Set",
+      "label_coincide": true
+    },
+    {
+      "itemid": 507,
+      "concept": "PIP",
+      "label_catalogo": "PIP",
+      "en_parquet": true,
+      "label_ditems": "PIP",
+      "label_coincide": true
+    },
+    {
+      "itemid": 535,
+      "concept": "PIP",
+      "label_catalogo": "Peak Insp. Pressure",
+      "en_parquet": true,
+      "label_ditems": "Peak Insp. Pressure",
+      "label_coincide": true
+    },
+    {
+      "itemid": 646,
+      "concept": "SpO2",
+      "label_catalogo": "SpO2",
+      "en_parquet": true,
+      "label_ditems": "SpO2",
+      "label_coincide": true
+    },
+    {
+      "itemid": 681,
+      "concept": "TV_observed",
+      "label_catalogo": "Tidal Volume",
+      "en_parquet": true,
+      "label_ditems": "Tidal Volume",
+      "label_coincide": true
+    },
+    {
+      "itemid": 682,
+      "concept": "TV_observed",
+      "label_catalogo": "Tidal Volume (Obser)",
+      "en_parquet": true,
+      "label_ditems": "Tidal Volume (Obser)",
+      "label_coincide": true
+    },
+    {
+      "itemid": 683,
+      "concept": "TV_set",
+      "label_catalogo": "Tidal Volume (Set)",
+      "en_parquet": true,
+      "label_ditems": "Tidal Volume (Set)",
+      "label_coincide": true
+    },
+    {
+      "itemid": 686,
+      "concept": "PEEP",
+      "label_catalogo": "Total PEEP Level",
+      "en_parquet": true,
+      "label_ditems": "Total PEEP Level",
+      "label_coincide": true
+    },
+    {
+      "itemid": 720,
+      "concept": "VentMode",
+      "label_catalogo": "Ventilator Mode",
+      "en_parquet": true,
+      "label_ditems": "Ventilator Mode",
+      "label_coincide": true
+    },
+    {
+      "itemid": 3420,
+      "concept": "FiO2",
+      "label_catalogo": "FIO2",
+      "en_parquet": true,
+      "label_ditems": "FIO2",
+      "label_coincide": true
+    },
+    {
+      "itemid": 220045,
+      "concept": "HR",
+      "label_catalogo": "Heart Rate",
+      "en_parquet": true,
+      "label_ditems": "Heart Rate",
+      "label_coincide": true
+    },
+    {
+      "itemid": 220052,
+      "concept": "MAP_invasive",
+      "label_catalogo": "Arterial Blood Pressure mean",
+      "en_parquet": true,
+      "label_ditems": "Arterial Blood Pressure mean",
+      "label_coincide": true
+    },
+    {
+      "itemid": 220181,
+      "concept": "MAP_non_invasive",
+      "label_catalogo": "Non Invasive Blood Pressure mean",
+      "en_parquet": true,
+      "label_ditems": "Non Invasive Blood Pressure mean",
+      "label_coincide": true
+    },
+    {
+      "itemid": 220277,
+      "concept": "SpO2",
+      "label_catalogo": "O2 saturation pulseoxymetry",
+      "en_parquet": true,
+      "label_ditems": "O2 saturation pulseoxymetry",
+      "label_coincide": true
+    },
+    {
+      "itemid": 220339,
+      "concept": "PEEP",
+      "label_catalogo": "PEEP set",
+      "en_parquet": true,
+      "label_ditems": "PEEP set",
+      "label_coincide": true
+    },
+    {
+      "itemid": 223835,
+      "concept": "FiO2",
+      "label_catalogo": "Inspired O2 Fraction",
+      "en_parquet": true,
+      "label_ditems": "Inspired O2 Fraction",
+      "label_coincide": true
+    },
+    {
+      "itemid": 223836,
+      "concept": "AirwayType",
+      "label_catalogo": "Airway Type",
+      "en_parquet": true,
+      "label_ditems": "Airway Type",
+      "label_coincide": true
+    },
+    {
+      "itemid": 223849,
+      "concept": "VentMode",
+      "label_catalogo": "Ventilator Mode",
+      "en_parquet": true,
+      "label_ditems": "Ventilator Mode",
+      "label_coincide": true
+    },
+    {
+      "itemid": 224684,
+      "concept": "TV_set",
+      "label_catalogo": "Tidal Volume (set)",
+      "en_parquet": true,
+      "label_ditems": "Tidal Volume (set)",
+      "label_coincide": true
+    },
+    {
+      "itemid": 224685,
+      "concept": "TV_observed",
+      "label_catalogo": "Tidal Volume (observed)",
+      "en_parquet": true,
+      "label_ditems": "Tidal Volume (observed)",
+      "label_coincide": true
+    },
+    {
+      "itemid": 224686,
+      "concept": "TV_observed",
+      "label_catalogo": "Tidal Volume (spontaneous)",
+      "en_parquet": true,
+      "label_ditems": "Tidal Volume (spontaneous)",
+      "label_coincide": true
+    },
+    {
+      "itemid": 224687,
+      "concept": "MV",
+      "label_catalogo": "Minute Volume",
+      "en_parquet": true,
+      "label_ditems": "Minute Volume",
+      "label_coincide": true
+    },
+    {
+      "itemid": 224690,
+      "concept": "RR_V",
+      "label_catalogo": "Respiratory Rate (Total)",
+      "en_parquet": true,
+      "label_ditems": "Respiratory Rate (Total)",
+      "label_coincide": true
+    },
+    {
+      "itemid": 224695,
+      "concept": "PIP",
+      "label_catalogo": "Peak Insp. Pressure",
+      "en_parquet": true,
+      "label_ditems": "Peak Insp. Pressure",
+      "label_coincide": true
+    },
+    {
+      "itemid": 224700,
+      "concept": "PEEP",
+      "label_catalogo": "Total PEEP Level",
+      "en_parquet": true,
+      "label_ditems": "Total PEEP Level",
+      "label_coincide": true
+    }
+  ]
+}

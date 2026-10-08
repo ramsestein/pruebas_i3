@@ -1,0 +1,15 @@
+{
+  "generated_at": "2026-10-04T14:16:30.047715+00:00",
+  "vitaldb_version": "1.6.0",
+  "raw_dir": "D:\\data\\vitaldb_sicu",
+  "total_files": 15327,
+  "readable": 15326,
+  "unreadable": [
+    "D:\\data\\vitaldb_sicu\\SICU2_02_250203_130000.vital"
+  ],
+  "n_unreadable": 1,
+  "errors": {
+    "PermissionError: [Errno 13] Permission denied": 1
+  },
+  "cache": "reports/fase1_5/vitaldb_probe_160.json"
+}
