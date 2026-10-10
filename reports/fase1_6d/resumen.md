@@ -167,6 +167,28 @@ reconstruidos. **box14 (27,3 GB) agotó el primer timeout de 2 700 s** — era u
 **falso positivo por lentitud** (~10 MB/s × 27,3 GB ≈ 2 700 s), no un cuelgue; se
 recupera con el timeout proporcional y los reintentos.
 
+**Resultado final de la reconstrucción: 13/13 boxes, 181 eventos, 4 excluidos,
+0 pendientes** (`datasets/clinic/cases_v0.5.0_eac1eb35/clinic_cases_index.json`).
+Nivel A en los 181; `end_reason` canónico (`extubation_observed` 64,
+`end_of_record` 116, `death_at_vent` 1); **0 eventos sin `source_files`** (se
+cierra el pendiente de la 1.6c).
+
+### Recuperación ante cuelgues (red de seguridad)
+
+`src/common/timeout_batches.py` (`run_with_bisection`, 11 tests) + dos drivers
+que ejecutan el trabajo por lotes en subprocesos con timeout y, si un lote se
+atasca, lo **bisecan** para aislar el elemento culpable (el resto se salva);
+escriben resultados **incrementales** (reanudable):
+
+- `scripts/verify/fase1_6d/probe_cohort_resumable.py`: **caché de sondas por
+  fichero** con timeout (lotes de 25, 20 s/fichero) → genera el JSON que consume
+  el builder con `--probe-cache`, de forma que la segmentación **no toca el
+  disco**. Un fichero que falla siempre tras 3 reintentos se marca **ilegible**
+  (`null`, el builder lo trata como «sin dato») y se reporta.
+- `scripts/verify/fase1_6d/coverage_resumable.py`: cobertura por evento con
+  timeout y bisección; un evento que falla siempre se deja **sin cobertura**
+  (no se inventa un 0) y se reporta.
+
 > **Pendiente:** no ejecutada en esta sesión. Con el disco `D:` medido a
 > ~67 MB/s (ver Limitaciones) es viable: 263,8 GB en 15 291 `.vital`, ≈1–2 h de
 > E/S más parseo. El único índice de Clínic disponible sigue siendo el antiguo
