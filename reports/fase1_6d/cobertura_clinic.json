@@ -1,0 +1,22 @@
+{
+  "cohort": "clinic",
+  "index": "datasets\\clinic\\cases_v0.5.0_eac1eb35\\clinic_cases_index.json",
+  "n_events": 181,
+  "n_measured": 181,
+  "n_pendientes": 0,
+  "pendientes": [],
+  "vars_ok_50": 151,
+  "vars_ok_80": 139,
+  "d13_incluidos": 172,
+  "d13_pct": 95.0,
+  "cobertura_mediana_por_variable": {
+    "FiO2": 1.0,
+    "HR": 1.0,
+    "MAP": 1.0,
+    "PEEP": 1.0,
+    "RR": 1.0,
+    "SpO2": 1.0
+  },
+  "aplicado": true,
+  "segundos": 3079.8
+}

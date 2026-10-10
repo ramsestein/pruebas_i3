@@ -215,9 +215,9 @@ def main() -> None:
     rep = build_report(old, new)
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "relabel_vitaldb.json").write_text(
+    (out_dir / f"relabel_{args.cohort}.json").write_text(
         json.dumps(rep, ensure_ascii=False, indent=2), encoding="utf-8")
-    (out_dir / "relabel_vitaldb.md").write_text(
+    (out_dir / f"relabel_{args.cohort}.md").write_text(
         "\n".join(_to_md(rep)) + "\n", encoding="utf-8")
     print(f"cambiados exito->censura: {rep['n_changed_success_to_censored']}")
     print(f"perfiles: {rep['profiles']}")
@@ -234,7 +234,7 @@ def main() -> None:
             ids = [x.strip() for x in args.png_events.split(",") if x.strip()]
         else:
             ids = [c["event_id"] for c in rep["changed"][: args.png]]
-        png_dir = out_dir / "figs_relabel"
+        png_dir = out_dir / f"figs_relabel_{args.cohort}"
         n_ok = 0
         for ev_id in ids:
             ev = _label(new, ev_id)

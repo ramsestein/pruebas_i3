@@ -1,0 +1,188 @@
+{
+  "clinic": {
+    "index": "datasets\\clinic\\cases_v0.5.0_eac1eb35\\clinic_cases_index.json",
+    "n_events": 181,
+    "n_excluded": 4,
+    "levels": {
+      "A": 181,
+      "B": 0,
+      "D": 0
+    },
+    "labels48h": {
+      "success": 65,
+      "censored": 116,
+      "causes": {
+        "end_of_record": 115,
+        "terminal_extubation": 1
+      }
+    },
+    "labels72h": {
+      "success": 65,
+      "censored": 116,
+      "causes": {
+        "end_of_record": 115,
+        "terminal_extubation": 1
+      }
+    },
+    "failure_events_48h": 7,
+    "vars_ok_50": 151,
+    "vars_ok_80": 139,
+    "vars_ok_50_summary": 151,
+    "vars_ok_80_summary": 139,
+    "d13": {
+      "core": [
+        "HR",
+        "SpO2"
+      ],
+      "min_coverage": 0.5,
+      "n_included": 172,
+      "pct_included": 95.03,
+      "n_coverage_measured": 181
+    },
+    "coverage_per_variable": {
+      "FiO2": {
+        "n": 181,
+        "median": 1.0,
+        "p10": 0.5938,
+        "frac_events_gt_50pct": 0.9171270718232044
+      },
+      "HR": {
+        "n": 181,
+        "median": 1.0,
+        "p10": 0.9203,
+        "frac_events_gt_50pct": 0.9502762430939227
+      },
+      "MAP": {
+        "n": 181,
+        "median": 1.0,
+        "p10": 0.8149,
+        "frac_events_gt_50pct": 0.9337016574585635
+      },
+      "PEEP": {
+        "n": 181,
+        "median": 1.0,
+        "p10": 0.0,
+        "frac_events_gt_50pct": 0.850828729281768
+      },
+      "RR": {
+        "n": 181,
+        "median": 1.0,
+        "p10": 0.0,
+        "frac_events_gt_50pct": 0.850828729281768
+      },
+      "SpO2": {
+        "n": 181,
+        "median": 1.0,
+        "p10": 0.9176,
+        "frac_events_gt_50pct": 0.9502762430939227
+      }
+    },
+    "end_reason": {
+      "end_of_record": 116,
+      "extubation_observed": 64,
+      "death_at_vent": 1
+    },
+    "end_reason_unknown": [],
+    "n_events_without_source_files": 0,
+    "events_without_source_files": [],
+    "label_source": null,
+    "label_error": {
+      "value": null,
+      "source": "no aplica (señal continua)"
+    }
+  },
+  "vitaldb": {
+    "index": "datasets\\vitaldb\\cases_v0.4.0_aa142f35\\vitaldb_cases_index.json",
+    "n_events": 96,
+    "n_excluded": 18,
+    "levels": {
+      "A": 96,
+      "B": 0,
+      "D": 0
+    },
+    "labels48h": {
+      "success": 40,
+      "censored": 56,
+      "causes": {
+        "end_of_record": 56
+      }
+    },
+    "labels72h": {
+      "success": 39,
+      "censored": 57,
+      "causes": {
+        "end_of_record": 57
+      }
+    },
+    "failure_events_48h": 5,
+    "vars_ok_50": 22,
+    "vars_ok_80": 16,
+    "vars_ok_50_summary": 22,
+    "vars_ok_80_summary": 16,
+    "d13": {
+      "core": [
+        "HR",
+        "SpO2"
+      ],
+      "min_coverage": 0.5,
+      "n_included": 67,
+      "pct_included": 69.79,
+      "n_coverage_measured": 96
+    },
+    "coverage_per_variable": {
+      "FiO2": {
+        "n": 96,
+        "median": 0.0,
+        "p10": 0.0,
+        "frac_events_gt_50pct": 0.3333333333333333
+      },
+      "HR": {
+        "n": 96,
+        "median": 0.87085,
+        "p10": 0.0,
+        "frac_events_gt_50pct": 0.7083333333333334
+      },
+      "MAP": {
+        "n": 96,
+        "median": 0.87085,
+        "p10": 0.0,
+        "frac_events_gt_50pct": 0.7083333333333334
+      },
+      "PEEP": {
+        "n": 96,
+        "median": 0.0,
+        "p10": 0.0,
+        "frac_events_gt_50pct": 0.23958333333333334
+      },
+      "RR": {
+        "n": 96,
+        "median": 0.9212,
+        "p10": 0.0,
+        "frac_events_gt_50pct": 0.71875
+      },
+      "SpO2": {
+        "n": 96,
+        "median": 0.9129,
+        "p10": 0.0,
+        "frac_events_gt_50pct": 0.71875
+      }
+    },
+    "end_reason": {
+      "end_of_record": 60,
+      "extubation_observed": 36
+    },
+    "end_reason_unknown": [],
+    "n_events_without_source_files": 4,
+    "events_without_source_files": [
+      "vitaldb_SICU1_08_event_4",
+      "vitaldb_SICU1_12_event_4",
+      "vitaldb_SICU2_05_event_4",
+      "vitaldb_SICU2_16_event_15"
+    ],
+    "label_source": null,
+    "label_error": {
+      "value": null,
+      "source": "no aplica (señal continua)"
+    }
+  }
+}

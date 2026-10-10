@@ -194,6 +194,42 @@ escriben resultados **incrementales** (reanudable):
 > E/S más parseo. El único índice de Clínic disponible sigue siendo el antiguo
 > (181 eventos) y sus cifras de cobertura están invalidadas.
 
+### Resultados (reconstrucción completada)
+
+**Completada.** Índice `datasets/clinic/cases_v0.5.0_eac1eb35/clinic_cases_index.json`:
+**13/13 boxes, 181 eventos, 4 excluidos, 0 pendientes**, nivel A en los 181 y
+**0 eventos sin `source_files`**.
+
+| Métrica | Valor |
+|---|---|
+| Eventos / excluidos | 181 / 4 |
+| Éxito 48 h / censura 48 h | 65 / 116 |
+| Eventos con ≥ 1 fallo | 7 |
+| **D13** (FC y SpO2 > 50 %) | **172 (95,0 %)** |
+| `vars_ok` 50 % / 80 % | **151 (83,4 %) / 139 (76,8 %)** |
+| `end_reason` | `end_of_record` 116 · `extubation_observed` 64 · `death_at_vent` 1 (canónico) |
+| Cobertura mediana por variable | HR, SpO2, MAP, RR, FiO2, PEEP = **1,00** (p10: HR 0,92, SpO2 0,92, MAP 0,82, FiO2 0,59, RR/PEEP 0,00) |
+| Perfil dominante | las **6 variables** (151 eventos) |
+
+### Cambio respecto al índice antiguo (181 eventos)
+
+`relabel_clinic.*`: **75 eventos pasan de «éxito» a `end_of_record`**
+(140→65 éxitos, 41→116 censuras), **todos** con `end_of_record` y **cola de
+monitor < 1 h** (0,00 h en la mayoría). No se pierde ningún evento (181 → 181,
+`n_only_old = 0`).
+
+**Por qué:** el índice antiguo (v0.1.0) daba por buena una extubación **siempre
+que terminara la ventilación**, sin exigir la hora de observación. Con la regla
+común (Fase 1.6b, punto 4) una desconexión solo es extubación si va seguida de
+**≥ 1 h de monitor con FC/SpO2 fisiológicos**; si el box deja de grabar con la
+desconexión, el evento es `end_of_record`. Es **el mismo efecto que en VitalDB**
+(75 → 40): la censura por señal es más estricta que la regla antigua. Los 9
+eventos con perfil «(ninguna)» quedan documentados en `relabel_clinic.md`.
+
+Cobertura medida con `coverage_resumable.py` (181/181 eventos, 0 pendientes,
+3 080 s): FC y MAP **no** colapsan a un mismo valor arbitrario — coinciden solo
+cuando ambas cubren el 100 % (153/181) y difieren en los 28 restantes.
+
 ## 6. `end_reason` con vocabulario único
 
 `src/common/end_reasons.py` (11 tests) fija los **6 valores** canónicos —
@@ -250,14 +286,15 @@ propuesta.
 ### Trabajo pendiente
 
 - **Releído de VitalDB** con la cobertura en minutos y las variables derivadas
-  (punto 3b–3d) y **reconstrucción completa de Clínic** (punto 5): no ejecutados
-  en esta sesión. El código, las recetas y los scripts de informe están listos;
-  con la E/S sana basta lanzarlos.
+  (punto 3b–3d): no ejecutado en esta sesión. Con `D:` a ~500–1 000 MB/s es
+  viable (72,7 GB); los artefactos actuales son de los índices v0.2.0/v0.4.0.
+- **Validación de las variables derivadas de ondas** sobre datos reales
+  (punto 4, `wave_derived_validation.py`): pendiente de ejecutar sobre los
+  índices reconstruidos.
+- **MIMIC** sigue en su índice v0.4.0 (con `end_reason` antiguo `death`); se
+  corregirá al re-extraer con los builders actualizados.
 - El **error de etiqueta** de Clínic/VitalDB sigue siendo «no aplica (señal
   continua)»; el de eICU-B se hereda de MIMIC por estrato.
-- `end_reason` es ya un vocabulario único; los índices **v0.4.0** de MIMIC y
-  Clínic aún contienen valores antiguos (`death`, `death_signal`) — se corrigen
-  al reconstruir con los builders actualizados (eICU-B ya lo está desde v0.5.0).
 
 ## Reproducibilidad
 

@@ -110,27 +110,27 @@
     "criterio": "test = último 40% del tiempo; train en 2 bloques temporales (ventana creciente: entrenar con el bloque 1, validar con el 2)",
     "test": {
       "n": 72,
-      "success": 58,
-      "censored": 14,
+      "success": 27,
+      "censored": 45,
       "failures": 6
     },
     "train": {
       "n": 109,
-      "success": 82,
-      "censored": 27,
+      "success": 38,
+      "censored": 71,
       "failures": 1
     },
     "bloques_train": [
       {
         "n": 54,
-        "success": 44,
-        "censored": 10,
+        "success": 17,
+        "censored": 37,
         "failures": 0
       },
       {
         "n": 55,
-        "success": 38,
-        "censored": 17,
+        "success": 21,
+        "censored": 34,
         "failures": 1
       }
     ],

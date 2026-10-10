@@ -19,9 +19,9 @@
 ## clinic
 
 - Criterio: test = último 40% del tiempo; train en 2 bloques temporales (ventana creciente: entrenar con el bloque 1, validar con el 2)
-- Test: {'n': 72, 'success': 58, 'censored': 14, 'failures': 6}
-- Train: {'n': 109, 'success': 82, 'censored': 27, 'failures': 1}
-- Bloques de train: n=54 (éx 44/cens 10, fallos 0), n=55 (éx 38/cens 17, fallos 1)
+- Test: {'n': 72, 'success': 27, 'censored': 45, 'failures': 6}
+- Train: {'n': 109, 'success': 38, 'censored': 71, 'failures': 1}
+- Bloques de train: n=54 (éx 17/cens 37, fallos 0), n=55 (éx 21/cens 34, fallos 1)
 
 ## vitaldb
 
