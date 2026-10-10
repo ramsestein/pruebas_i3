@@ -99,8 +99,11 @@ def main() -> None:
     p.add_argument("--boxes", default=None)
     p.add_argument("--cache", default=None)
     p.add_argument("--batch-size", type=int, default=25)
-    p.add_argument("--per-file-timeout", type=float, default=20.0)
-    p.add_argument("--min-timeout", type=float, default=30.0)
+    p.add_argument("--per-file-timeout", type=float, default=20.0,
+                   help="Timeout mínimo por fichero (s)")
+    p.add_argument("--timeout-per-gb", type=float, default=300.0,
+                   help="Timeout por GB del lote (s/GB)")
+    p.add_argument("--min-timeout", type=float, default=60.0)
     p.add_argument("--retries", type=int, default=3)
     p.add_argument("--report-dir", default=str(ROOT / "reports" / "fase1_6d"))
     args = p.parse_args()
@@ -137,7 +140,11 @@ def main() -> None:
         batch_file = parts_dir / "_batch.json"
         batch_file.write_text(json.dumps(as_list), encoding="utf-8")
         out_file = parts_dir / "probes.jsonl"
-        timeout = max(args.min_timeout, len(as_list) * args.per_file_timeout)
+        gb = sum(Path(p).stat().st_size for p in as_list
+                 if Path(p).exists()) / 1e9
+        timeout = max(args.min_timeout,
+                      len(as_list) * args.per_file_timeout,
+                      gb * args.timeout_per_gb)
         cmd = [sys.executable, str(Path(__file__).resolve()),
                "--worker", "--batch", str(batch_file), "--out", str(out_file)]
         try:

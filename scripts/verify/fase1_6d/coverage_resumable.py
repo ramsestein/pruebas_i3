@@ -50,11 +50,18 @@ def _tasks(index: dict, by_box: dict[str, dict[str, Path]]) -> dict[str, dict]:
                  for n in names]
         if not names or any(x is None for x in paths):
             continue
+        size_gb = 0.0
+        for pth in paths:
+            try:
+                size_gb += Path(pth).stat().st_size / 1e9
+            except OSError:
+                pass
         tasks[e["event_id"]] = {
             "event_id": e["event_id"], "paths": paths,
             "t0_unix": float(e["t0_unix"]),
             "spans": [(a["vent_start_h"], a["vent_end_h"])
                       for a in e["attempts"]],
+            "size_gb": round(size_gb, 3),
         }
     return tasks
 
@@ -109,8 +116,11 @@ def main() -> None:
     p.add_argument("--config", default=str(CONFIG))
     p.add_argument("--index", default=None)
     p.add_argument("--batch-size", type=int, default=8)
-    p.add_argument("--per-event-timeout", type=float, default=180.0)
-    p.add_argument("--min-timeout", type=float, default=60.0)
+    p.add_argument("--per-event-timeout", type=float, default=120.0,
+                   help="Timeout mínimo por evento (s)")
+    p.add_argument("--timeout-per-gb", type=float, default=300.0,
+                   help="Timeout por GB de los ficheros del lote (s/GB)")
+    p.add_argument("--min-timeout", type=float, default=120.0)
     p.add_argument("--retries", type=int, default=3)
     p.add_argument("--apply", action="store_true",
                    help="Escribe coverage/vars_ok/D13 en el índice")
@@ -149,7 +159,10 @@ def main() -> None:
         batch_file = parts_dir / "_batch.json"
         batch_file.write_text(json.dumps(payload), encoding="utf-8")
         out_file = parts_dir / "coverage.jsonl"
-        timeout = max(args.min_timeout, len(payload) * args.per_event_timeout)
+        gb = sum(t.get("size_gb", 0.0) for t in payload)
+        timeout = max(args.min_timeout,
+                      len(payload) * args.per_event_timeout,
+                      gb * args.timeout_per_gb)
         cmd = [sys.executable, str(Path(__file__).resolve()),
                "--worker", "--batch", str(batch_file), "--out", str(out_file)]
         try:
