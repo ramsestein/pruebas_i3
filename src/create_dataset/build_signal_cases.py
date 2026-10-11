@@ -10,8 +10,9 @@ Diferencias frente a los builders antiguos (``build_clinical_cases.py`` /
 
 - La ventilación NO se detecta buscando cadenas en los bytes del gzip ni por
   la mera aparición de la pista: se **procesa** cada fichero con el parser de
-  ``vitaldb`` y se exige presencia real de pistas de ventilador
-  (``src/common/vital_signals.py``).
+  ``vitaldb`` y se exige **ACTIVIDAD** de las pistas de ventilador (TV_EXP /
+  MV_EXP / amplitud de AWP_WAV con VENT_RR > 0; Fase 1.6e), no la presencia de
+  registros (``src/common/vital_signals.py``).
 - La segmentación (D1/D2/D4) usa ``src/common/episodes.py``; NO se eliminan
   episodios "que comparten inicio" (ese agrupamiento del builder antiguo
   descartaba eventos legítimos).
@@ -69,6 +70,7 @@ from src.common.vital_signals import (
     COVERAGE_TRACKS,
     MERGE_TRACK_NAMES,
     VitalProbe,
+    active_vent_span_from_probe,
     coverage_fractions,
     hr_span_from_probe,
     merge_event_files,
@@ -237,7 +239,11 @@ def segment_box(
             f_start = sf.dt_unix / _SECONDS_PER_HOUR
             missing_spans.append(Span(f_start, f_start + 1.0))
             continue
-        v = _to_hours(vent_span_from_probe(probe))
+        # Fase 1.6e (punto 2): la ventilación se mide con ACTIVIDAD real
+        # (TV_EXP / MV_EXP / amplitud de AWP_WAV con VENT_RR > 0), no con la
+        # mera presencia de registros: con el respirador en espera FiO2/PEEP y
+        # las ondas siguen registrándose y ocultarían la extubación.
+        v = _to_hours(active_vent_span_from_probe(probe))
         m = _to_hours(monitor_span_from_probe(probe))
         h = _to_hours(hr_span_from_probe(probe))
         s = _to_hours(spo2_span_from_probe(probe))
@@ -642,8 +648,11 @@ def build_cohort_index(
     levels: dict[str, int] = {"A": 0, "B": 0, "D": 0}
     vars_ok_50 = vars_ok_80 = 0
     n_covered = 0
+    n_standby_min = 0
     for box, seg in results:
         n_missing_files += sum(1 for p in seg.probes.values() if p is None)
+        n_standby_min += sum(int(p.standby_minutes) for p in seg.probes.values()
+                             if p is not None)
         for i, ep in enumerate(seg.episodes):
             t0_unix = ep.start_h * _SECONDS_PER_HOUR
             death, raw = detect_death_for_episode(seg.files, ep)
@@ -702,7 +711,8 @@ def build_cohort_index(
         ),
         "method": (
             "Se procesa cada .vital de origen con el parser de vitaldb; la "
-            "ventilación exige presencia real de pistas de ventilador. "
+            "ventilación exige ACTIVIDAD real de las pistas de ventilador "
+            "(TV_EXP/MV_EXP/amplitud de AWP_WAV con VENT_RR>0; Fase 1.6e). "
             "Segmentación: src/common/episodes.py."
         ),
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -711,6 +721,7 @@ def build_cohort_index(
         "total_events": len(events),
         "total_excluded_events": len(excluded_events),
         "n_missing_files": n_missing_files,
+        "n_vent_standby_minutes": n_standby_min,
         "levels": levels,
         "levels_coverage_measured": n_covered,
         "vars_ok_50": vars_ok_50,

@@ -1,0 +1,91 @@
+{
+  "clinic": {
+    "n_afectados": 115,
+    "n_controles": 20,
+    "minutos_activos_afectados": {
+      "n": 115,
+      "p5": 0.0,
+      "p25": 211.0,
+      "mediana": 601.0,
+      "p75": 711.0,
+      "p95": 721.0
+    },
+    "vent_standby_min_por_pista": {
+      "TV_EXP": 477,
+      "MV_EXP": 6,
+      "AWP_WAV": 3261,
+      "VENT_RR": 477,
+      "PIP": 477,
+      "PEEP": 477
+    },
+    "minutos_standby_totales": 5175,
+    "separacion": {
+      "TV_EXP": {
+        "umbral": 100.0,
+        "unidad": "mL",
+        "clara": {
+          "n": 7883,
+          "p5": 334.0,
+          "p25": 412.0,
+          "mediana": 464.0,
+          "p75": 539.0,
+          "p95": 745.95
+        },
+        "sospechosa": {
+          "n": 477,
+          "p5": 0.0,
+          "p25": 13.0,
+          "mediana": 23.0,
+          "p75": 51.0,
+          "p95": 83.4
+        },
+        "clara_ge_umbral_pct": 100.0,
+        "sospechosa_ge_umbral_pct": 0.0
+      },
+      "MV_EXP": {
+        "umbral": 1.0,
+        "unidad": "L/min",
+        "clara": {
+          "n": 5768,
+          "p5": 5.53,
+          "p25": 7.03,
+          "mediana": 8.22,
+          "p75": 10.6,
+          "p95": 12.769
+        },
+        "sospechosa": {
+          "n": 6,
+          "p5": 0.0,
+          "p25": 0.003,
+          "mediana": 0.02,
+          "p75": 0.142,
+          "p95": 0.577
+        },
+        "clara_ge_umbral_pct": 100.0,
+        "sospechosa_ge_umbral_pct": 0.0
+      },
+      "AWP_WAV": {
+        "umbral": 5.0,
+        "unidad": "cmH2O",
+        "clara": {
+          "n": 719,
+          "p5": 1173.0,
+          "p25": 1193.0,
+          "mediana": 1240.0,
+          "p75": 1260.6,
+          "p95": 1320.0
+        },
+        "sospechosa": {
+          "n": 3261,
+          "p5": 0.0,
+          "p25": 0.0,
+          "mediana": 0.0,
+          "p75": 0.0,
+          "p95": 73.05
+        },
+        "clara_ge_umbral_pct": 100.0,
+        "sospechosa_ge_umbral_pct": 23.3
+      }
+    }
+  }
+}

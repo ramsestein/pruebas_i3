@@ -112,6 +112,161 @@ _DEATH_TRACKS: dict[str, tuple[str, ...]] = {
 _DEATH_WAVE_KEYS = ("ABP_amp", "PPG_amp")
 
 
+# ── Ventilación ACTIVA (Fase 1.6e, punto 2) ──────────────────────────────────
+# La PRESENCIA de registros de las pistas del ventilador NO implica ventilación:
+# con el respirador en espera (o con alto flujo) FiO2/PEEP y las ondas AWP/FLOW
+# siguen registrándose y la "ventilación" se extiende hasta el fin del registro,
+# ocultando la extubación real (Fase 1.6d: 75 eventos de Clínic y 33 de VitalDB
+# con cola de monitor 0,00 h).
+#
+# Un minuto es de ventilación **activa** si cumple AL MENOS uno de estos
+# criterios clínicos. Umbrales FIJOS (decisión D-a): no se ajustan.
+#
+#  - TV_EXP >= 100 mL: por debajo no hay volumen tidal entregado;
+#  - MV_EXP >= 1,0 L/min: por debajo no hay ventilación minuto efectiva;
+#  - amplitud de AWP_WAV (p95-p5) >= 5 cmH2O **con VENT_RR > 0**: un circuito en
+#    espera no produce esa excursión de presión, y se exige además que el
+#    ventilador declare respiraciones.
+#
+# FiO2 y PEEP_CMH2O por sí solas NO cuentan (son ajustes del respirador).
+ACTIVITY_TV_EXP_MIN_ML: float = 100.0
+ACTIVITY_MV_EXP_MIN_LPM: float = 1.0
+ACTIVITY_AWP_AMP_MIN_CMH2O: float = 5.0
+
+# Pistas que definen la actividad (numéricas + onda de presión).
+ACTIVITY_TV_TRACK = "Intellivue/TV_EXP"
+ACTIVITY_MV_TRACK = "Intellivue/MV_EXP"
+ACTIVITY_AWP_TRACK = "Intellivue/AWP_WAV"
+ACTIVITY_RR_TRACK = "Intellivue/VENT_RR"
+ACTIVITY_TRACKS: tuple[str, ...] = (
+    ACTIVITY_TV_TRACK, ACTIVITY_MV_TRACK, ACTIVITY_AWP_TRACK, ACTIVITY_RR_TRACK,
+)
+# Percentiles de la amplitud de la onda de presión (p95 - p5).
+AWP_AMP_PCT_HI: float = 95.0
+AWP_AMP_PCT_LO: float = 5.0
+
+
+def to_physical(values, *, gain: float = 1.0, offset: float = 0.0) -> np.ndarray:
+    """Convierte valores **crudos** de una pista a unidades FÍSICAS.
+
+    ``vitaldb`` devuelve los valores de los registros sin aplicar ``gain`` ni
+    ``offset``. En las pistas numéricas del ventilador son ``1.0``/``0.0`` (crudo
+    == físico), pero en las ondas no: ``Intellivue/AWP_WAV`` es
+    ``gain=0,015 offset=-10`` (cmH2O) y ``Intellivue/FLOW_WAV``
+    ``gain=0,065 offset=-130`` (L/min).
+    """
+    arr = np.asarray(values, dtype=np.float64)
+    if gain == 1.0 and offset == 0.0:
+        return arr
+    return arr * float(gain) + float(offset)
+
+
+def minute_max(t_sec, values) -> dict[int, float]:
+    """``{minuto: máximo}`` de una serie numérica (minuto = floor(t/60))."""
+    t = np.asarray(t_sec, dtype=np.float64)
+    v = np.asarray(values, dtype=np.float64)
+    if t.size == 0:
+        return {}
+    ok = np.isfinite(t) & np.isfinite(v)
+    t, v = t[ok], v[ok]
+    if t.size == 0:
+        return {}
+    keys = np.floor(t / 60.0).astype(np.int64)
+    out: dict[int, float] = {}
+    for k, val in zip(keys, v):
+        k = int(k)
+        if k not in out or val > out[k]:
+            out[k] = float(val)
+    return out
+
+
+def minute_amplitude(
+    t_sec, values, *, pct_hi: float = AWP_AMP_PCT_HI,
+    pct_lo: float = AWP_AMP_PCT_LO,
+) -> dict[int, float]:
+    """``{minuto: p_hi - p_lo}`` de una onda (amplitud de la excursión)."""
+    t = np.asarray(t_sec, dtype=np.float64)
+    v = np.asarray(values, dtype=np.float64)
+    if t.size < 5:
+        return {}
+    ok = np.isfinite(t) & np.isfinite(v)
+    t, v = t[ok], v[ok]
+    if t.size < 5:
+        return {}
+    keys = np.floor(t / 60.0).astype(np.int64)
+    order = np.argsort(keys, kind="stable")
+    keys, v = keys[order], v[order]
+    edges = np.flatnonzero(np.diff(keys)) + 1
+    out: dict[int, float] = {}
+    for seg in np.split(np.arange(keys.size), edges):
+        if seg.size < 5:
+            continue
+        arr = v[seg]
+        out[int(keys[seg[0]])] = float(np.percentile(arr, pct_hi)
+                                       - np.percentile(arr, pct_lo))
+    return out
+
+
+def active_vent_minutes(
+    *,
+    tv_exp: dict[int, float] | None = None,
+    mv_exp: dict[int, float] | None = None,
+    awp_amp: dict[int, float] | None = None,
+    vent_rr: dict[int, float] | None = None,
+) -> set[int]:
+    """Minutos de ventilación ACTIVA (unión de los tres criterios fijos).
+
+    Ver las constantes ``ACTIVITY_*`` para la justificación clínica.
+    """
+    active: set[int] = set()
+    for k, v in (tv_exp or {}).items():
+        if v >= ACTIVITY_TV_EXP_MIN_ML:
+            active.add(int(k))
+    for k, v in (mv_exp or {}).items():
+        if v >= ACTIVITY_MV_EXP_MIN_LPM:
+            active.add(int(k))
+    rr = vent_rr or {}
+    for k, v in (awp_amp or {}).items():
+        if v >= ACTIVITY_AWP_AMP_MIN_CMH2O and rr.get(int(k), 0.0) > 0.0:
+            active.add(int(k))
+    return active
+
+
+def spans_from_active_minutes(
+    minutes: Sequence[float], *, gap_min: float = 120.0,
+) -> list[tuple[float, float]]:
+    """Tramos ``(inicio_min, fin_min)`` a partir de los minutos activos (D1).
+
+    Un hueco de más de ``gap_min`` minutos cierra el tramo (D1: 2 h = 120 min,
+    misma convención inclusiva que ``episodes.merge_spans``). El fin de cada
+    tramo es el último minuto activo **más uno** (el minuto completo).
+    """
+    ms = sorted({float(m) for m in minutes if m is not None})
+    if not ms:
+        return []
+    out: list[tuple[float, float]] = []
+    start = prev = ms[0]
+    for m in ms[1:]:
+        if m - prev > gap_min + 1e-9:
+            out.append((start, prev + 1.0))
+            start = m
+        prev = m
+    out.append((start, prev + 1.0))
+    return out
+
+
+def count_standby_minutes(
+    present_minutes: Iterable[float], active: Iterable[float],
+) -> int:
+    """Minutos con pistas del ventilador **presentes pero inactivas**.
+
+    Son ``vent_standby``: no cuentan como ventilación ni como presencia de
+    paciente; se reportan (Fase 1.6e, punto 2).
+    """
+    return len(set(present_minutes) - set(active))
+
+
+
 @dataclass
 class TrackProbe:
     """Resumen de una pista presente en un fichero .vital."""
@@ -135,6 +290,11 @@ class VitalProbe:
     dtstart: float
     dtend: float
     tracks: dict[str, TrackProbe] = field(default_factory=dict)
+    # Fase 1.6e (punto 2): tramo de ventilación ACTIVA del fichero, en segundos
+    # epoch ``(inicio, fin)``, o ``None`` si no hay actividad. Y minutos con
+    # pistas del ventilador presentes pero inactivas (``vent_standby``).
+    active_span: Optional[tuple[float, float]] = None
+    standby_minutes: int = 0
 
     def has_any(self, names: Iterable[str]) -> bool:
         return any(self.tracks.get(n) for n in names)
@@ -158,6 +318,44 @@ def probe_vital_file(path: str | Path, track_names: Sequence[str] = _PROBE_TRACK
     return probe
 
 
+def _track_series(
+    recs,
+    srate: float,
+    is_wave: bool,
+    gain: float = 1.0,
+    offset: float = 0.0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Serie ``(t_epoch, valores)`` de una pista a partir de sus registros.
+
+    **Unidades:** los valores de ``recs`` son **crudos**: ``vitaldb`` no aplica
+    ``gain``/``offset``. En las pistas numéricas del ventilador son ``1.0``/``0.0``
+    (crudo == físico), pero en las ondas no: ``Intellivue/AWP_WAV`` tiene
+    ``gain=0,015 offset=-10`` (unit cmH2O) y ``Intellivue/FLOW_WAV``
+    ``gain=0,065 offset=-130`` (unit L/min). Sin la conversión, comparar la
+    amplitud de la onda con un umbral en cmH2O es un error de unidades
+    (Fase 1.6e, punto 2: el 23,3 % de los minutos «en espera» pasaban el umbral
+    de 5 cmH2O porque se comparaban contra 5 unidades crudas).
+    """
+    ts: list[float] = []
+    vs: list[float] = []
+    for r in recs:
+        if "dt" not in r or r.get("val") is None:
+            continue
+        dt = float(r["dt"])
+        arr = np.asarray(r["val"], dtype=np.float64).ravel()
+        if arr.size == 0:
+            continue
+        if gain != 1.0 or offset != 0.0:
+            arr = to_physical(arr, gain=gain, offset=offset)
+        if is_wave and srate > 0:
+            ts.extend((dt + np.arange(arr.size, dtype=np.float64) / srate).tolist())
+            vs.extend(arr.tolist())
+        else:
+            ts.append(dt)
+            vs.append(float(arr[0]))
+    return np.asarray(ts, dtype=np.float64), np.asarray(vs, dtype=np.float64)
+
+
 def probe_vital_file_detail(
     path: str | Path,
     track_names: Sequence[str] = _PROBE_TRACKS,
@@ -177,6 +375,7 @@ def probe_vital_file_detail(
 
     probe = VitalProbe(path=path, dtstart=float(vf.dtstart), dtend=float(vf.dtend))
 
+    activity_raw: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     for name, trk in (getattr(vf, "trks", None) or {}).items():
         recs = getattr(trk, "recs", None)
         if not recs:
@@ -184,6 +383,13 @@ def probe_vital_file_detail(
         dts = [float(r["dt"]) for r in recs if "dt" in r]
         if not dts:
             continue
+        is_wave = bool(trk.type == 1)
+        if name in ACTIVITY_TRACKS:
+            activity_raw[name] = _track_series(
+                recs, float(trk.srate or 0.0), is_wave,
+                gain=float(getattr(trk, "gain", 1.0) or 1.0),
+                offset=float(getattr(trk, "offset", 0.0) or 0.0),
+            )
         rng = range_for_track(name)
         min_phys = max_phys = None
         n_phys = 0
@@ -209,6 +415,37 @@ def probe_vital_file_detail(
         # Liberar memoria de la pista cuanto antes.
         trk.recs = None
 
+    # Fase 1.6e (punto 2): actividad ventilatoria del fichero.
+    tv = minute_max(*activity_raw.get(ACTIVITY_TV_TRACK,
+                                      (np.array([]), np.array([]))))
+    mv = minute_max(*activity_raw.get(ACTIVITY_MV_TRACK,
+                                      (np.array([]), np.array([]))))
+    rr = minute_max(*activity_raw.get(ACTIVITY_RR_TRACK,
+                                      (np.array([]), np.array([]))))
+    amp = minute_amplitude(*activity_raw.get(ACTIVITY_AWP_TRACK,
+                                             (np.array([]), np.array([]))))
+    active = active_vent_minutes(tv_exp=tv, mv_exp=mv, awp_amp=amp, vent_rr=rr)
+    present = set(tv) | set(mv) | set(rr) | set(amp)
+    probe.standby_minutes = count_standby_minutes(present, active)
+    if active:
+        # Spans en minutos, luego a segundos epoch. Dentro de un fichero horario
+        # el hueco nunca supera 2 h, así que sale un único tramo.
+        spans = spans_from_active_minutes(sorted(active), gap_min=120.0)
+        lo = min(s for s, _ in spans) * 60.0
+        hi = max(e for _, e in spans) * 60.0
+        # Acotar a las MUESTRAS observadas de las pistas de actividad: un minuto
+        # activo se considera completo, pero la ventilación no puede situarse
+        # antes de su primera muestra ni después de la última. Sin esta cota el
+        # fin se alargaba hasta 1 min de más y eso llega a invertir la etiqueta
+        # en el umbral exacto de 1 h de cola (D3).
+        obs = [float(t) for t_arr, _v in activity_raw.values()
+               for t in np.asarray(t_arr).ravel() if np.isfinite(t)]
+        if obs:
+            lo = max(lo, min(obs))
+            hi = min(hi, max(obs))
+        if hi > lo:
+            probe.active_span = (lo, hi)
+
     return probe, None
 
 
@@ -223,6 +460,9 @@ def probe_to_dict(probe: Optional[VitalProbe]) -> Optional[dict]:
     return {
         "dtstart": probe.dtstart,
         "dtend": probe.dtend,
+        "active_span": (None if probe.active_span is None
+                        else [probe.active_span[0], probe.active_span[1]]),
+        "standby_minutes": probe.standby_minutes,
         "tracks": {
             name: [t.dt_min, t.dt_max, t.n_recs, t.srate, t.is_wave,
                    t.dt_min_phys, t.dt_max_phys, t.n_phys]
@@ -237,6 +477,9 @@ def probe_from_dict(path: str | Path, data: Optional[dict]) -> Optional[VitalPro
         return None
     probe = VitalProbe(path=Path(path), dtstart=float(data["dtstart"]),
                        dtend=float(data["dtend"]))
+    act = data.get("active_span")
+    probe.active_span = None if act is None else (float(act[0]), float(act[1]))
+    probe.standby_minutes = int(data.get("standby_minutes") or 0)
     for name, vals in data["tracks"].items():
         dt_min, dt_max, n_recs, srate, is_wave = vals[:5]
         min_phys = vals[5] if len(vals) > 5 else None
@@ -282,6 +525,21 @@ def _union_extent(probe: VitalProbe, names: Iterable[str]) -> Optional[Span]:
 def vent_span_from_probe(probe: VitalProbe) -> Optional[Span]:
     """Intervalo con actividad de ventilador, o ``None`` si no la hay."""
     return _union_extent(probe, VENT_TRACKS)
+
+
+def active_vent_span_from_probe(probe: VitalProbe) -> Optional[Span]:
+    """Intervalo de ventilación **ACTIVA** del fichero (Fase 1.6e, punto 2).
+
+    Usa los minutos con actividad real (TV_EXP / MV_EXP / amplitud de AWP_WAV
+    con VENT_RR > 0), no la mera presencia de registros de pistas del
+    ventilador. Devuelve el span en **segundos epoch**, en las MISMAS unidades
+    que ``vent_span_from_probe`` (los llamadores lo pasan a horas con
+    ``_to_hours``).
+    """
+    if probe.active_span is None:
+        return None
+    start, end = probe.active_span
+    return Span(float(start), float(end))
 
 
 def monitor_span_from_probe(probe: VitalProbe) -> Optional[Span]:

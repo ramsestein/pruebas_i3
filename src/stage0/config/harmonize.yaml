@@ -5,7 +5,7 @@
 # Todos los parámetros vienen de aquí.
 # =============================================================================
 
-version: "0.5.0"
+version: "0.6.0"
 
 # ── Rutas ──────────────────────────────────────────────────────────────────────
 paths:
@@ -448,6 +448,16 @@ fase1_6d:
       tracheostomy,
       end_of_record,
     ]
+
+# ── Fase 1.6e: ventilación ACTIVA y cierre de pendientes ─────────────────────
+fase1_6e:
+  reports_dir: "reports/fase1_6e"
+  # Punto 2: umbrales FIJOS de ventilación activa (D-a). Se documentan aquí y
+  # las constantes viven en src/common/vital_signals.py.
+  vent_activity:
+    tv_exp_min_ml: 100.0 # por debajo no hay volumen tidal entregado
+    mv_exp_min_lpm: 1.0 # por debajo no hay ventilación minuto efectiva
+    awp_amp_min_cmh2o: 5.0 # amplitud p95-p5 con VENT_RR > 0
 
 # ── Reproducibilidad ──────────────────────────────────────────────────────────
 random_seed: 42
