@@ -458,6 +458,15 @@ fase1_6e:
     tv_exp_min_ml: 100.0 # por debajo no hay volumen tidal entregado
     mv_exp_min_lpm: 1.0 # por debajo no hay ventilación minuto efectiva
     awp_amp_min_cmh2o: 5.0 # amplitud p95-p5 con VENT_RR > 0
+  # Punto 3: VNI después de la extubación = extubado (D-b). Regla CONSERVADORA:
+  # sin firma de interfaz no invasiva el tramo NO se reclasifica (cuenta como
+  # ventilación invasiva) y se marca `posible_vni_no_verificable`.
+  vni:
+    min_disconnect_min: 10.0 # desconexión real del circuito
+    leak_min_fraction: 0.20 # fuga >= 20 % (no hay pista de fuga en ninguna cohorte)
+    tv_insp_fraction: 0.20 # (TV_INSP - TV_EXP)/TV_INSP >= 0,2
+    min_fraction_minutes: 0.50 # en >= 50 % de los minutos del tramo
+    segment_gap_min: 5.0 # une la contigüidad entre ficheros al segmentar
 
 # ── Reproducibilidad ──────────────────────────────────────────────────────────
 random_seed: 42

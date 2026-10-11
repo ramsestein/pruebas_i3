@@ -503,3 +503,88 @@ class TestReconstruccionResumible:
         assert merged["total_boxes"] == 0
         assert merged["total_events"] == 0
         assert merged["source"] == "clinic_source_vital"
+
+
+# ── Fase 1.6e (punto 3): VNI post-extubación = extubado (D-b) ────────────────
+
+def write_hour_vni(
+    path: Path, dt: datetime, *, tv_exp: float | None = 500.0,
+    tv_insp: float | None = None, monitor: bool = True,
+    duration_s: float = 3599.0, step_s: float = 60.0,
+) -> Path:
+    """.vital sintético de ~1 h con TV espirado e inspirado controlables.
+
+    Muestreo por MINUTO (como los datos reales): con muestras cada 10 min el
+    hueco artificial entre horas consecutivas igualaría el umbral de desconexión
+    real de la VNI (``vni.MIN_GAP_MIN``).
+    """
+    dt_unix = to_epoch_utc(dt)
+    vf = vitaldb.VitalFile()
+    vf.dtstart = dt_unix
+    vf.dtend = dt_unix + duration_s
+    if monitor:
+        vf.add_track("Intellivue/ECG_HR",
+                     _recs(dt_unix, duration_s, step_s=step_s, value=80.0))
+        vf.add_track("Intellivue/PLETH_SAT_O2",
+                     _recs(dt_unix, duration_s, step_s=step_s, value=98.0))
+    if tv_exp is not None:
+        vf.add_track("Intellivue/TV_EXP",
+                     _recs(dt_unix, duration_s, step_s=step_s, value=tv_exp))
+        vf.add_track("Intellivue/VENT_RR",
+                     _recs(dt_unix, duration_s, step_s=step_s, value=14.0))
+    if tv_insp is not None:
+        vf.add_track("Intellivue/TV_INSP",
+                     _recs(dt_unix, duration_s, step_s=step_s, value=tv_insp))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    vf.to_vital(str(path))
+    return path
+
+
+class TestVniPostExtubacion:
+    """La VNI con mascarilla tras la extubación no es ventilación invasiva."""
+
+    def _make(self, raw_dir: Path, *, firma: bool) -> None:
+        """Ventilación invasiva 0-1 h, hueco de 1 h con monitor, y ventilación
+        de 3-4 h (con o sin firma de TV inspirado)."""
+        for h, vent in ((0, True), (1, True), (2, False), (3, True), (4, True)):
+            tv_insp = None
+            if firma and h in (3, 4):
+                tv_insp = 700.0      # (700-500)/700 = 0,286 >= 0,2 en todos
+            write_hour_vni(
+                raw_dir / "box2" / _fname("tok", BASE + timedelta(hours=h)),
+                BASE + timedelta(hours=h),
+                tv_exp=(500.0 if vent else None), tv_insp=tv_insp,
+            )
+
+    def _event(self, tmp_path: Path):
+        boxes = scan_source_files(tmp_path, CLINIC_SPEC)
+        segs = [(b, segment_box(b, f)) for b, f in boxes.items()]
+        idx = build_cohort_index(segs, cohort="clinic", spec=CLINIC_SPEC,
+                                 merged=False)
+        return idx["events"][0], idx, segs[0][1]
+
+    def test_tramo_con_firma_de_interfaz_es_vni(self, tmp_path):
+        self._make(tmp_path, firma=True)
+        ev, idx, seg = self._event(tmp_path)
+        assert len(seg.vni_spans) == 1
+        assert ev["n_vni_segments"] == 1
+        assert ev["vni_post_ext_h_start"] == pytest.approx(3.0, abs=0.1)
+        assert ev["vni_post_ext_h_end"] == pytest.approx(5.0, abs=0.1)
+        # La ventilación invasiva termina en la desconexión (hora 2) y el monitor
+        # sigue: hay cola >= 1 h -> extubación confirmada (D-b).
+        assert ev["attempts"][-1]["vent_end_h"] == pytest.approx(2.0, abs=0.1)
+        assert ev["monitor_tail_h"] >= 1.0
+        assert ev["labels"]["48h"]["event_type"] == "successful_extubation"
+        assert idx["n_vni_segments"] == 1
+        assert idx["n_eventos_con_vni_post_ext"] == 1
+
+    def test_tramo_sin_firma_no_se_reclasifica(self, tmp_path):
+        """Control negativo: sin pista de TV inspirado el tramo es NO verificable."""
+        self._make(tmp_path, firma=False)
+        ev, idx, seg = self._event(tmp_path)
+        assert seg.vni_spans == []
+        assert len(seg.unverifiable_spans) == 1
+        assert ev["n_vni_segments"] == 0
+        assert ev["vni_post_ext_h_start"] is None
+        assert ev["n_vni_unverifiable_segments"] == 1
+        assert idx["n_vni_unverifiable_segments"] == 1

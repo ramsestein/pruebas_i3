@@ -81,6 +81,7 @@ from src.common.vital_signals import (
     spo2_span_from_probe,
     vent_span_from_probe,
 )
+from src.common.vni import classify_vni  # noqa: E402
 from src.stage0.io.versioning import compute_config_hash, load_config
 from src.common.timeutils import to_epoch_utc
 
@@ -205,6 +206,104 @@ class BoxSegmentation:
     probes: dict[str, Optional[VitalProbe]] = field(default_factory=dict)
     # Horas cubiertas por ficheros ILEGIBLES ("sin dato", no "sin señal").
     missing_spans: list[Span] = field(default_factory=list)
+    # Fase 1.6e (punto 3): tramos POST-extubación con firma de interfaz no
+    # invasiva (VNI confirmada, D-b) y tramos sin firma verificable
+    # (``posible_vni_no_verificable``, que NO se reclasifican).
+    vni_spans: list[Span] = field(default_factory=list)
+    unverifiable_spans: list[Span] = field(default_factory=list)
+
+
+# Fase 1.6e (punto 3): al separar la ventilación en tramos para poder ver un
+# cambio de interfaz basta con unir la contigüidad entre ficheros (minutos), no
+# los huecos de desconexión: una desconexión real son >= 10 min.
+VNI_SEGMENT_GAP_H: float = 5.0 / 60.0
+
+
+def _monitor_in_span(
+    monitor_spans: Sequence[Span], lo_h: float, hi_h: float,
+) -> bool:
+    """¿Hay señal de monitor (paciente) en el hueco ``[lo_h, hi_h]``?
+
+    Sin FC/SpO2 fisiológicas la "desconexión" podría ser el fin del registro, no
+    una desconexión real del circuito (ver ``vni.real_disconnect_before``).
+    """
+    if hi_h <= lo_h:
+        return False
+    return any(s.start_h < hi_h and s.end_h > lo_h for s in monitor_spans)
+
+
+def _interface_signature(
+    span: Span,
+    files: Sequence[SourceFile],
+    probes: dict[str, Optional[VitalProbe]],
+) -> dict:
+    """Firma de interfaz de un tramo a partir de los ficheros que lo cubren.
+
+    ``tv_insp_frac`` = mediana de la fracción medida en los ficheros del tramo
+    (``None`` si ninguno trae TV_INSP). ``mode_is_niv`` = ``False`` si algún
+    fichero declara una modalidad invasiva (``SET_SIMV``); si no, ``None``.
+    """
+    fracs: list[float] = []
+    modes: list[bool] = []
+    for sf in files:
+        f_start = sf.dt_unix / _SECONDS_PER_HOUR
+        if not (f_start < span.end_h and f_start + 1.0 > span.start_h):
+            continue
+        probe = probes.get(str(sf.path))
+        if probe is None:
+            continue
+        if probe.tv_insp_frac is not None:
+            fracs.append(float(probe.tv_insp_frac))
+        if probe.mode_is_niv is not None:
+            modes.append(bool(probe.mode_is_niv))
+    out: dict = {}
+    if modes:
+        # Solo hay modalidad no invasiva si TODOS los ficheros del tramo lo dicen.
+        out["mode_is_niv"] = all(modes)
+    if fracs:
+        out["tv_insp_frac"] = sorted(fracs)[len(fracs) // 2]
+    return out
+
+
+def _split_vni_segments(
+    vent_spans: list[Span],
+    monitor_spans: Sequence[Span],
+    files: Sequence[SourceFile],
+    probes: dict[str, Optional[VitalProbe]],
+) -> tuple[list[Span], list[Span], list[Span]]:
+    """Separa la ventilación INVASIVA de los tramos de VNI post-extubación (D-b).
+
+    Devuelve ``(invasivos, vni, no_verificables)``. Un tramo posterior a otro
+    solo se reclasifica como VNI si hay **desconexión real** (>= 10 min sin
+    actividad con monitor) y **firma de interfaz no invasiva**; sin firma el
+    tramo cuenta como invasivo y se marca como no verificable (regla
+    conservadora: la VNI nunca se da por supuesta).
+    """
+    segments = merge_spans(vent_spans, VNI_SEGMENT_GAP_H)
+    invasive: list[Span] = []
+    vni: list[Span] = []
+    unver: list[Span] = []
+    for i, seg in enumerate(segments):
+        if i == 0:
+            invasive.append(seg)
+            continue
+        prev_end_h = segments[i - 1].end_h
+        sig = _interface_signature(seg, files, probes)
+        dec = classify_vni(
+            prev_end_min=prev_end_h * 60.0,
+            next_start_min=seg.start_h * 60.0,
+            monitor_present=_monitor_in_span(monitor_spans, prev_end_h,
+                                             seg.start_h),
+            **sig,
+        )
+        if dec.is_vni:
+            vni.append(seg)
+        elif dec.verifiable:
+            invasive.append(seg)
+        else:
+            invasive.append(seg)
+            unver.append(seg)
+    return invasive, vni, unver
 
 
 def _to_hours(span: Optional[Span]) -> Optional[Span]:
@@ -259,12 +358,23 @@ def segment_box(
     # Puentear los huecos causados por ficheros ilegibles antes de segmentar:
     # un fin de ventilación solo es real si el hueco NO está cubierto por
     # ficheros "sin dato".
+    # Fase 1.6e (punto 3): antes de formar intentos se separan los tramos de VNI
+    # post-extubación (D-b): una VNI con mascarilla es estar EXTUBADO, así que su
+    # tramo no cuenta como ventilación invasiva ni como fallo, y dejar de
+    # eliminarlo es lo que permite detectar la reintubación posterior.
+    vent_span_all = merge_spans_ignoring_missing(
+        vent_spans, missing_spans, VNI_SEGMENT_GAP_H
+    )
+    monitor_span_all = merge_spans_ignoring_missing(
+        monitor_spans, missing_spans, patient_gap_h
+    )
+    vent_spans, vni_spans, unver_spans = _split_vni_segments(
+        list(vent_span_all), list(monitor_span_all), files, probes
+    )
     vent_spans = merge_spans_ignoring_missing(
         vent_spans, missing_spans, disconnect_gap_h
     )
-    monitor_spans = merge_spans_ignoring_missing(
-        monitor_spans, missing_spans, patient_gap_h
-    )
+    monitor_spans = monitor_span_all
     hr_spans = merge_spans_ignoring_missing(hr_spans, missing_spans, patient_gap_h)
     spo2_spans = merge_spans_ignoring_missing(spo2_spans, missing_spans, patient_gap_h)
 
@@ -283,6 +393,7 @@ def segment_box(
     return BoxSegmentation(
         box=box, files=list(files), episodes=kept, excluded_episodes=excluded,
         probes=probes, missing_spans=merge_spans(missing_spans, 0.0),
+        vni_spans=vni_spans, unverifiable_spans=unver_spans,
     )
 
 
@@ -489,6 +600,8 @@ def build_event_record(
     signal_loss: bool = False,
     death: Optional[DeathDecision] = None,
     missing_spans: Sequence[Span] = (),
+    vni_spans: Sequence[Span] = (),
+    unverifiable_spans: Sequence[Span] = (),
 ) -> dict:
     """Ficha de un evento lista para el índice JSON (D12)."""
     attempts = [
@@ -553,6 +666,24 @@ def build_event_record(
     # Fase 1.5, punto 2: horas perdidas por ficheros ilegibles ("sin dato").
     level, missing_hours = classify_vitaldb_event(episode, missing_spans)
 
+    # Fase 1.6e (punto 3): VNI post-extubación (D-b). El tramo de VNI que empieza
+    # tras el fin de la última ventilación INVASIVA se guarda aparte: el paciente
+    # está extubado (no es fallo) y solo una reintubación invasiva posterior lo
+    # sería.
+    last_invasive_end_h = (episode.attempts[-1].end_h
+                           if episode.attempts else None)
+    region_end_h = _region_end_h(episode)
+    vni_post = [s for s in vni_spans
+                if last_invasive_end_h is not None
+                and s.end_h > last_invasive_end_h + _EPS
+                and episode.start_h <= s.start_h < region_end_h]
+    vni_start = vni_end = None
+    if vni_post:
+        vni_start = round(min(s.start_h for s in vni_post)
+                          - episode.start_h, 4)
+        vni_end = round(max(s.end_h for s in vni_post)
+                        - episode.start_h, 4)
+
     return {
         "event_id": "",  # se rellena en el orquestador
         "cohort": cohort,
@@ -571,6 +702,13 @@ def build_event_record(
         "monitor_tail_h": round(tail_h, 4),
         "n_attempts": episode.n_attempts,
         "attempts": attempts,
+        "vni_post_ext_h_start": vni_start,
+        "vni_post_ext_h_end": vni_end,
+        "n_vni_segments": len(vni_post),
+        "n_vni_unverifiable_segments": sum(
+            1 for s in unverifiable_spans
+            if episode.start_h <= s.start_h < region_end_h
+        ),
         "extubation_rule": ext_dec.reason,
         "end_reason": end_reason_from_causes(
             (["death_at_vent"] if died else []),
@@ -649,10 +787,14 @@ def build_cohort_index(
     vars_ok_50 = vars_ok_80 = 0
     n_covered = 0
     n_standby_min = 0
+    n_vni_segments = 0
+    n_unver_segments = 0
     for box, seg in results:
         n_missing_files += sum(1 for p in seg.probes.values() if p is None)
         n_standby_min += sum(int(p.standby_minutes) for p in seg.probes.values()
                              if p is not None)
+        n_vni_segments += len(seg.vni_spans)
+        n_unver_segments += len(seg.unverifiable_spans)
         for i, ep in enumerate(seg.episodes):
             t0_unix = ep.start_h * _SECONDS_PER_HOUR
             death, raw = detect_death_for_episode(seg.files, ep)
@@ -663,6 +805,8 @@ def build_cohort_index(
                 signal_loss=signal_loss_at_end(seg.files, seg.probes, ep),
                 death=death,
                 missing_spans=seg.missing_spans,
+                vni_spans=seg.vni_spans,
+                unverifiable_spans=seg.unverifiable_spans,
             )
             rec["event_id"] = f"{cohort}_{box}_event_{i + 1}"
             levels[rec["level"]] = levels.get(rec["level"], 0) + 1
@@ -712,7 +856,9 @@ def build_cohort_index(
         "method": (
             "Se procesa cada .vital de origen con el parser de vitaldb; la "
             "ventilación exige ACTIVIDAD real de las pistas de ventilador "
-            "(TV_EXP/MV_EXP/amplitud de AWP_WAV con VENT_RR>0; Fase 1.6e). "
+            "(TV_EXP/MV_EXP/amplitud de AWP_WAV con VENT_RR>0; Fase 1.6e) "
+            "y los tramos posteriores con firma de interfaz NO invasiva se "
+            "separan como VNI (D-b: VNI = extubado, no es fallo). "
             "Segmentación: src/common/episodes.py."
         ),
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -722,6 +868,11 @@ def build_cohort_index(
         "total_excluded_events": len(excluded_events),
         "n_missing_files": n_missing_files,
         "n_vent_standby_minutes": n_standby_min,
+        "n_vni_segments": n_vni_segments,
+        "n_eventos_con_vni_post_ext": sum(
+            1 for e in events if e.get("vni_post_ext_h_start") is not None
+        ),
+        "n_vni_unverifiable_segments": n_unver_segments,
         "levels": levels,
         "levels_coverage_measured": n_covered,
         "vars_ok_50": vars_ok_50,

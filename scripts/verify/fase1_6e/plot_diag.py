@@ -54,6 +54,18 @@ def _select(rows: list[dict], how: str, n: int, n_afectados: int) -> list[dict]:
         out = [r for r in afc if r["fin_vent_activa_h"] is None]
     elif how == "controles":
         out = rows[n_afectados:]
+    elif how == "vni_no_verificable":
+        # Tramos post-extubación marcados como `posible_vni_no_verificable`
+        # (punto 3): se dibujan para poder ver si parecen o no una VNI.
+        rep = REPORT / "vni_reporte.json"
+        ids = set()
+        if rep.exists():
+            data = json.loads(rep.read_text(encoding="utf-8"))
+            for cohort_data in data.values():
+                for d in cohort_data.get("detalle", []):
+                    if d.get("no_verificables"):
+                        ids.add(d["event_id"])
+        out = [r for r in afc if r["event_id"] in ids]
     else:
         raise SystemExit(f"selección desconocida: {how}")
     return out[:n] if n else out
@@ -68,7 +80,8 @@ def main() -> None:
     p.add_argument("--cohort", required=True, choices=sorted(SPECS))
     p.add_argument("--config", default=str(ROOT / "src/stage0/config/harmonize.yaml"))
     p.add_argument("--select", default="recuperados",
-                   choices=["recuperados", "cambian", "sin_actividad", "controles"])
+                   choices=["recuperados", "cambian", "sin_actividad",
+                            "controles", "vni_no_verificable"])
     p.add_argument("--n", type=int, default=9)
     p.add_argument("--n-afectados", type=int, default=None,
                    help="Nº de filas de afectados (antes de los controles).")

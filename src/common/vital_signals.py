@@ -31,6 +31,7 @@ from .monitor_observation import physiological_extent, range_for_track
 from .track_aliases import HR as _HR_ALIASES
 from .track_aliases import MAP as _MAP_ALIASES
 from .track_aliases import SPO2 as _SPO2_ALIASES
+from .vni import TV_INSP_FRACTION
 
 logger = logging.getLogger(__name__)
 
@@ -96,8 +97,26 @@ MERGE_TRACK_NAMES: tuple[str, ...] = (
     "Intellivue/PIP_CMH2O",
 )
 
+# ── Firma de INTERFAZ para la VNI post-extubación (Fase 1.6e, punto 3) ────────
+# Un tramo de ventilación posterior a la última desconexión solo se reclasifica
+# como VNI (y por tanto NO es ventilación invasiva ni fallo) si hay firma de
+# interfaz NO invasiva (``src/common/vni.py``).
+#
+# Estado real de las cohortes de señal: NINGUNA de las dos tiene pista de fuga
+# (ver `reports/fase1_6e/inventario_pistas_*.md`), así que la firma de fuga no se
+# puede calcular y NO se inventa una semántica para ella; la única firma
+# medible es TV_INSP y, en VitalDB, el ajuste de modo (``SET_SIMV`` = SIMV, que es
+# una modalidad INVASIVA). Sin firma → ``posible_vni_no_verificable``.
+VNI_TV_INSP_TRACK = "Intellivue/TV_INSP"
+# Modalidades que implican interfaz INVASIVA (tubo).
+VNI_INVASIVE_MODE_TRACKS: tuple[str, ...] = ("Intellivue/SET_SIMV",)
+# La condición POR MINUTO de la firma de TV inspirado es ``vni.TV_INSP_FRACTION``
+# (importada arriba: fuente única); la cobertura mínima del tramo (50 %) la
+# aplica ``vni.tv_insp_signature``.
+VNI_TRACKS: tuple[str, ...] = ((VNI_TV_INSP_TRACK,) + VNI_INVASIVE_MODE_TRACKS)
+
 _PROBE_TRACKS: tuple[str, ...] = tuple(dict.fromkeys(
-    VENT_TRACKS + MONITOR_NUM_TRACKS + MONITOR_WAVE_TRACKS
+    VENT_TRACKS + MONITOR_NUM_TRACKS + MONITOR_WAVE_TRACKS + VNI_TRACKS
 ))
 
 # Pistas para la detección de muerte por señales (Fase 1, ajuste 2).
@@ -295,6 +314,13 @@ class VitalProbe:
     # pistas del ventilador presentes pero inactivas (``vent_standby``).
     active_span: Optional[tuple[float, float]] = None
     standby_minutes: int = 0
+    # Fase 1.6e (punto 3): firma de interfaz NO invasiva del fichero.
+    # ``tv_insp_frac`` = fracción de los minutos con TV_INSP y TV_EXP en los que
+    # ``(TV_INSP - TV_EXP)/TV_INSP >= 0,2`` (``None`` si no hay tales minutos).
+    # ``mode_is_niv`` = ``None`` si el fichero no trae ajuste de modo, y ``False``
+    # si el modo es invasivo (``SET_SIMV``).
+    tv_insp_frac: Optional[float] = None
+    mode_is_niv: Optional[bool] = None
 
     def has_any(self, names: Iterable[str]) -> bool:
         return any(self.tracks.get(n) for n in names)
@@ -376,6 +402,8 @@ def probe_vital_file_detail(
     probe = VitalProbe(path=path, dtstart=float(vf.dtstart), dtend=float(vf.dtend))
 
     activity_raw: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    vni_raw: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    invasive_mode = False
     for name, trk in (getattr(vf, "trks", None) or {}).items():
         recs = getattr(trk, "recs", None)
         if not recs:
@@ -390,6 +418,14 @@ def probe_vital_file_detail(
                 gain=float(getattr(trk, "gain", 1.0) or 1.0),
                 offset=float(getattr(trk, "offset", 0.0) or 0.0),
             )
+        elif name == VNI_TV_INSP_TRACK:
+            vni_raw[name] = _track_series(
+                recs, float(trk.srate or 0.0), is_wave,
+                gain=float(getattr(trk, "gain", 1.0) or 1.0),
+                offset=float(getattr(trk, "offset", 0.0) or 0.0),
+            )
+        elif name in VNI_INVASIVE_MODE_TRACKS:
+            invasive_mode = True
         rng = range_for_track(name)
         min_phys = max_phys = None
         n_phys = 0
@@ -446,6 +482,20 @@ def probe_vital_file_detail(
         if hi > lo:
             probe.active_span = (lo, hi)
 
+    # Fase 1.6e (punto 3): firma de interfaz no invasiva del fichero.
+    ti = minute_max(*vni_raw.get(VNI_TV_INSP_TRACK,
+                                 (np.array([]), np.array([]))))
+    if ti:
+        common = [k for k in ti if k in tv and ti[k] > 0.0]
+        if common:
+            probe.tv_insp_frac = float(
+                sum(1 for k in common
+                    if (ti[k] - tv[k]) / ti[k] >= TV_INSP_FRACTION)
+                / len(common)
+            )
+    if invasive_mode:
+        probe.mode_is_niv = False
+
     return probe, None
 
 
@@ -463,6 +513,8 @@ def probe_to_dict(probe: Optional[VitalProbe]) -> Optional[dict]:
         "active_span": (None if probe.active_span is None
                         else [probe.active_span[0], probe.active_span[1]]),
         "standby_minutes": probe.standby_minutes,
+        "tv_insp_frac": probe.tv_insp_frac,
+        "mode_is_niv": probe.mode_is_niv,
         "tracks": {
             name: [t.dt_min, t.dt_max, t.n_recs, t.srate, t.is_wave,
                    t.dt_min_phys, t.dt_max_phys, t.n_phys]
@@ -480,6 +532,10 @@ def probe_from_dict(path: str | Path, data: Optional[dict]) -> Optional[VitalPro
     act = data.get("active_span")
     probe.active_span = None if act is None else (float(act[0]), float(act[1]))
     probe.standby_minutes = int(data.get("standby_minutes") or 0)
+    tv_insp_frac = data.get("tv_insp_frac")
+    probe.tv_insp_frac = None if tv_insp_frac is None else float(tv_insp_frac)
+    mode = data.get("mode_is_niv")
+    probe.mode_is_niv = None if mode is None else bool(mode)
     for name, vals in data["tracks"].items():
         dt_min, dt_max, n_recs, srate, is_wave = vals[:5]
         min_phys = vals[5] if len(vals) > 5 else None
