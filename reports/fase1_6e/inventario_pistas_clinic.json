@@ -1,0 +1,559 @@
+{
+  "inventario": {
+    "n_files": 78,
+    "n_ok": 78,
+    "n_ilegibles": 0,
+    "tracks": {
+      "Intellivue/ECG_HR": {
+        "n": 77,
+        "pct": 98.72
+      },
+      "Intellivue/ECG_VPC_CNT": {
+        "n": 77,
+        "pct": 98.72
+      },
+      "Intellivue/PLETH_PERF_REL": {
+        "n": 77,
+        "pct": 98.72
+      },
+      "Intellivue/PLETH_SAT_O2": {
+        "n": 77,
+        "pct": 98.72
+      },
+      "Intellivue/RR": {
+        "n": 77,
+        "pct": 98.72
+      },
+      "Intellivue/PLETH_HR": {
+        "n": 76,
+        "pct": 97.44
+      },
+      "Intellivue/PLETH": {
+        "n": 74,
+        "pct": 94.87
+      },
+      "Intellivue/ECG_II": {
+        "n": 66,
+        "pct": 84.62
+      },
+      "Intellivue/RESP": {
+        "n": 59,
+        "pct": 75.64
+      },
+      "Intellivue/ST_I": {
+        "n": 56,
+        "pct": 71.79
+      },
+      "Intellivue/ST_II": {
+        "n": 56,
+        "pct": 71.79
+      },
+      "Intellivue/ST_AVF": {
+        "n": 55,
+        "pct": 70.51
+      },
+      "Intellivue/ST_AVL": {
+        "n": 55,
+        "pct": 70.51
+      },
+      "Intellivue/ST_AVR": {
+        "n": 55,
+        "pct": 70.51
+      },
+      "Intellivue/ST_III": {
+        "n": 55,
+        "pct": 70.51
+      },
+      "Intellivue/ECG_III": {
+        "n": 52,
+        "pct": 66.67
+      },
+      "Intellivue/ST_V": {
+        "n": 46,
+        "pct": 58.97
+      },
+      "Intellivue/NIBP_DIA": {
+        "n": 43,
+        "pct": 55.13
+      },
+      "Intellivue/NIBP_HR": {
+        "n": 43,
+        "pct": 55.13
+      },
+      "Intellivue/NIBP_MEAN": {
+        "n": 43,
+        "pct": 55.13
+      },
+      "Intellivue/NIBP_SYS": {
+        "n": 43,
+        "pct": 55.13
+      },
+      "Intellivue/ST_MCL": {
+        "n": 38,
+        "pct": 48.72
+      },
+      "Intellivue/ABP_DIA": {
+        "n": 32,
+        "pct": 41.03
+      },
+      "Intellivue/ABP_MEAN": {
+        "n": 32,
+        "pct": 41.03
+      },
+      "Intellivue/ABP_SYS": {
+        "n": 32,
+        "pct": 41.03
+      },
+      "Intellivue/CO2": {
+        "n": 31,
+        "pct": 39.74
+      },
+      "Intellivue/ABP": {
+        "n": 31,
+        "pct": 39.74
+      },
+      "Intellivue/ABP_HR": {
+        "n": 31,
+        "pct": 39.74
+      },
+      "Intellivue/ICP": {
+        "n": 17,
+        "pct": 21.79
+      },
+      "Intellivue/AWAY_CO2_ET": {
+        "n": 16,
+        "pct": 20.51
+      },
+      "Intellivue/AWAY_CO2_INSP_MIN": {
+        "n": 16,
+        "pct": 20.51
+      },
+      "Intellivue/FIO2": {
+        "n": 16,
+        "pct": 20.51
+      },
+      "Intellivue/ICP_MEAN": {
+        "n": 15,
+        "pct": 19.23
+      },
+      "Intellivue/PEEP_CMH2O": {
+        "n": 15,
+        "pct": 19.23
+      },
+      "Intellivue/PIP_CMH2O": {
+        "n": 15,
+        "pct": 19.23
+      },
+      "Intellivue/TV_EXP": {
+        "n": 15,
+        "pct": 19.23
+      },
+      "Intellivue/VENT_RR": {
+        "n": 15,
+        "pct": 19.23
+      },
+      "Intellivue/ART": {
+        "n": 14,
+        "pct": 17.95
+      },
+      "Intellivue/ECG_I": {
+        "n": 14,
+        "pct": 17.95
+      },
+      "Intellivue/EEG_BIS_SQI": {
+        "n": 14,
+        "pct": 17.95
+      },
+      "Intellivue/ART_DIA": {
+        "n": 13,
+        "pct": 16.67
+      },
+      "Intellivue/ART_MEAN": {
+        "n": 13,
+        "pct": 16.67
+      },
+      "Intellivue/ART_SYS": {
+        "n": 13,
+        "pct": 16.67
+      },
+      "Intellivue/EEG_BIS": {
+        "n": 13,
+        "pct": 16.67
+      },
+      "Intellivue/EEG_RATIO_SUPPRN": {
+        "n": 13,
+        "pct": 16.67
+      },
+      "Intellivue/EMG_ELEC_POTL_MUSCL": {
+        "n": 13,
+        "pct": 16.67
+      },
+      "Intellivue/PPLAT_CMH2O": {
+        "n": 11,
+        "pct": 14.1
+      },
+      "Intellivue/TV_INSP": {
+        "n": 10,
+        "pct": 12.82
+      },
+      "Intellivue/EEG_BIS_ASYM": {
+        "n": 10,
+        "pct": 12.82
+      },
+      "Intellivue/EEG": {
+        "n": 9,
+        "pct": 11.54
+      },
+      "Intellivue/PRESS_CEREB_PERF": {
+        "n": 9,
+        "pct": 11.54
+      },
+      "Intellivue/MV_EXP": {
+        "n": 7,
+        "pct": 8.97
+      },
+      "Intellivue/MV_INSP": {
+        "n": 7,
+        "pct": 8.97
+      },
+      "Intellivue/ST_V1": {
+        "n": 7,
+        "pct": 8.97
+      },
+      "Intellivue/ST_V2": {
+        "n": 7,
+        "pct": 8.97
+      },
+      "Intellivue/ST_V3": {
+        "n": 7,
+        "pct": 8.97
+      },
+      "Intellivue/ST_V4": {
+        "n": 7,
+        "pct": 8.97
+      },
+      "Intellivue/ST_V5": {
+        "n": 7,
+        "pct": 8.97
+      },
+      "Intellivue/ST_V6": {
+        "n": 7,
+        "pct": 8.97
+      },
+      "Intellivue/VENT_RR_SPONT": {
+        "n": 7,
+        "pct": 8.97
+      },
+      "Intellivue/HR": {
+        "n": 6,
+        "pct": 7.69
+      },
+      "Intellivue/TEMP": {
+        "n": 5,
+        "pct": 6.41
+      },
+      "Intellivue/ECG_AVF": {
+        "n": 5,
+        "pct": 6.41
+      },
+      "Intellivue/PPV": {
+        "n": 4,
+        "pct": 5.13
+      },
+      "Intellivue/ECG_AVL": {
+        "n": 3,
+        "pct": 3.85
+      },
+      "Intellivue/BT_BLD": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/ECG_II_WAV": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/ECG_MCL": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/ECG_V": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/ECG_V_WAV": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/AWP_WAV": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/FLOW_WAV": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/TOF1": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/TOF2": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/TOF3": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/TOF4": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/TOF_CNT": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/ECG_AI_WAV": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/ECG_AS_WAV": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/ECG_ES_WAV": {
+        "n": 2,
+        "pct": 2.56
+      },
+      "Intellivue/CI_CTS": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/CO_CTS": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/VOL_BLD_STROKE": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/VOL_BLD_STROKE_INDEX": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/VOL_BLD_STROKE_VAR": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/ECG_I_WAV": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/ART": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/ART_DBP": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/ART_MBP": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/ART_SBP": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/BT": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/CO": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/CO2": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/CVP": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/ECG": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/EEG": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/ETCO2": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/FLOW_RATE": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/GAS1_AGENT": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/GAS1_EXPIRED": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/HR": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/NIBP_DBP": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/NIBP_MBP": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/NIBP_SBP": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/PEEP": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/PIP": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/PLETH": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/PLETH_HR": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/PLETH_SPO2": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/PSI": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/PVC": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/PVI": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/RR": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/RR_CO2": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/SEFL": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/SO2_1": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/SO2_2": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/SPHB": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/TOTAL_VOL": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Demo/TV": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "EVENT": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/RAP_MEAN": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/PTC_CNT": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/ECG_III_WAV": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/BP_MEAN": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/CI": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/CO": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/LAP_MEAN": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/PAP_DIA": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/PAP_MEAN": {
+        "n": 1,
+        "pct": 1.28
+      },
+      "Intellivue/PAP_SYS": {
+        "n": 1,
+        "pct": 1.28
+      }
+    }
+  },
+  "interesantes": {
+    "Intellivue/AWAY_CO2_INSP_MIN": {
+      "n": 16,
+      "pct": 20.51
+    },
+    "Intellivue/FIO2": {
+      "n": 16,
+      "pct": 20.51
+    },
+    "Intellivue/PEEP_CMH2O": {
+      "n": 15,
+      "pct": 19.23
+    },
+    "Intellivue/TV_INSP": {
+      "n": 10,
+      "pct": 12.82
+    },
+    "Intellivue/MV_INSP": {
+      "n": 7,
+      "pct": 8.97
+    },
+    "Demo/PEEP": {
+      "n": 1,
+      "pct": 1.28
+    }
+  }
+}

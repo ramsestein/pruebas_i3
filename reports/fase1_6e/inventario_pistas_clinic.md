@@ -1,0 +1,151 @@
+# Inventario de pistas — clinic (Fase 1.6e, punto 1d)
+
+- Ficheros: 78 (legibles 78, ilegibles 0)
+- Pistas distintas: 131
+
+## Pistas presentes (todas)
+
+| Pista | Ficheros | % |
+|---|---|---|
+| `Intellivue/ECG_HR` | 77 | 98.72 % |
+| `Intellivue/ECG_VPC_CNT` | 77 | 98.72 % |
+| `Intellivue/PLETH_PERF_REL` | 77 | 98.72 % |
+| `Intellivue/PLETH_SAT_O2` | 77 | 98.72 % |
+| `Intellivue/RR` | 77 | 98.72 % |
+| `Intellivue/PLETH_HR` | 76 | 97.44 % |
+| `Intellivue/PLETH` | 74 | 94.87 % |
+| `Intellivue/ECG_II` | 66 | 84.62 % |
+| `Intellivue/RESP` | 59 | 75.64 % |
+| `Intellivue/ST_I` | 56 | 71.79 % |
+| `Intellivue/ST_II` | 56 | 71.79 % |
+| `Intellivue/ST_AVF` | 55 | 70.51 % |
+| `Intellivue/ST_AVL` | 55 | 70.51 % |
+| `Intellivue/ST_AVR` | 55 | 70.51 % |
+| `Intellivue/ST_III` | 55 | 70.51 % |
+| `Intellivue/ECG_III` | 52 | 66.67 % |
+| `Intellivue/ST_V` | 46 | 58.97 % |
+| `Intellivue/NIBP_DIA` | 43 | 55.13 % |
+| `Intellivue/NIBP_HR` | 43 | 55.13 % |
+| `Intellivue/NIBP_MEAN` | 43 | 55.13 % |
+| `Intellivue/NIBP_SYS` | 43 | 55.13 % |
+| `Intellivue/ST_MCL` | 38 | 48.72 % |
+| `Intellivue/ABP_DIA` | 32 | 41.03 % |
+| `Intellivue/ABP_MEAN` | 32 | 41.03 % |
+| `Intellivue/ABP_SYS` | 32 | 41.03 % |
+| `Intellivue/CO2` | 31 | 39.74 % |
+| `Intellivue/ABP` | 31 | 39.74 % |
+| `Intellivue/ABP_HR` | 31 | 39.74 % |
+| `Intellivue/ICP` | 17 | 21.79 % |
+| `Intellivue/AWAY_CO2_ET` | 16 | 20.51 % |
+| `Intellivue/AWAY_CO2_INSP_MIN` | 16 | 20.51 % |
+| `Intellivue/FIO2` | 16 | 20.51 % |
+| `Intellivue/ICP_MEAN` | 15 | 19.23 % |
+| `Intellivue/PEEP_CMH2O` | 15 | 19.23 % |
+| `Intellivue/PIP_CMH2O` | 15 | 19.23 % |
+| `Intellivue/TV_EXP` | 15 | 19.23 % |
+| `Intellivue/VENT_RR` | 15 | 19.23 % |
+| `Intellivue/ART` | 14 | 17.95 % |
+| `Intellivue/ECG_I` | 14 | 17.95 % |
+| `Intellivue/EEG_BIS_SQI` | 14 | 17.95 % |
+| `Intellivue/ART_DIA` | 13 | 16.67 % |
+| `Intellivue/ART_MEAN` | 13 | 16.67 % |
+| `Intellivue/ART_SYS` | 13 | 16.67 % |
+| `Intellivue/EEG_BIS` | 13 | 16.67 % |
+| `Intellivue/EEG_RATIO_SUPPRN` | 13 | 16.67 % |
+| `Intellivue/EMG_ELEC_POTL_MUSCL` | 13 | 16.67 % |
+| `Intellivue/PPLAT_CMH2O` | 11 | 14.1 % |
+| `Intellivue/TV_INSP` | 10 | 12.82 % |
+| `Intellivue/EEG_BIS_ASYM` | 10 | 12.82 % |
+| `Intellivue/EEG` | 9 | 11.54 % |
+| `Intellivue/PRESS_CEREB_PERF` | 9 | 11.54 % |
+| `Intellivue/MV_EXP` | 7 | 8.97 % |
+| `Intellivue/MV_INSP` | 7 | 8.97 % |
+| `Intellivue/ST_V1` | 7 | 8.97 % |
+| `Intellivue/ST_V2` | 7 | 8.97 % |
+| `Intellivue/ST_V3` | 7 | 8.97 % |
+| `Intellivue/ST_V4` | 7 | 8.97 % |
+| `Intellivue/ST_V5` | 7 | 8.97 % |
+| `Intellivue/ST_V6` | 7 | 8.97 % |
+| `Intellivue/VENT_RR_SPONT` | 7 | 8.97 % |
+| `Intellivue/HR` | 6 | 7.69 % |
+| `Intellivue/TEMP` | 5 | 6.41 % |
+| `Intellivue/ECG_AVF` | 5 | 6.41 % |
+| `Intellivue/PPV` | 4 | 5.13 % |
+| `Intellivue/ECG_AVL` | 3 | 3.85 % |
+| `Intellivue/BT_BLD` | 2 | 2.56 % |
+| `Intellivue/ECG_II_WAV` | 2 | 2.56 % |
+| `Intellivue/ECG_MCL` | 2 | 2.56 % |
+| `Intellivue/ECG_V` | 2 | 2.56 % |
+| `Intellivue/ECG_V_WAV` | 2 | 2.56 % |
+| `Intellivue/AWP_WAV` | 2 | 2.56 % |
+| `Intellivue/FLOW_WAV` | 2 | 2.56 % |
+| `Intellivue/TOF1` | 2 | 2.56 % |
+| `Intellivue/TOF2` | 2 | 2.56 % |
+| `Intellivue/TOF3` | 2 | 2.56 % |
+| `Intellivue/TOF4` | 2 | 2.56 % |
+| `Intellivue/TOF_CNT` | 2 | 2.56 % |
+| `Intellivue/ECG_AI_WAV` | 2 | 2.56 % |
+| `Intellivue/ECG_AS_WAV` | 2 | 2.56 % |
+| `Intellivue/ECG_ES_WAV` | 2 | 2.56 % |
+| `Intellivue/CI_CTS` | 1 | 1.28 % |
+| `Intellivue/CO_CTS` | 1 | 1.28 % |
+| `Intellivue/VOL_BLD_STROKE` | 1 | 1.28 % |
+| `Intellivue/VOL_BLD_STROKE_INDEX` | 1 | 1.28 % |
+| `Intellivue/VOL_BLD_STROKE_VAR` | 1 | 1.28 % |
+| `Intellivue/ECG_I_WAV` | 1 | 1.28 % |
+| `Demo/ART` | 1 | 1.28 % |
+| `Demo/ART_DBP` | 1 | 1.28 % |
+| `Demo/ART_MBP` | 1 | 1.28 % |
+| `Demo/ART_SBP` | 1 | 1.28 % |
+| `Demo/BT` | 1 | 1.28 % |
+| `Demo/CO` | 1 | 1.28 % |
+| `Demo/CO2` | 1 | 1.28 % |
+| `Demo/CVP` | 1 | 1.28 % |
+| `Demo/ECG` | 1 | 1.28 % |
+| `Demo/EEG` | 1 | 1.28 % |
+| `Demo/ETCO2` | 1 | 1.28 % |
+| `Demo/FLOW_RATE` | 1 | 1.28 % |
+| `Demo/GAS1_AGENT` | 1 | 1.28 % |
+| `Demo/GAS1_EXPIRED` | 1 | 1.28 % |
+| `Demo/HR` | 1 | 1.28 % |
+| `Demo/NIBP_DBP` | 1 | 1.28 % |
+| `Demo/NIBP_MBP` | 1 | 1.28 % |
+| `Demo/NIBP_SBP` | 1 | 1.28 % |
+| `Demo/PEEP` | 1 | 1.28 % |
+| `Demo/PIP` | 1 | 1.28 % |
+| `Demo/PLETH` | 1 | 1.28 % |
+| `Demo/PLETH_HR` | 1 | 1.28 % |
+| `Demo/PLETH_SPO2` | 1 | 1.28 % |
+| `Demo/PSI` | 1 | 1.28 % |
+| `Demo/PVC` | 1 | 1.28 % |
+| `Demo/PVI` | 1 | 1.28 % |
+| `Demo/RR` | 1 | 1.28 % |
+| `Demo/RR_CO2` | 1 | 1.28 % |
+| `Demo/SEFL` | 1 | 1.28 % |
+| `Demo/SO2_1` | 1 | 1.28 % |
+| `Demo/SO2_2` | 1 | 1.28 % |
+| `Demo/SPHB` | 1 | 1.28 % |
+| `Demo/TOTAL_VOL` | 1 | 1.28 % |
+| `Demo/TV` | 1 | 1.28 % |
+| `EVENT` | 1 | 1.28 % |
+| `Intellivue/RAP_MEAN` | 1 | 1.28 % |
+| `Intellivue/PTC_CNT` | 1 | 1.28 % |
+| `Intellivue/ECG_III_WAV` | 1 | 1.28 % |
+| `Intellivue/BP_MEAN` | 1 | 1.28 % |
+| `Intellivue/CI` | 1 | 1.28 % |
+| `Intellivue/CO` | 1 | 1.28 % |
+| `Intellivue/LAP_MEAN` | 1 | 1.28 % |
+| `Intellivue/PAP_DIA` | 1 | 1.28 % |
+| `Intellivue/PAP_MEAN` | 1 | 1.28 % |
+| `Intellivue/PAP_SYS` | 1 | 1.28 % |
+
+## Pistas de interés (modo / fuga / TV inspirado / interfaz)
+
+| Pista | Ficheros | % |
+|---|---|---|
+| `Intellivue/AWAY_CO2_INSP_MIN` | 16 | 20.51 % |
+| `Intellivue/FIO2` | 16 | 20.51 % |
+| `Intellivue/PEEP_CMH2O` | 15 | 19.23 % |
+| `Intellivue/TV_INSP` | 10 | 12.82 % |
+| `Intellivue/MV_INSP` | 7 | 8.97 % |
+| `Demo/PEEP` | 1 | 1.28 % |

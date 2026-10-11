@@ -1,0 +1,141 @@
+# Diagnóstico de ventilación activa — clinic (Fase 1.6e, punto 1)
+
+Eventos analizados: 135 (afectados 115, controles 20)
+
+| Evento | fin_vent_actual | fin_vent_activa | fin_monitor_fis | cola_nueva_h | pistas que prolongan |
+|---|---|---|---|---|---|
+| clinic_box10_event_4 | 62.806 | 62.8 | 62.8065 | 0.007 | — |
+| clinic_box10_event_7 | 20.184 | 19.517 | 20.1844 | 0.668 | — |
+| clinic_box11_event_1 | 29.942 | 29.05 | 29.9425 | 0.892 | — |
+| clinic_box11_event_2 | 7.042 | 7.033 | 7.7836 | 0.75 | — |
+| clinic_box12_event_1 | 55.515 | 55.5 | 55.5154 | 0.015 | — |
+| clinic_box12_event_11 | 7.384 | None | 7.3844 | None | — |
+| clinic_box12_event_12 | 41.586 | None | 41.5855 | None | — |
+| clinic_box12_event_16 | 50.164 | 50.15 | 50.1643 | 0.014 | — |
+| clinic_box12_event_18 | 183.455 | 183.45 | 183.4547 | 0.005 | — |
+| clinic_box12_event_3 | 47.911 | 47.9 | 47.9108 | 0.011 | — |
+| clinic_box12_event_4 | 30.429 | 30.417 | 30.4289 | 0.012 | — |
+| clinic_box12_event_5 | 28.968 | 28.95 | 28.9679 | 0.018 | — |
+| clinic_box12_event_7 | 6.483 | 6.45 | 6.4827 | 0.033 | — |
+| clinic_box12_event_8 | 16.282 | 16.217 | 16.2823 | 0.066 | — |
+| clinic_box12_event_9 | 40.697 | 40.65 | 40.697 | 0.047 | — |
+| clinic_box13_event_1 | 83.761 | 83.75 | 83.7613 | 0.011 | — |
+| clinic_box13_event_2 | 12.597 | 11.733 | 12.597 | 0.864 | — |
+| clinic_box13_event_3 | 10.704 | 10.7 | 10.7035 | 0.004 | — |
+| clinic_box13_event_4 | 0.324 | 0.317 | 0.3237 | 0.007 | — |
+| clinic_box14_event_1 | 0.154 | None | 0.155 | None | — |
+| clinic_box14_event_10 | 61.544 | 61.533 | 61.5436 | 0.01 | — |
+| clinic_box14_event_11 | 46.26 | 45.983 | 46.2608 | 0.277 | — |
+| clinic_box14_event_12 | 1.584 | 1.333 | 1.5838 | 0.25 | — |
+| clinic_box14_event_13 | 18.075 | None | 18.075 | None | — |
+| clinic_box14_event_14 | 6.639 | None | 6.6387 | None | — |
+| clinic_box14_event_16 | 100.773 | 100.767 | 100.7733 | 0.007 | — |
+| clinic_box14_event_17 | 88.109 | 87.083 | 88.1094 | 1.026 | — |
+| clinic_box14_event_18 | 44.164 | 43.5 | 44.164 | 0.664 | — |
+| clinic_box14_event_19 | 10.692 | 10.117 | 10.6916 | 0.575 | — |
+| clinic_box14_event_2 | 0.143 | 0.133 | 0.1427 | 0.009 | — |
+| clinic_box14_event_20 | 17.504 | 12.183 | 17.5942 | 5.411 | AWP_WAV, FIO2, FLOW_WAV |
+| clinic_box14_event_21 | 14.204 | 9.183 | 14.2045 | 5.021 | AWP_WAV, FIO2, FLOW_WAV |
+| clinic_box14_event_22 | 7.42 | None | 7.42 | None | — |
+| clinic_box14_event_23 | 45.632 | 45.617 | 45.6315 | 0.015 | — |
+| clinic_box14_event_25 | 0.315 | 0.3 | 0.3154 | 0.015 | — |
+| clinic_box14_event_29 | 44.999 | 44.983 | 44.9994 | 0.016 | — |
+| clinic_box14_event_3 | 0.006 | None | 0.0067 | None | — |
+| clinic_box14_event_31 | 62.755 | 62.05 | 62.7554 | 0.705 | — |
+| clinic_box14_event_32 | 8.49 | 7.6 | 8.4903 | 0.89 | — |
+| clinic_box14_event_33 | 76.891 | 76.867 | 76.8914 | 0.025 | — |
+| clinic_box14_event_35 | 0.004 | 0.0 | 0.0042 | 0.004 | — |
+| clinic_box14_event_36 | 9.644 | 9.633 | 9.6437 | 0.01 | — |
+| clinic_box14_event_37 | 0.99 | 0.983 | 0.9904 | 0.007 | — |
+| clinic_box14_event_38 | 4.767 | 4.767 | 4.7672 | 0.001 | — |
+| clinic_box14_event_39 | 1.175 | None | 1.1748 | None | — |
+| clinic_box14_event_4 | 106.592 | 105.8 | 106.5924 | 0.792 | — |
+| clinic_box14_event_40 | 19.953 | None | 19.9537 | None | — |
+| clinic_box14_event_5 | 99.264 | 99.25 | 99.2642 | 0.014 | — |
+| clinic_box14_event_6 | 17.348 | None | 17.3476 | None | — |
+| clinic_box14_event_7 | 0.847 | None | 1.3255 | None | — |
+| clinic_box14_event_9 | 164.599 | 164.583 | 164.5985 | 0.015 | — |
+| clinic_box2_event_1 | 39.787 | 39.783 | 39.7866 | 0.003 | — |
+| clinic_box2_event_10 | 6.548 | 6.533 | 6.5953 | 0.062 | — |
+| clinic_box2_event_2 | 8.672 | 8.667 | 8.6719 | 0.005 | — |
+| clinic_box2_event_3 | 51.916 | 51.9 | 51.916 | 0.016 | — |
+| clinic_box2_event_5 | 27.238 | 27.233 | 27.2446 | 0.011 | — |
+| clinic_box2_event_6 | 0.228 | 0.217 | 0.2284 | 0.012 | — |
+| clinic_box2_event_9 | 22.336 | 22.317 | 22.3364 | 0.02 | — |
+| clinic_box3_event_1 | 51.665 | 51.65 | 51.6647 | 0.015 | — |
+| clinic_box3_event_2 | 71.062 | 70.417 | 71.0618 | 0.645 | — |
+| clinic_box3_event_5 | 5.5 | 5.483 | 5.5001 | 0.017 | — |
+| clinic_box3_event_6 | 7.289 | 7.283 | 7.2889 | 0.006 | — |
+| clinic_box3_event_7 | 9.431 | 8.833 | 9.4305 | 0.597 | — |
+| clinic_box3_event_8 | 79.882 | 79.867 | 79.8824 | 0.016 | — |
+| clinic_box3_event_9 | 1.238 | 1.217 | 1.2379 | 0.021 | — |
+| clinic_box4_event_1 | 0.062 | None | 0.0621 | None | — |
+| clinic_box4_event_10 | 28.39 | 27.567 | 28.3904 | 0.824 | — |
+| clinic_box4_event_11 | 6.984 | 6.367 | 6.9841 | 0.617 | — |
+| clinic_box4_event_12 | 10.037 | 9.5 | 10.0373 | 0.537 | — |
+| clinic_box4_event_14 | 23.494 | 23.483 | 23.4942 | 0.011 | — |
+| clinic_box4_event_16 | 7.33 | 7.317 | 7.3299 | 0.013 | — |
+| clinic_box4_event_18 | 10.011 | 10.0 | 10.0107 | 0.011 | — |
+| clinic_box4_event_2 | 2.223 | None | 2.2232 | None | — |
+| clinic_box4_event_21 | 53.497 | 53.467 | 53.4971 | 0.03 | — |
+| clinic_box4_event_22 | 37.294 | 36.7 | 37.294 | 0.594 | — |
+| clinic_box4_event_23 | 41.689 | 41.683 | 41.6891 | 0.006 | — |
+| clinic_box4_event_24 | 108.969 | 108.967 | 108.9688 | 0.002 | — |
+| clinic_box4_event_26 | 19.636 | 19.633 | 19.6359 | 0.003 | — |
+| clinic_box4_event_27 | 59.166 | 58.267 | 59.1658 | 0.899 | — |
+| clinic_box4_event_28 | 2.459 | 1.75 | 2.4594 | 0.709 | — |
+| clinic_box4_event_29 | 2.886 | 2.033 | 2.8859 | 0.853 | — |
+| clinic_box4_event_30 | 22.13 | 21.133 | 22.1298 | 0.996 | — |
+| clinic_box4_event_31 | 1.663 | -0.983 | 1.6631 | 2.646 | — |
+| clinic_box4_event_7 | 35.297 | 35.283 | 35.2967 | 0.013 | — |
+| clinic_box4_event_8 | 12.711 | 11.9 | 12.711 | 0.811 | — |
+| clinic_box5_event_1 | 15.651 | 15.65 | 16.088 | 0.438 | — |
+| clinic_box5_event_2 | 10.433 | 10.417 | 10.4401 | 0.023 | — |
+| clinic_box5_event_6 | 0.068 | 0.067 | 0.0683 | 0.002 | — |
+| clinic_box6_event_1 | 4.919 | 3.95 | 4.919 | 0.969 | — |
+| clinic_box6_event_11 | 207.0 | 198.633 | 207.0003 | 8.367 | FIO2 |
+| clinic_box6_event_15 | 45.44 | 44.65 | 45.4397 | 0.79 | — |
+| clinic_box6_event_16 | 27.973 | 27.967 | 27.9727 | 0.006 | — |
+| clinic_box6_event_17 | 4.944 | 4.2 | 4.9438 | 0.744 | — |
+| clinic_box6_event_18 | 3.034 | 3.033 | 3.0335 | 0.0 | — |
+| clinic_box6_event_19 | 19.019 | 19.017 | 19.0189 | 0.002 | — |
+| clinic_box6_event_2 | 120.338 | 120.333 | 120.3382 | 0.005 | — |
+| clinic_box6_event_3 | 57.972 | 57.45 | 57.9725 | 0.522 | — |
+| clinic_box6_event_7 | 14.578 | 13.85 | 14.5783 | 0.728 | — |
+| clinic_box6_event_8 | 36.972 | 36.967 | 36.9724 | 0.006 | — |
+| clinic_box6_event_9 | 16.465 | 16.45 | 16.465 | 0.015 | — |
+| clinic_box7_event_1 | 39.929 | 39.917 | 39.9295 | 0.013 | — |
+| clinic_box7_event_2 | 25.738 | 25.733 | 25.7384 | 0.005 | — |
+| clinic_box7_event_5 | 6.927 | 6.917 | 6.9269 | 0.01 | — |
+| clinic_box7_event_7 | 130.877 | 130.867 | 130.8775 | 0.011 | — |
+| clinic_box8_event_10 | 43.746 | 43.733 | 43.746 | 0.013 | — |
+| clinic_box8_event_2 | 0.987 | 0.983 | 0.9872 | 0.004 | — |
+| clinic_box8_event_3 | 7.381 | 0.0 | 7.381 | 7.381 | FIO2, PEEP, PIP, TV_EXP, TV_INSP, VENT_RR |
+| clinic_box8_event_4 | 73.099 | 73.083 | 73.0991 | 0.016 | — |
+| clinic_box8_event_5 | 39.825 | 39.4 | 39.8248 | 0.425 | — |
+| clinic_box8_event_7 | 17.017 | 10.533 | 17.0179 | 6.485 | AWP_WAV, FLOW_WAV |
+| clinic_box8_event_8 | 22.38 | 22.367 | 22.3796 | 0.013 | — |
+| clinic_box9_event_1 | 87.398 | 85.383 | 87.3977 | 2.014 | — |
+| clinic_box9_event_2 | 40.36 | 39.65 | 40.3596 | 0.71 | — |
+| clinic_box9_event_3 | 8.779 | 7.583 | 8.7792 | 1.196 | — |
+| clinic_box9_event_4 | 5.221 | 5.217 | 5.2213 | 0.005 | — |
+| clinic_box10_event_1 | 147.987 | None | 245.4919 | None | — |
+| clinic_box10_event_12 | 29.487 | 29.483 | 126.0165 | 96.533 | — |
+| clinic_box10_event_5 | 4.255 | 2.633 | 12.534 | 9.901 | FIO2 |
+| clinic_box10_event_9 | 11.16 | 11.15 | 19.3196 | 8.17 | — |
+| clinic_box12_event_14 | 81.847 | None | 136.2829 | None | — |
+| clinic_box12_event_2 | 260.604 | 256.833 | 307.4262 | 50.593 | FIO2 |
+| clinic_box13_event_6 | 31.117 | 31.117 | 44.3262 | 13.21 | — |
+| clinic_box14_event_26 | 22.835 | 22.8 | 78.9744 | 56.174 | — |
+| clinic_box14_event_30 | 0.316 | None | 30.9551 | None | — |
+| clinic_box2_event_4 | 18.392 | 18.383 | 62.3188 | 43.935 | — |
+| clinic_box3_event_10 | 4.004 | 4.0 | 20.9829 | 16.983 | — |
+| clinic_box3_event_4 | 151.535 | 151.517 | 223.2129 | 71.696 | — |
+| clinic_box4_event_17 | 64.632 | 60.283 | 163.7481 | 103.465 | FIO2 |
+| clinic_box4_event_25 | 18.628 | 9.633 | 23.1064 | 13.473 | FIO2, PEEP, PIP, TV_EXP, TV_INSP, VENT_RR |
+| clinic_box4_event_5 | 27.342 | 24.0 | 53.4964 | 29.496 | FIO2, PEEP, PIP, TV_EXP, TV_INSP, VENT_RR |
+| clinic_box5_event_3 | 5.082 | 5.067 | 19.3605 | 14.294 | — |
+| clinic_box5_event_7 | 0.799 | None | 128.6187 | None | — |
+| clinic_box6_event_13 | 405.014 | 404.267 | 405.0136 | 0.747 | — |
+| clinic_box6_event_5 | 9.486 | 7.3 | 34.9457 | 27.646 | FIO2, PEEP, PIP, TV_EXP, TV_INSP, VENT_RR |
+| clinic_box7_event_4 | 14.096 | 14.067 | 35.2765 | 21.21 | — |

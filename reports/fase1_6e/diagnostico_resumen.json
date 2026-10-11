@@ -1,0 +1,271 @@
+{
+  "clinic": {
+    "n_afectados": 115,
+    "n_controles": 20,
+    "n_sin_actividad": 13,
+    "detalle_sin_actividad": [
+      {
+        "event_id": "clinic_box12_event_11",
+        "tracks": {
+          "FIO2": {
+            "n_min": 403,
+            "max": 51.0,
+            "mediana": 25.0
+          }
+        },
+        "n_min_pista": "FIO2"
+      },
+      {
+        "event_id": "clinic_box12_event_12",
+        "tracks": {
+          "FIO2": {
+            "n_min": 246,
+            "max": 31.0,
+            "mediana": 30.0
+          }
+        },
+        "n_min_pista": "FIO2"
+      },
+      {
+        "event_id": "clinic_box14_event_1",
+        "tracks": {
+          "AWP_WAV": {
+            "n_min": 10,
+            "max": 0.0,
+            "mediana": 0.0
+          },
+          "FLOW_WAV": {
+            "n_min": 10,
+            "max": 0.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "clinic_box14_event_13",
+        "tracks": {
+          "AWP_WAV": {
+            "n_min": 706,
+            "max": 0.0,
+            "mediana": 0.0
+          },
+          "FLOW_WAV": {
+            "n_min": 706,
+            "max": 0.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "clinic_box14_event_14",
+        "tracks": {
+          "AWP_WAV": {
+            "n_min": 314,
+            "max": 0.0,
+            "mediana": 0.0
+          },
+          "FLOW_WAV": {
+            "n_min": 314,
+            "max": 0.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "clinic_box14_event_22",
+        "tracks": {
+          "FIO2": {
+            "n_min": 196,
+            "max": 35.0,
+            "mediana": 25.0
+          },
+          "AWP_WAV": {
+            "n_min": 196,
+            "max": 243.0,
+            "mediana": 47.0
+          },
+          "FLOW_WAV": {
+            "n_min": 196,
+            "max": 125.0,
+            "mediana": 1.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "clinic_box14_event_3",
+        "tracks": {
+          "AWP_WAV": {
+            "n_min": 1,
+            "max": 0.0,
+            "mediana": 0.0
+          },
+          "FLOW_WAV": {
+            "n_min": 1,
+            "max": 0.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "clinic_box14_event_39",
+        "tracks": {
+          "FIO2": {
+            "n_min": 71,
+            "max": 30.0,
+            "mediana": 30.0
+          },
+          "AWP_WAV": {
+            "n_min": 71,
+            "max": 100.0,
+            "mediana": 30.0
+          },
+          "FLOW_WAV": {
+            "n_min": 71,
+            "max": 1.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "clinic_box14_event_40",
+        "tracks": {
+          "FIO2": {
+            "n_min": 110,
+            "max": 21.0,
+            "mediana": 21.0
+          },
+          "AWP_WAV": {
+            "n_min": 661,
+            "max": 760.0,
+            "mediana": 0.0
+          },
+          "FLOW_WAV": {
+            "n_min": 661,
+            "max": 2313.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "clinic_box14_event_6",
+        "tracks": {
+          "AWP_WAV": {
+            "n_min": 436,
+            "max": 0.0,
+            "mediana": 0.0
+          },
+          "FLOW_WAV": {
+            "n_min": 436,
+            "max": 0.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "clinic_box14_event_7",
+        "tracks": {
+          "AWP_WAV": {
+            "n_min": 19,
+            "max": 0.0,
+            "mediana": 0.0
+          },
+          "FLOW_WAV": {
+            "n_min": 19,
+            "max": 0.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "clinic_box4_event_1",
+        "tracks": {
+          "FIO2": {
+            "n_min": 4,
+            "max": 61.0,
+            "mediana": 61.0
+          }
+        },
+        "n_min_pista": "FIO2"
+      },
+      {
+        "event_id": "clinic_box4_event_2",
+        "tracks": {
+          "FIO2": {
+            "n_min": 134,
+            "max": 50.0,
+            "mediana": 50.0
+          }
+        },
+        "n_min_pista": "FIO2"
+      }
+    ],
+    "n_no_cambian": 65,
+    "n_cambian": 37,
+    "n_recuperados": 9,
+    "ejemplos_recuperados": [
+      "clinic_box14_event_17",
+      "clinic_box14_event_20",
+      "clinic_box14_event_21",
+      "clinic_box4_event_31",
+      "clinic_box6_event_11",
+      "clinic_box8_event_3",
+      "clinic_box8_event_7",
+      "clinic_box9_event_1",
+      "clinic_box9_event_3"
+    ],
+    "n_siguen_censurados": 93,
+    "mediana_recorte_h": 0.7920000000000016,
+    "p90_recorte_h": 5.021000000000001,
+    "pistas_que_prolongan": {
+      "FIO2": 4,
+      "AWP_WAV": 3,
+      "FLOW_WAV": 3,
+      "PEEP": 1,
+      "PIP": 1,
+      "TV_EXP": 1,
+      "TV_INSP": 1,
+      "VENT_RR": 1
+    },
+    "cola_nueva_ge_1h": 9,
+    "cola_nueva_lt_1h": 93,
+    "control_cola_mediana_h": 27.646,
+    "control_cola_ge_1h": 15,
+    "ejemplos_cambian": [
+      "clinic_box10_event_7",
+      "clinic_box11_event_1",
+      "clinic_box13_event_2",
+      "clinic_box14_event_11",
+      "clinic_box14_event_12",
+      "clinic_box14_event_17",
+      "clinic_box14_event_18",
+      "clinic_box14_event_19",
+      "clinic_box14_event_20",
+      "clinic_box14_event_21",
+      "clinic_box14_event_31",
+      "clinic_box14_event_32"
+    ],
+    "ejemplos_sin_actividad": [
+      "clinic_box12_event_11",
+      "clinic_box12_event_12",
+      "clinic_box14_event_1",
+      "clinic_box14_event_13",
+      "clinic_box14_event_14",
+      "clinic_box14_event_22",
+      "clinic_box14_event_3",
+      "clinic_box14_event_39",
+      "clinic_box14_event_40",
+      "clinic_box14_event_6",
+      "clinic_box14_event_7",
+      "clinic_box4_event_1"
+    ]
+  }
+}

@@ -46,3 +46,11 @@ Thumbs.db
 # Cache de sondas del escaneo de VitalDB (derivada y grande)
 reports/fase1_5/vitaldb_probe*.json
 
+# ── Fase 1.6e: estado intermedio y detalle derivado (grandes) ─────────────────
+# El estado incremental de los escaneos reanudables (*.jsonl) y el detalle por
+# minuto del diagnostico de ventilacion activa se regeneran con los scripts.
+# SI se versionan el resumen (diagnostico_resumen.json) y las tablas por evento
+# (diagnostico_vent_activa_<cohorte>.md).
+*.jsonl
+reports/fase1_6e/diagnostico_vent_activa_*.json
+
