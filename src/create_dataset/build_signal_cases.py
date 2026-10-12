@@ -49,9 +49,11 @@ from src.common.d5_events import (
 from src.common.eicu_levels import hourly_coverage
 from src.common.end_reasons import end_reason_from_causes
 from src.common.episodes import (
+    Attempt,
     Episode,
     Span,
     build_episodes,
+    clip_spans,
     merge_spans,
     merge_spans_ignoring_missing,
     segment_attempts,
@@ -132,6 +134,12 @@ VITALDB_SPEC = CohortSpec(
 )
 
 SPECS: dict[str, CohortSpec] = {"clinic": CLINIC_SPEC, "vitaldb": VITALDB_SPEC}
+
+# Fase 1.6e (punto 2c, D-f/D-i): union de cursos partidos por un apagado
+# simultaneo y exclusion de fragmentos de registro.
+UNION_GAP_MAX_H: float = 2.0    # (a) hueco maximo del apagado que se une
+UNION_RETURN_MIN: float = 15.0  # (c) vuelve ventilado en <= 15 min de monitor
+MIN_REGION_H: float = 0.5       # (D-i) region de registro minima (30 min)
 
 
 # ── Escaneo de ficheros de origen ────────────────────────────────────────────
@@ -242,6 +250,8 @@ class BoxSegmentation:
     # (``posible_vni_no_verificable``, que NO se reclasifican).
     vni_spans: list[Span] = field(default_factory=list)
     unverifiable_spans: list[Span] = field(default_factory=list)
+    # Fase 1.6e (punto 2c, D-f): registro de las uniones de cursos aplicadas.
+    unions: list[dict] = field(default_factory=list)
 
 
 # Fase 1.6e (punto 3): al separar la ventilación en tramos para poder ver un
@@ -449,16 +459,158 @@ def segment_box(
         monitor_gap_h=patient_gap_h,
         no_patient_fraction=no_patient_fraction,
     )
+
+    # Fase 1.6e (punto 2c, D-f): une los cursos partidos por un apagado
+    # simultaneo de monitor y ventilador cuando el paciente vuelve ventilado.
+    episodes, uniones = join_courses(episodes, files, probes, monitor_spans)
+    # D-i: los fragmentos de registro que queden (no absorbidos por la union) se
+    # conservan marcados, nunca se borran.
+    for ep in episodes:
+        if not ep.excluded and _fragmento_de_registro(ep):
+            ep.excluded = True
+            ep.exclusion_reason = "fragmento_registro"
+
     kept = [e for e in episodes if not e.excluded]
     excluded = [e for e in episodes if e.excluded]
     return BoxSegmentation(
         box=box, files=list(files), episodes=kept, excluded_episodes=excluded,
         probes=probes, missing_spans=merge_spans(missing_spans, 0.0),
-        vni_spans=vni_spans, unverifiable_spans=unver_spans,
+        vni_spans=vni_spans, unverifiable_spans=unver_spans, unions=uniones,
     )
 
 
 # ── Materialización de eventos (fusión + índice) ─────────────────────────────
+
+def _files_in_span(
+    files: Sequence[SourceFile],
+    probes: Optional[dict[str, Optional[VitalProbe]]],
+    lo_h: float,
+    hi_h: float,
+) -> list[SourceFile]:
+    """Ficheros cuyo intervalo REAL solapa con ``[lo_h, hi_h)`` (B2)."""
+    out: list[SourceFile] = []
+    for sf in files:
+        pr = (probes or {}).get(str(sf.path))
+        if _span_overlaps(file_span_h(sf, pr), lo_h, hi_h):
+            out.append(sf)
+    return out
+
+
+def _monitor_window(
+    monitor_spans: Sequence[Span], region_start_h: float, region_end_h: float,
+) -> Optional[tuple[float, float]]:
+    """Tramo de MONITOR de una región: (inicio del primer tramo, fin del último).
+
+    Las regiones de identidad (D2) reparten el tiempo sin monitor entre las dos
+    regiones vecinas (corte a mitad del hueco), así que el fin de la región NO es
+    el fin del monitor. Para medir el apagado simultáneo hace falta el monitor.
+    """
+    inside = clip_spans(monitor_spans, region_start_h, region_end_h)
+    if not inside:
+        return None
+    return (min(s.start_h for s in inside), max(s.end_h for s in inside))
+
+
+def join_courses(
+    episodes: Sequence[Episode],
+    files: Sequence[SourceFile],
+    probes: Optional[dict[str, Optional[VitalProbe]]] = None,
+    monitor_spans: Sequence[Span] = (),
+    *,
+    gap_max_h: float = UNION_GAP_MAX_H,
+    return_min: float = UNION_RETURN_MIN,
+) -> tuple[list[Episode], list[dict]]:
+    """D-f: une cursos partidos por un apagado simultáneo, SOLO donde está justificado.
+
+    Se une el evento *i* con el siguiente del mismo box si TODO se cumple:
+
+    - **(a)** el hueco entre el fin del MONITOR de *i* y el inicio del monitor de
+      la región siguiente es ``<= gap_max_h`` (2 h);
+    - **(b)** en ese hueco **no hay ningún fichero** (el grabador estaba parado:
+      es "sin dato", no un fin de observación);
+    - **(c)** la región siguiente **empieza ventilada** (actividad en
+      ``<= return_min`` min de su primer tramo de monitor).
+
+    La continuidad de ajustes (|dPEEP| <= 3 y |dFiO2| <= 20) **NO** se usa: el
+    control negativo del punto 2c.3 dio 59,3 % de falsos positivos con pacientes
+    distintos (PEEP y FiO2 se repiten), así que se descarta como criterio.
+
+    El curso unido conserva los dos intentos (con sus tiempos relativos al t0
+    común) y marca el hueco en ``unknown_gaps``: horas "fuera del box" en las que
+    no se observó ni ventilación ni extubación, así que no cuentan como
+    desconexión ni como reintubación.
+
+    Devuelve la lista de episodios (unida) y el registro de las uniones.
+    """
+    orden = sorted((e for e in episodes), key=lambda e: e.region_start_h)
+    if len(orden) < 2:
+        return list(episodes), []
+    out: list[Episode] = []
+    uniones: list[dict] = []
+    i = 0
+    while i < len(orden):
+        cur = orden[i]
+        if i + 1 < len(orden):
+            nxt = orden[i + 1]
+            w_cur = _monitor_window(monitor_spans, cur.region_start_h,
+                                    cur.region_end_h)
+            w_nxt = _monitor_window(monitor_spans, nxt.region_start_h,
+                                    nxt.region_end_h)
+            mon_end = w_cur[1] if w_cur else _region_end_h(cur)
+            mon_start = w_nxt[0] if w_nxt else float(nxt.region_start_h)
+            gap_h = mon_start - mon_end
+            en_hueco = _files_in_span(files, probes, mon_end, mon_start)
+            vuelve_ventilado = (
+                nxt.attempts[0].start_h - mon_start <= return_min / 60.0 + _EPS
+            )
+            if (not cur.excluded and not nxt.excluded
+                    and -_EPS <= gap_h <= gap_max_h + _EPS
+                    and not en_hueco and vuelve_ventilado):
+                atts = [Attempt(idx, a.start_h, a.end_h)
+                        for idx, a in enumerate(list(cur.attempts)
+                                               + list(nxt.attempts))]
+                fracs = [(cur.no_patient_fraction, cur.ventilated_hours),
+                         (nxt.no_patient_fraction, nxt.ventilated_hours)]
+                num = sum(f * h for f, h in fracs if f is not None)
+                den = sum(h for f, h in fracs if f is not None)
+                hueco = ([Span(mon_end, mon_start)] if gap_h > _EPS else [])
+                cur = Episode(
+                    attempts=atts,
+                    region_start_h=cur.region_start_h,
+                    region_end_h=nxt.region_end_h,
+                    observation_end_h=nxt.observation_end_h,
+                    no_patient_fraction=(num / den if den else None),
+                    unknown_gaps=list(cur.unknown_gaps) + hueco
+                    + list(nxt.unknown_gaps),
+                )
+                uniones.append({
+                    "gap_h": round(gap_h, 4),
+                    "monitor_end_h": round(mon_end, 4),
+                    "monitor_start_h": round(mon_start, 4),
+                    "n_files_en_hueco": 0,
+                    "vuelve_ventilado": True,
+                })
+                i += 2
+                out.append(cur)
+                continue
+        out.append(cur)
+        i += 1
+    return out, uniones
+
+
+def _fragmento_de_registro(
+    episode: Episode, *, min_region_h: float = MIN_REGION_H,
+) -> bool:
+    """D-i: marca (no borra) los eventos cuyo REGISTRO es un fragmento.
+
+    Se mide la región de identidad (``region_start_h`` -> fin del monitor), no la
+    duración de la ventilación: una ventilación corta dentro de una región larga
+    es un evento legítimo (p.ej. intubación cerca del final del box), mientras
+    que una región de minutos es un trozo de registro. **No** es una duración
+    mínima objetivo: es integridad del registro.
+    """
+    return (_region_end_h(episode) - float(episode.region_start_h)) < min_region_h
+
 
 def _region_end_h(episode: Episode) -> float:
     """Fin de la observación = fin del MONITOR de la región de paciente (D2)."""
@@ -681,6 +833,34 @@ def classify_vitaldb_event(
     return ("D" if in_label else "B"), hours
 
 
+def _pairs_para_etiquetar(episode: Episode) -> list[tuple[float, float | None]]:
+    """Intentos para ETIQUETAR (D3), en horas relativas a t0.
+
+    D-f: los intentos separados por un hueco **sin datos** (``unknown_gaps``) se
+    fusionan en uno solo, porque en esas horas no se observó ni ventilación ni
+    extubación: no son una desconexión (rule 0) ni una reintubación (D13). Los
+    intentos del índice se conservan tal cual; esto es solo la vista de cálculo.
+    """
+    t0 = float(episode.start_h)
+    huecos = list(episode.unknown_gaps)
+
+    def _en_hueco(lo: float, hi: float) -> bool:
+        return any(g.start_h <= lo + _EPS and g.end_h >= hi - _EPS
+                   for g in huecos)
+
+    merged: list[list[float]] = []
+    for a in episode.attempts:
+        if merged and _en_hueco(merged[-1][1], float(a.start_h)):
+            merged[-1][1] = float(a.end_h)
+        else:
+            merged.append([float(a.start_h), float(a.end_h)])
+    return [
+        (round(e - t0, 4),
+         None if i + 1 >= len(merged) else round(merged[i + 1][0] - t0, 4))
+        for i, (_, e) in enumerate(merged)
+    ]
+
+
 def build_event_record(
     *,
     cohort: str,
@@ -720,7 +900,7 @@ def build_event_record(
     # Si la última desconexión NO está confirmada (sin >= 1 h de monitor sin
     # ventilador) no es una extubación: se excluye del etiquetado (así una
     # posible extubación anterior consolidada sigue ganando).
-    pairs = [(a["vent_end_h"], a["reintubation_h"]) for a in attempts]
+    pairs = _pairs_para_etiquetar(episode)
     label_pairs = pairs if confirmed else pairs[:-1]
 
     died = bool(death is not None and death.is_death)
@@ -816,6 +996,18 @@ def build_event_record(
         },
         "signal_loss_at_end": bool(signal_loss),
         "simultaneous_shutdown": bool(simultaneous_shutdown(episode)),
+        # Fase 1.6e (punto 2c, D-f): cursos unidos por un apagado simultáneo.
+        # El hueco queda como horas "fuera del box" sin ningún dato.
+        "n_unions": len(episode.unknown_gaps),
+        "n_label_attempts": len(pairs),
+        "fuera_del_box_h": round(
+            sum(g.duration_h for g in episode.unknown_gaps), 4
+        ),
+        "fuera_del_box": [
+            [round(g.start_h - episode.start_h, 4),
+             round(g.end_h - episode.start_h, 4)]
+            for g in episode.unknown_gaps
+        ],
         "has_missing_files": bool(missing_hours),
         "missing_hours": missing_hours,
         "level": level,
@@ -880,12 +1072,14 @@ def build_cohort_index(
     n_standby_min = 0
     n_vni_segments = 0
     n_unver_segments = 0
+    n_unions = 0
     for box, seg in results:
         n_missing_files += sum(1 for p in seg.probes.values() if p is None)
         n_standby_min += sum(int(p.standby_minutes) for p in seg.probes.values()
                              if p is not None)
         n_vni_segments += len(seg.vni_spans)
         n_unver_segments += len(seg.unverifiable_spans)
+        n_unions += len(seg.unions)
         for i, ep in enumerate(seg.episodes):
             t0_unix = ep.start_h * _SECONDS_PER_HOUR
             death, raw = detect_death_for_episode(seg.files, ep)
@@ -964,6 +1158,11 @@ def build_cohort_index(
             1 for e in events if e.get("vni_post_ext_h_start") is not None
         ),
         "n_vni_unverifiable_segments": n_unver_segments,
+        "n_unions": n_unions,
+        "n_fragmentos_registro": sum(
+            1 for e in excluded_events
+            if e.get("exclusion_reason") == "fragmento_registro"
+        ),
         "levels": levels,
         "levels_coverage_measured": n_covered,
         "vars_ok_50": vars_ok_50,

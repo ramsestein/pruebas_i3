@@ -113,6 +113,13 @@ class Episode:
     # intento: puede haber monitor sin ventilador después de la extubación.
     region_start_h: float = float("nan")
     region_end_h: float = float("nan")
+    # Fin de la observación fisiológica (FC/SpO2) de la región. None si no se
+    # evaluó (D4); lo rellena `build_episodes`.
+    observation_end_h: Optional[float] = None
+    # Huecos "fuera del box" que quedan DENTRO de un curso unido (D-f): horas
+    # sin datos de ningún tipo, en las que no se observó ni ventilación ni
+    # extubación. No cuentan como desconexión ni como reintubación.
+    unknown_gaps: list[Span] = field(default_factory=list)
 
     @property
     def n_attempts(self) -> int:

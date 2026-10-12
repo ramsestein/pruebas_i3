@@ -467,6 +467,15 @@ fase1_6e:
     tv_insp_fraction: 0.20 # (TV_INSP - TV_EXP)/TV_INSP >= 0,2
     min_fraction_minutes: 0.50 # en >= 50 % de los minutos del tramo
     segment_gap_min: 5.0 # une la contigüidad entre ficheros al segmentar
+  # Punto 2c: unión de cursos partidos por un apagado simultáneo (D-f) y
+  # fragmentos de registro (D-i). Constantes en build_signal_cases.py.
+  # El criterio de continuidad de ajustes (PEEP/FiO2) NO se usa: el control
+  # negativo de 2c.3 dio 59,3 % de falsos positivos con pacientes distintos.
+  union:
+    gap_max_h: 2.0 # (a) hueco monitor->monitor máximo
+    return_min: 15.0 # (c) la región siguiente empieza ventilada
+    # (b) en el hueco no puede haber ningún fichero: el grabador estaba parado
+    min_region_h: 0.5 # D-i: región de registro mínima (integridad, no objetivo)
 
 # ── Reproducibilidad ──────────────────────────────────────────────────────────
 random_seed: 42
