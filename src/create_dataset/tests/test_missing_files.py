@@ -91,6 +91,59 @@ class TestUnreadableFilesDoNotCreateGaps:
         assert seg.episodes[0].n_attempts == 2
 
 
+class TestHuecoDelIlegibleUsaLosVecinosReales:
+    """B2 residual: el tramo de un fichero ilegible NO es "nombre + 1 h".
+
+    En Clínic la hora del nombre va 1-2 h por detrás del contenido y las
+    grabaciones duran 19-48 h, así que una ventana de 1 h puede quedarse corta
+    y cortar el episodio en dos. El tramo debe ir del fin del fichero legible
+    anterior al inicio del siguiente, con el tope de la duración real máxima
+    observada en el box.
+    """
+
+    def _box(self, tmp_path: Path, *, c_start_h: float = 10.0) -> None:
+        # A: contenido 00:00-06:00 (6 h) con ventilación.
+        write_hour(tmp_path / "box2" / _fname("tok1", BASE), BASE,
+                   monitor=True, vent=True, duration_s=6 * 3600.0)
+        # B: fichero ILEGIBLE (se simula con probe_fn) cuyo NOMBRE (01:00) va
+        # por detrás del contenido, como en Clínic.
+        write_hour(tmp_path / "box2" / _fname("tok1", BASE + timedelta(hours=1)),
+                   BASE + timedelta(hours=1), duration_s=3600.0)
+        # C: contenido desde c_start_h, 6 h, con ventilación.
+        dt_c = BASE + timedelta(hours=c_start_h)
+        write_hour(tmp_path / "box2" / _fname("tok1", dt_c), dt_c,
+                   monitor=True, vent=True, duration_s=6 * 3600.0)
+
+    def test_hueco_de_4h_queda_cubierto_y_no_corta(self, tmp_path: Path):
+        """Hueco real de 4 h con un fichero ilegible dentro: se cubre."""
+        self._box(tmp_path, c_start_h=10.0)
+        boxes = scan_source_files(tmp_path, CLINIC_SPEC)
+        seg = segment_box("box2", boxes["box2"], probe_fn=_probe_factory({1}))
+        base = to_epoch_utc(BASE) / 3600.0
+        spans = [(s.start_h - base, s.end_h - base) for s in seg.missing_spans]
+        assert any(s <= 6.0 + 1e-6 and e >= 10.0 - 1e-6 for s, e in spans), spans
+        assert len(seg.episodes) == 1
+        assert seg.episodes[0].n_attempts == 1
+
+    def test_control_negativo_sin_ilegible_son_dos_eventos(self, tmp_path: Path):
+        self._box(tmp_path, c_start_h=10.0)
+        boxes = scan_source_files(tmp_path, CLINIC_SPEC)
+        seg = segment_box("box2", boxes["box2"])
+        assert len(seg.episodes) == 2
+
+    def test_sin_fichero_ilegible_no_se_puentia_el_hueco_largo(
+        self, tmp_path: Path
+    ):
+        """Sin ficheros en el hueco de 24 h, no hay nada que puentear (D-f)."""
+        self._box(tmp_path, c_start_h=30.0)
+        # El fichero de las 01:00 se BORRA: no hay constancia de grabación.
+        (tmp_path / "box2" / _fname("tok1", BASE + timedelta(hours=1))).unlink()
+        boxes = scan_source_files(tmp_path, CLINIC_SPEC)
+        seg = segment_box("box2", boxes["box2"])
+        assert seg.missing_spans == []
+        assert len(seg.episodes) == 2
+
+
 class TestClassifyVitaldbEvent:
     def _episode(self) -> Episode:
         return Episode(

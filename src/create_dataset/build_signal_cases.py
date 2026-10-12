@@ -360,6 +360,7 @@ def segment_box(
     spo2_spans: list[Span] = []
     probes: dict[str, Optional[VitalProbe]] = {}
     missing_spans: list[Span] = []
+    unreadable: list[SourceFile] = []
 
     for sf in files:
         probe = probe_fn(sf.path)
@@ -367,9 +368,7 @@ def segment_box(
         if probe is None:
             # Fichero ILEGIBLE: es "sin dato", no "sin señal". Sus horas no
             # deben crear huecos de ventilador (D1) ni cortes de paciente (D2).
-            f_start = file_span_h(sf).start_h
-            f_end = file_span_h(sf).end_h
-            missing_spans.append(Span(f_start, f_end))
+            unreadable.append(sf)
             continue
         # Fase 1.6e (punto 2): la ventilación se mide con ACTIVIDAD real
         # (TV_EXP / MV_EXP / amplitud de AWP_WAV con VENT_RR > 0), no con la
@@ -387,6 +386,35 @@ def segment_box(
             hr_spans.append(h)
         if s is not None:
             spo2_spans.append(s)
+
+    # Ficheros ilegibles (B2 residual): su intervalo REAL se desconoce y la hora
+    # del nombre no es fiable en Clínic (grabaciones de 19-48 h cuyo nombre va
+    # 1-2 h por detrás del contenido), así que "nombre + 1 h" puede quedarse
+    # corto y cortar el episodio en dos. El tramo va del fin del fichero legible
+    # anterior al inicio del siguiente: que EXISTA un fichero entre ambos es
+    # prueba de que el grabador seguía escribiendo, o sea "sin dato, no sin
+    # señal". Los huecos de verdad (sin ningún fichero) no pasan por aquí: solo
+    # los crea la ausencia total de ficheros.
+    readable = sorted(
+        (sf for sf in files if probes.get(str(sf.path)) is not None),
+        key=lambda f: file_span_h(f, probes[str(f.path)]).start_h,
+    )
+    spans_reales = {str(sf.path): file_span_h(sf, probes[str(sf.path)])
+                    for sf in readable}
+    for sf in unreadable:
+        guess = file_span_h(sf)
+        prev_end: Optional[float] = None
+        next_start: Optional[float] = None
+        for other in readable:
+            span = spans_reales[str(other.path)]
+            if span.start_h <= guess.start_h:
+                prev_end = span.end_h if prev_end is None else max(prev_end,
+                                                                   span.end_h)
+            if span.start_h >= guess.start_h and next_start is None:
+                next_start = span.start_h
+        lo = guess.start_h if prev_end is None else min(prev_end, guess.start_h)
+        hi = guess.end_h if next_start is None else max(next_start, guess.end_h)
+        missing_spans.append(Span(lo, hi))
 
     # Puentear los huecos causados por ficheros ilegibles antes de segmentar:
     # un fin de ventilación solo es real si el hueco NO está cubierto por
