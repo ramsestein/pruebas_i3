@@ -54,4 +54,9 @@ reports/fase1_5/vitaldb_probe*.json
 *.jsonl
 reports/fase1_6e/diagnostico_vent_activa_*.json
 reports/fase1_6e/apagado_simultaneo.json
+# Sondas derivadas del punto 2b (los .md equivalentes SÍ se versionan).
+reports/fase1_6e/box14_dedupe.json
+reports/fase1_6e/scan_set_*.json
+# Listas de trabajo reanudables del inventario de pistas.
+reports/fase1_6e/inventario_*_parts/
 
