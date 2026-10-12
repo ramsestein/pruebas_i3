@@ -17,6 +17,7 @@ import vitaldb
 
 from src.common.vital_signals import (
     ACTIVITY_AWP_AMP_MIN_CMH2O,
+    ACTIVITY_AWP_RR_MIN_RPM,
     ACTIVITY_MV_EXP_MIN_LPM,
     ACTIVITY_TV_EXP_MIN_ML,
     active_vent_minutes,
@@ -243,3 +244,42 @@ class TestUnidadesDeLaOndaDePresion:
     def test_las_pistas_numericas_no_se_escalan(self):
         vals = np.array([324.0, 500.0, 0.0])
         assert list(to_physical(vals, gain=1.0, offset=0.0)) == [324.0, 500.0, 0.0]
+
+
+class TestCriterioAwpConFrDerivada:
+    """D-h: sin pista `VENT_RR`, la amplitud de AWP cuenta si la FR derivada ≥ 4 rpm.
+
+    Cubre los casos en los que el ventilador no declara `VENT_RR` (p. ej.
+    `clinic_box14_event_40` o `vitaldb_SICU1_07_event_1`, con excursiones de AWP
+    reales que no activaban el criterio).
+    """
+
+    def test_amplitud_alta_sin_vent_rr_con_fr_derivada_es_actividad(self):
+        assert active_vent_minutes(awp_amp={5: 600.0}, vent_rr={},
+                                   awp_rr_derived={5: 12.0}) == {5}
+
+    def test_fr_derivada_baja_no_es_actividad(self):
+        assert active_vent_minutes(awp_amp={5: 600.0}, vent_rr={},
+                                   awp_rr_derived={5: 2.0}) == set()
+
+    def test_sin_fr_derivada_no_es_actividad(self):
+        assert active_vent_minutes(awp_amp={5: 600.0}, vent_rr={}) == set()
+
+    def test_si_hay_vent_rr_manda_vent_rr(self):
+        """Con pista `VENT_RR` presente, la FR derivada no la sustituye."""
+        assert active_vent_minutes(awp_amp={5: 600.0}, vent_rr={5: 0.0},
+                                   awp_rr_derived={5: 12.0}) == set()
+        assert active_vent_minutes(awp_amp={5: 600.0}, vent_rr={5: 14.0},
+                                   awp_rr_derived={}) == {5}
+
+    def test_el_umbral_de_amplitud_sigue_mandando(self):
+        # Amplitud por debajo de 5 cmH2O: la FR derivada no la salva.
+        assert active_vent_minutes(awp_amp={5: 3.0}, vent_rr={},
+                                   awp_rr_derived={5: 20.0}) == set()
+
+    def test_umbral_de_fr_documentado(self):
+        assert ACTIVITY_AWP_RR_MIN_RPM == 4.0
+        assert active_vent_minutes(awp_amp={1: 600.0}, vent_rr={},
+                                   awp_rr_derived={1: ACTIVITY_AWP_RR_MIN_RPM}) == {1}
+        assert active_vent_minutes(awp_amp={1: 600.0}, vent_rr={},
+                                   awp_rr_derived={1: 3.9}) == set()

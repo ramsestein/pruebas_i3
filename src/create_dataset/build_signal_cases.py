@@ -189,8 +189,39 @@ def scan_source_files(
             boxes.setdefault(box, []).append(SourceFile(path, box, token, dt_unix))
 
     for box in boxes:
+        boxes[box], dropped = dedupe_homonyms(boxes[box])
+        if dropped:
+            logger.warning("[%s] %d ficheros homónimos descartados "
+                           "(mismo box en dos carpetas, D-g): %s…",
+                           box, len(dropped), ", ".join(dropped[:3]))
+    for box in boxes:
         boxes[box].sort(key=lambda f: f.dt_unix)
     return boxes
+
+
+def dedupe_homonyms(
+    files: Sequence[SourceFile],
+) -> tuple[list[SourceFile], list[str]]:
+    """Quita homónimos **dentro del mismo box** (D-g), de forma determinista.
+
+    `box14` está partido en dos carpetas (`14/` y `14_2/`) con **578 nombres
+    repetidos**: son el mismo aparato grabando el mismo contenido (mismos tokens
+    y mismo tamaño; el SHA-256 se comprueba en
+    `scripts/verify/fase1_6e/box14_dedupe.py`). Al guardar `source_files` solo el
+    nombre, la selección cogía **ambas** copias y 30 eventos listaban cada
+    fichero dos veces.
+
+    Se conserva la PRIMERA ruta en orden lexicográfico (`14/` antes que `14_2/`).
+    Devuelve ``(ficheros, nombres_descartados)``.
+    """
+    best: dict[str, SourceFile] = {}
+    dropped: list[str] = []
+    for sf in sorted(files, key=lambda f: str(f.path)):
+        if sf.path.name in best:
+            dropped.append(sf.path.name)
+        else:
+            best[sf.path.name] = sf
+    return [best[n] for n in sorted(best, key=lambda n: best[n].dt_unix)], dropped
 
 
 # ── Segmentación de un box ───────────────────────────────────────────────────
@@ -246,8 +277,9 @@ def _interface_signature(
     fracs: list[float] = []
     modes: list[bool] = []
     for sf in files:
-        f_start = sf.dt_unix / _SECONDS_PER_HOUR
-        if not (f_start < span.end_h and f_start + 1.0 > span.start_h):
+        if not _span_overlaps(
+                file_span_h(sf, probes.get(str(sf.path))),
+                span.start_h, span.end_h):
             continue
         probe = probes.get(str(sf.path))
         if probe is None:
@@ -335,8 +367,9 @@ def segment_box(
         if probe is None:
             # Fichero ILEGIBLE: es "sin dato", no "sin señal". Sus horas no
             # deben crear huecos de ventilador (D1) ni cortes de paciente (D2).
-            f_start = sf.dt_unix / _SECONDS_PER_HOUR
-            missing_spans.append(Span(f_start, f_start + 1.0))
+            f_start = file_span_h(sf).start_h
+            f_end = file_span_h(sf).end_h
+            missing_spans.append(Span(f_start, f_end))
             continue
         # Fase 1.6e (punto 2): la ventilación se mide con ACTIVIDAD real
         # (TV_EXP / MV_EXP / amplitud de AWP_WAV con VENT_RR > 0), no con la
@@ -412,6 +445,10 @@ def observation_end_h(episode: Episode) -> float:
     Solo cuentan FC/SpO2 con valores fisiológicos: si tras la desconexión el box
     sigue grabando ondas planas, no hay observación válida y el fin es el de la
     propia desconexión (→ el evento se censura como ``end_of_record``).
+
+    **Devuelve horas ABSOLUTAS** (epoch/3600) en cualquiera de sus dos ramas
+    (``episode.observation_end_h`` y ``_region_end_h``); todo lo que va a las
+    etiquetas se pasa a relativo restando ``episode.start_h``.
     """
     if episode.observation_end_h is not None:
         return float(episode.observation_end_h)
@@ -435,10 +472,18 @@ def extubation_decision(episode: Episode) -> ExtubationDecision:
     no existe frontera de estancia (``stay_end_h=None``): si no hay la hora de
     monitor sin ventilador, la censura es ``end_of_record`` (o ``death_at_vent``
     si la detección de muerte por señales la confirma, que se aplica aparte).
+
+    **Unidades (B1):** los episodios trabajan en horas ABSOLUTAS (epoch/3600) y
+    el registro las pasa a relativas; aquí se pasa a ``resolve_extubation`` ya
+    RELATIVO al inicio del episodio, porque devuelve ``censor_time_h`` derivado
+    de sus entradas y ese valor va directo a las etiquetas. Antes se le colaba
+    el valor absoluto (``censor_time_h`` ≈ 486 000 h en Clínic/VitalDB, mientras
+    MIMIC y eICU lo tenían relativo).
     """
+    t0_h = float(episode.start_h)
     return resolve_extubation(
-        last_vent_end_h=float(episode.attempts[-1].end_h),
-        observation_end_h=float(observation_end_h(episode)),
+        last_vent_end_h=float(episode.attempts[-1].end_h) - t0_h,
+        observation_end_h=float(observation_end_h(episode)) - t0_h,
         stay_end_h=None,
     )
 
@@ -454,48 +499,66 @@ def _files_for_episode(
     No solo los que solapan con ventilación: el monitor posterior a la
     desconexión es necesario para confirmar la extubación y para D5.
 
-    Respaldos (Fase 1.6c, punto 4), en este orden:
-
-    1. los que solapan algún intento;
-    2. los que solapan el episodio según la **hora de cabecera** del sondeo
-       (``dtstart``/``dtend``): hay ficheros de VitalDB cuyo nombre no coincide
-       con la fecha real del contenido y su episodio nace de la cabecera, no del
-       nombre. Sin este respaldo el evento quedaba sin ``source_files`` y no se
-       podía ni auditar ni medir su cobertura.
+    **Selección por solape de intervalos REALES** (B2): usa ``dtstart``/``dtend``
+    de la sonda y solo cae a la hora del NOMBRE + 1 h cuando el fichero no tiene
+    sonda (ilegible). En Clínic los ficheros no son horarios y su nombre va 1-2 h
+    por detrás del contenido, así que la suposición antigua perdía ficheros que
+    sí cubren el episodio. Respaldo: solape con cada intento.
     """
     start_h = episode.start_h
     end_h = _region_end_h(episode)
     out: list[SourceFile] = []
     for sf in files:
-        f_start = sf.dt_unix / _SECONDS_PER_HOUR
-        f_end = f_start + 1.0  # los ficheros de origen son horarios
-        if f_start < end_h and f_end > start_h:
+        pr = (probes or {}).get(str(sf.path))
+        if _span_overlaps(file_span_h(sf, pr), start_h, end_h):
             out.append(sf)
     if out:
         return out
+    # Respaldo por intentos (mismo criterio de solape real).
     for att in episode.attempts:
         for sf in files:
-            f_start = sf.dt_unix / _SECONDS_PER_HOUR
-            if f_start < att.end_h and f_start + 1.0 > att.start_h:
-                out.append(sf)
-    if out:
-        return out
-    if probes:
-        for sf in files:
-            pr = probes.get(str(sf.path))
-            if pr is None:
-                continue
-            if (pr.dtstart / _SECONDS_PER_HOUR < end_h
-                    and pr.dtend / _SECONDS_PER_HOUR > start_h):
+            pr = (probes or {}).get(str(sf.path))
+            if _span_overlaps(file_span_h(sf, pr), att.start_h, att.end_h):
                 out.append(sf)
     return out
 
 
-def _arrived_ventilated(episode: Episode, files: Sequence[SourceFile]) -> bool:
+def file_span_h(
+    sf: SourceFile, probe: Optional[VitalProbe] = None,
+) -> Span:
+    """Intervalo **REAL** de un fichero de origen, en horas.
+
+    Usa la cabecera (``probe.dtstart``/``dtend``) cuando se conoce; si no (fichero
+    ilegible o sin sonda) cae a la hora del NOMBRE con 1 h de duración, que es la
+    suposición antigua.
+
+    **Por qué (B2):** en Clínic los ficheros de origen no son horarios (hay
+    grabaciones de 19-48 h) y la hora del nombre va 1-2 h por detrás del inicio
+    real del contenido; suponer 1 h de duración descartaba ficheros que sí cubren
+    el episodio (ventanas «vacías» y ventanas de análisis sin datos).
+    """
+    if probe is not None and float(probe.dtend) > float(probe.dtstart):
+        return Span(float(probe.dtstart) / _SECONDS_PER_HOUR,
+                    float(probe.dtend) / _SECONDS_PER_HOUR)
+    f_start = sf.dt_unix / _SECONDS_PER_HOUR
+    return Span(f_start, f_start + 1.0)
+
+
+def _span_overlaps(span: Span, lo_h: float, hi_h: float) -> bool:
+    """¿Solapa ``span`` con ``[lo_h, hi_h]``? (intervalos semiabiertos)"""
+    return span.start_h < hi_h and span.end_h > lo_h
+
+
+def _arrived_ventilated(
+    episode: Episode,
+    files: Sequence[SourceFile],
+    probes: dict[str, Optional[VitalProbe]] | None = None,
+) -> bool:
     """D10: el paciente ya estaba intubado al empezar el registro del box."""
     if not files:
         return False
-    first_file_start = files[0].dt_unix / _SECONDS_PER_HOUR
+    pr = (probes or {}).get(str(files[0].path))
+    first_file_start = file_span_h(files[0], pr).start_h
     return abs(episode.start_h - first_file_start) < (1.0 / 60.0)
 
 

@@ -540,9 +540,117 @@ def write_hour_vni(
     return path
 
 
+class TestDedupeHomonimos:
+    """D-g: `box14` está partido en `14/` y `14_2/` con 578 nombres repetidos.
+
+    Al guardar `source_files` solo el nombre, la selección cogía las dos copias (30
+    eventos listaban cada fichero dos veces). Se deduplica por nombre dentro del
+    box, de forma determinista (`14/` antes que `14_2/`).
+    """
+
+    def test_homonimos_se_deduplican(self, tmp_path):
+        dt = BASE
+        for sub in ("14", "14_2"):
+            write_hour(tmp_path / "box14" / sub / _fname("tok", dt), dt,
+                       monitor=True, vent=True)
+        boxes = scan_source_files(tmp_path, CLINIC_SPEC)
+        assert len(boxes["box14"]) == 1
+        assert "14_2" not in str(boxes["box14"][0].path)
+
+    def test_ningun_evento_repite_fichero(self, tmp_path):
+        for h in (0, 1):
+            dt = BASE + timedelta(hours=h)
+            for sub in ("14", "14_2"):
+                write_hour(tmp_path / "box14" / sub / _fname("tok", dt), dt,
+                           monitor=True, vent=True)
+        boxes = scan_source_files(tmp_path, CLINIC_SPEC)
+        segs = [(b, segment_box(b, f)) for b, f in boxes.items()]
+        idx = build_cohort_index(segs, cohort="clinic", spec=CLINIC_SPEC,
+                                 merged=False)
+        assert idx["events"]
+        for ev in idx["events"]:
+            assert len(set(ev["source_files"])) == len(ev["source_files"])
+
+
+class TestSeleccionPorIntervaloReal:
+    """B2: los `source_files` se eligen por solape de intervalos REALES.
+
+    En Clínic los ficheros no son horarios (grabaciones de 19-48 h) y la hora del
+    nombre va por detrás del contenido: suponer 1 h de duración perdía ficheros
+    que sí cubren el episodio.
+    """
+
+    def _write_long(self, path: Path, t_start: datetime, hours: float,
+                    *, from_h: float | None) -> None:
+        """Fichero de ``hours`` horas cuyo contenido empieza en ``t_start``.
+
+        Monitor y ventilación solo se registran desde ``from_h`` horas después del
+        inicio del contenido (el resto del fichero son ondas sin pistas).
+        """
+        dt0 = to_epoch_utc(t_start)
+        dur = hours * 3600.0
+        vf = vitaldb.VitalFile()
+        vf.dtstart = dt0
+        vf.dtend = dt0 + dur
+        if from_h is not None:
+            off = from_h * 3600.0
+            sub = dur - off
+            vf.add_track("Intellivue/ECG_HR", _recs(dt0 + off, sub, value=80.0))
+            vf.add_track("Intellivue/PLETH_SAT_O2",
+                         _recs(dt0 + off, sub, value=98.0))
+            vf.add_track("Intellivue/TV_EXP", _recs(dt0 + off, sub, value=500.0))
+            vf.add_track("Intellivue/VENT_RR",
+                         _recs(dt0 + off, sub, value=14.0))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        vf.to_vital(str(path))
+
+    def test_fichero_largo_que_empieza_antes_del_episodio_se_incluye(self, tmp_path):
+        # A: nombre 00:00 con contenido 00:00-03:00, pero monitor y ventilación
+        # solo desde 02:00 -> el episodio empieza a las 02:00, dentro de A.
+        # B: nombre 03:00 con contenido 03:00-04:00.
+        self._write_long(tmp_path / "box2" / _fname("a", BASE), BASE, 3.0,
+                         from_h=2.0)
+        self._write_long(tmp_path / "box2" / _fname("b", BASE + timedelta(hours=3)),
+                         BASE + timedelta(hours=3), 1.0, from_h=0.0)
+        boxes = scan_source_files(tmp_path, CLINIC_SPEC)
+        segs = [(b, segment_box(b, f)) for b, f in boxes.items()]
+        idx = build_cohort_index(segs, cohort="clinic", spec=CLINIC_SPEC,
+                                 merged=False)
+        ev = idx["events"][0]
+        # La regla antigua («nombre + 1 h») veía A como 00:00-01:00 y lo perdía:
+        # la lista quedaba solo con B pese a que A cubre el episodio (B2).
+        assert len(ev["source_files"]) == 2, ev["source_files"]
+        assert ev["attempts"][0]["vent_start_h"] == pytest.approx(0.0, abs=0.1)
+
+
+class TestCensorTimeRelativo:
+    """B1: `censor_time_h`/`is_at_risk_until_h` en horas RELATIVAS a t0.
+
+    Como MIMIC/eICU. Antes se colaba el fin de región ABSOLUTO (epoch/3600) en
+    las cohortes de señal: 115 de 181 eventos de Clínic con `censor_time_h`
+    > 1000 h (y lo mismo en VitalDB).
+    """
+
+    def test_censura_a_fin_de_registro_es_relativa(self, tmp_path):
+        for h in range(6):
+            dt = BASE + timedelta(hours=h)
+            write_hour(tmp_path / "box2" / _fname("t", dt), dt,
+                       monitor=True, vent=True)
+        boxes = scan_source_files(tmp_path, CLINIC_SPEC)
+        segs = [(b, segment_box(b, f)) for b, f in boxes.items()]
+        idx = build_cohort_index(segs, cohort="clinic", spec=CLINIC_SPEC,
+                                 merged=False)
+        ev = idx["events"][0]
+        lab = ev["labels"]["48h"]
+        assert lab["event_type"] == "censored_end_of_record"
+        # Criterio global del plan: ningún evento con censor_time_h > 1000 h.
+        assert 0.0 <= lab["censor_time_h"] < 1000.0
+        assert 0.0 <= lab["is_at_risk_until_h"] < 1000.0
+        assert ev["end_reason"] == "end_of_record"
+
+
 class TestVniPostExtubacion:
     """La VNI con mascarilla tras la extubación no es ventilación invasiva."""
-
     def _make(self, raw_dir: Path, *, firma: bool) -> None:
         """Ventilación invasiva 0-1 h, hueco de 1 h con monitor, y ventilación
         de 3-4 h (con o sin firma de TV inspirado)."""

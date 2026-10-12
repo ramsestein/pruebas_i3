@@ -32,6 +32,7 @@ from .track_aliases import HR as _HR_ALIASES
 from .track_aliases import MAP as _MAP_ALIASES
 from .track_aliases import SPO2 as _SPO2_ALIASES
 from .vni import TV_INSP_FRACTION
+from .wave_derived import DEFAULT_FS_HZ, derive_from_waves
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +152,10 @@ _DEATH_WAVE_KEYS = ("ABP_amp", "PPG_amp")
 ACTIVITY_TV_EXP_MIN_ML: float = 100.0
 ACTIVITY_MV_EXP_MIN_LPM: float = 1.0
 ACTIVITY_AWP_AMP_MIN_CMH2O: float = 5.0
+# Decisión D-h (Fase 1.6e): si el minuto NO tiene pista ``VENT_RR``, la amplitud de
+# AWP cuenta como ventilación si la FR DERIVADA de la propia onda (en unidades
+# físicas) es >= este valor. Con pista ``VENT_RR`` manda ``VENT_RR > 0``.
+ACTIVITY_AWP_RR_MIN_RPM: float = 4.0
 
 # Pistas que definen la actividad (numéricas + onda de presión).
 ACTIVITY_TV_TRACK = "Intellivue/TV_EXP"
@@ -232,10 +237,15 @@ def active_vent_minutes(
     mv_exp: dict[int, float] | None = None,
     awp_amp: dict[int, float] | None = None,
     vent_rr: dict[int, float] | None = None,
+    awp_rr_derived: dict[int, float] | None = None,
 ) -> set[int]:
     """Minutos de ventilación ACTIVA (unión de los tres criterios fijos).
 
     Ver las constantes ``ACTIVITY_*`` para la justificación clínica.
+
+    **D-h:** la amplitud de AWP exige respiraciones declaradas por el ventilador
+    (``VENT_RR > 0``); si el minuto **no tiene** ``VENT_RR`` (pista ausente),
+    sirve la FR **derivada** de la onda (``awp_rr_derived`` >= 4 rpm).
     """
     active: set[int] = set()
     for k, v in (tv_exp or {}).items():
@@ -245,9 +255,16 @@ def active_vent_minutes(
         if v >= ACTIVITY_MV_EXP_MIN_LPM:
             active.add(int(k))
     rr = vent_rr or {}
+    der = awp_rr_derived or {}
     for k, v in (awp_amp or {}).items():
-        if v >= ACTIVITY_AWP_AMP_MIN_CMH2O and rr.get(int(k), 0.0) > 0.0:
-            active.add(int(k))
+        if v < ACTIVITY_AWP_AMP_MIN_CMH2O:
+            continue
+        m = int(k)
+        if m in rr:
+            if rr[m] > 0.0:
+                active.add(m)
+        elif der.get(m, 0.0) >= ACTIVITY_AWP_RR_MIN_RPM:
+            active.add(m)
     return active
 
 
@@ -460,7 +477,26 @@ def probe_vital_file_detail(
                                       (np.array([]), np.array([]))))
     amp = minute_amplitude(*activity_raw.get(ACTIVITY_AWP_TRACK,
                                              (np.array([]), np.array([]))))
-    active = active_vent_minutes(tv_exp=tv, mv_exp=mv, awp_amp=amp, vent_rr=rr)
+    # D-h: FR derivada de la propia onda de presión (unidades físicas), para los
+    # minutos en los que NO hay pista VENT_RR. Solo se calcula si hay onda.
+    awp_rr_derived: dict[int, float] = {}
+    awp_series = activity_raw.get(ACTIVITY_AWP_TRACK)
+    if awp_series is not None and awp_series[0].size:
+        srate = 0.0
+        trk_awp = (getattr(vf, "trks", None) or {}).get(ACTIVITY_AWP_TRACK)
+        if trk_awp is not None:
+            srate = float(getattr(trk_awp, "srate", 0.0) or 0.0)
+        try:
+            derived = derive_from_waves(
+                awp_series[0], awp=awp_series[1],
+                fs=srate if srate > 0 else DEFAULT_FS_HZ,
+                minute_offset_s=0.0,
+            )
+            awp_rr_derived = dict(derived.rr_rpm or {})
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("[vital_signals] FR derivada no calculable: %s", exc)
+    active = active_vent_minutes(tv_exp=tv, mv_exp=mv, awp_amp=amp, vent_rr=rr,
+                                 awp_rr_derived=awp_rr_derived)
     present = set(tv) | set(mv) | set(rr) | set(amp)
     probe.standby_minutes = count_standby_minutes(present, active)
     if active:
