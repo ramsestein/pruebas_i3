@@ -106,7 +106,14 @@ def _hueco_con_ficheros(
         # `--probar` (leer cabeceras).
         dentro = [f for f in cand if lo < (f.dt_unix / 3600.0) < hi]
         return (True if dentro else None), len(cand)
-    for f in cand:
+    # Con `--probar` se leen cabeceras (D: es caro): se ordenan los candidatos
+    # por cercania al hueco y se para en el primer solape, para no leer 24
+    # ficheros por par.
+    def _dist(f) -> float:
+        t = f.dt_unix / 3600.0
+        return max(lo - t, t - hi, 0.0)
+
+    for f in sorted(cand, key=_dist):
         pr = probe_vital_file(f.path)
         span = file_span_h(f, pr)
         if span.start_h < hi and span.end_h > lo:
