@@ -53,4 +53,5 @@ reports/fase1_5/vitaldb_probe*.json
 # (diagnostico_vent_activa_<cohorte>.md).
 *.jsonl
 reports/fase1_6e/diagnostico_vent_activa_*.json
+reports/fase1_6e/apagado_simultaneo.json
 
