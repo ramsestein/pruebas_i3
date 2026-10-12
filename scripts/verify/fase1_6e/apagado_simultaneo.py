@@ -57,6 +57,7 @@ EDGE_WINDOW_MIN = 30.0  # ventana de continuidad antes/después
 MAX_GAP_H = 12.0       # D-f: el hueco debe ser <= 12 h para poder unir
 MONITOR = ("Intellivue/ECG_HR", "Intellivue/HR", "Intellivue/PLETH_HR",
            "Intellivue/PLETH_SAT_O2")
+PROBE_MAX = 4          # cabeceras que se leen por evento al confirmar el hueco
 
 
 def _active_minutes(row: dict) -> set[int]:
@@ -75,6 +76,19 @@ def _active_minutes(row: dict) -> set[int]:
     return out
 
 
+def _span_real(sf, t0_h: float) -> tuple[float, float]:
+    """Intervalo REAL de un fichero en horas relativas a ``t0_h``.
+
+    Cabecera cuando se puede leer (``dtstart``/``dtend``); si no, hora del
+    nombre + 1 h (B2: en Clínic el nombre va por detrás del contenido).
+    """
+    pr = probe_vital_file(sf.path)
+    if pr is not None and float(pr.dtend) > float(pr.dtstart):
+        return (float(pr.dtstart) / 3600.0 - t0_h,
+                float(pr.dtend) / 3600.0 - t0_h)
+    return (sf.dt_unix / 3600.0 - t0_h, sf.dt_unix / 3600.0 - t0_h + 1.0)
+
+
 def _median_in(row: dict, track: str, lo_min: float, hi_min: float) -> float | None:
     d = (row.get("per_min") or {}).get(track) or {}
     vals = [float(v) for k, v in d.items() if lo_min <= float(k) <= hi_min]
@@ -85,13 +99,18 @@ def _delta(a: float | None, b: float | None) -> float | None:
     return None if a is None or b is None else round(b - a, 3)
 
 
-def _monitor_median(paths: list[str], lo_min: float, hi_min: float
-                    ) -> dict[str, float | None]:
-    """Mediana de FC y SpO2 en ``[lo_min, hi_min]`` (minutos desde t0 del evento)."""
+def _monitor_median(paths: list[str], lo_min: float, hi_min: float,
+                    t0_unix: float) -> dict[str, float | None]:
+    """Mediana de FC y SpO2 en ``[lo_min, hi_min]`` (minutos desde t0 del evento).
+
+    OJO: hay que pasar ``t0_unix`` para que las series vengan en segundos desde
+    t0; sin él ``read_track_series`` las devuelve en epoch y la ventana no casa
+    (el error salió como ΔFC/ΔSpO2 = None en todas las filas del informe).
+    """
     out: dict[str, float | None] = {"FC": None, "SpO2": None}
     if not paths:
         return out
-    series = read_track_series(paths, list(MONITOR))
+    series = read_track_series(paths, list(MONITOR), t0_unix=t0_unix)
     for key, names in (("FC", ("Intellivue/ECG_HR", "Intellivue/HR",
                                "Intellivue/PLETH_HR")),
                        ("SpO2", ("Intellivue/PLETH_SAT_O2",))):
@@ -162,6 +181,167 @@ def classify(gap_h: float | None, gap_has_files: bool | None,
     return "D_indeterminado"
 
 
+def _seccion_union(casos: list[dict], *, gap_max_h: float = 2.0,
+                   return_min: float = 15.0) -> list[str]:
+    """Seccion del informe: pares que cumplen la regla ESTRECHA de union (2c.2).
+
+    Es la que aplica el builder (`join_courses`): (a) hueco <= ``gap_max_h``,
+    (b) sin ficheros en el hueco, (c) la region siguiente empieza ventilada. El
+    criterio de continuidad de ajustes se descarto por el control negativo de
+    2c.3 (59,3 % de falsos positivos).
+    """
+    def _ok_hueco(c: dict) -> bool:
+        return c.get("hueco_h") is not None and c["hueco_h"] <= gap_max_h
+
+    def _sin_ficheros(c: dict) -> bool:
+        # `None` = no sondado: no se puede afirmar que no haya ficheros.
+        return c.get("tiene_ficheros") is False
+
+    cumplen = [c for c in casos
+               if _ok_hueco(c) and _sin_ficheros(c) and c["empieza_activa"]]
+    solo_hueco = [c for c in casos
+                  if _ok_hueco(c) and _sin_ficheros(c)
+                  and not c["empieza_activa"]]
+    sin_sonda = [c for c in casos if c.get("tiene_ficheros") is None]
+    lines = ["### Union de cursos (regla estrecha, D-f)", "",
+             f"- Cumplen (a) hueco <= {gap_max_h:g} h, (b) sin ficheros en el "
+             f"hueco y (c) la region siguiente empieza ventilada: "
+             f"**{len(cumplen)}**",
+             f"- Descartados por (c) (no vuelve ventilada en <= "
+             f"{return_min:g} min): {len(solo_hueco)}",
+             f"- Sin sondeo (`tiene_ficheros = None`): {len(sin_sonda)} "
+             f"(sin leer el hueco la regla no se puede evaluar)", ""]
+    # Variantes: que pasaria si se aceptara tambien el hueco CON grabacion pero
+    # sin senal de paciente (el box sigue grabando y el paciente esta fuera) y/o
+    # si se ampliara el limite de hueco. Solo se cuentan pares A (vuelve
+    # ventilado): la unica evidencia de "mismo curso" que tenemos.
+    variantes = []
+    for gmax in (gap_max_h, 6.0, 12.0):
+        con_senal = [c for c in casos if c["empieza_activa"]
+                     and c.get("hueco_h") is not None
+                     and c["hueco_h"] <= gmax]
+        variantes.append((gmax, len(con_senal)))
+    lines += ["| Variante | Uniones en esta cohorte |", "|---|---|",
+              f"| Aplicada: sin ficheros y <= {gap_max_h:g} h | {len(cumplen)} |"]
+    for gmax, n in variantes[1:]:
+        lines.append(f"| Tambien con grabacion (box on, paciente fuera) y "
+                     f"<= {gmax:g} h | {n} |")
+    lines += ["",
+              "**Decision (12/10)**: se mantiene la regla ESTRICTA tal cual. Las "
+              "variantes de la tabla son informativas: en ClinIC no hay ningun "
+              "caso con grabador parado y hueco <= 2 h, asi que no se une "
+              "ninguna pareja y los eventos con apagado simultaneo quedan "
+              "censurados como hasta ahora (`end_of_record`).", ""]
+    if cumplen:
+        lines += ["| Evento (primero del par) | hueco (h) | dPEEP | dFiO2 | "
+                  "dFC | dSpO2 |", "|---|---|---|---|---|---|"]
+        for c in sorted(cumplen, key=lambda x: x["event_id"]):
+            lines.append(
+                f"| {c['event_id']} | {c['hueco_h']} | {c['d_peep']} | "
+                f"{c['d_fio2']} | {c['d_fc']} | {c['d_spo2']} |")
+        lines.append("")
+    return lines
+
+
+def _bloque_cohort(cohort: str, casos: list[dict]) -> list[str]:
+    """Bloque del informe de una cohorte (clases, union y tabla de casos)."""
+    resumen: dict[str, int] = {}
+    for c in casos:
+        resumen[c["clase"]] = resumen.get(c["clase"], 0) + 1
+    out = [f"## {cohort}", "",
+           f"- Eventos con apagado simultaneo (<= {EDGE_MIN:.0f} min): "
+           f"**{len(casos)}**",
+           f"- Clases: {resumen}", ""]
+    out += _seccion_union(casos)
+    out += ["| Evento | hueco (h) | ficheros en el hueco | empieza activa | "
+            "fragmento | dPEEP | dFiO2 | dTV | dRR | dFC | dSpO2 | clase |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for c in sorted(casos, key=lambda x: (x["clase"], x["event_id"])):
+        out.append(
+            f"| {c['event_id']} | {c['hueco_h']} | {c['tiene_ficheros']} | "
+            f"{c['empieza_activa']} | {c['fragmento']} | {c['d_peep']} | "
+            f"{c['d_fio2']} | {c['d_tv']} | {c['d_rr']} | {c['d_fc']} | "
+            f"{c['d_spo2']} | {c['clase']} |")
+    out.append("")
+    return out
+
+
+def _solo_informe() -> int:
+    """Rehace el informe completo desde el JSON (sin volver a sondear D:)."""
+    path = REPORT / "apagado_simultaneo.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    md_path = REPORT / "apagado_simultaneo.md"
+    md = ["# Fase 1.6e, punto 2c.1 — apagado simultáneo monitor+ventilador", ""]
+    for cohort in sorted(k for k in data if not k.endswith("__neg_control")):
+        neg = data.get(f"{cohort}__neg_control") or {}
+        md += list(neg.get("_md") or [])
+        md += _bloque_cohort(cohort, data[cohort])
+    md_path.write_text("\n".join(md) + "\n", encoding="utf-8")
+    print(f"Informe actualizado: {md_path}")
+    return 0
+
+
+def _recalc_fc(cohorts: list[str], config_path_str: str) -> int:
+    """Recalcula SOLO ΔFC/ΔSpO2 de los bordes y refresca el JSON y el informe.
+
+    Leer cabeceras/pistas de D: es caro, así que no se repite el sondeo de
+    huecos: se reaprovecha lo ya guardado en ``apagado_simultaneo.json``.
+    """
+    path = REPORT / "apagado_simultaneo.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    config = load_config(config_path_str)
+    for cohort in cohorts:
+        casos = data.get(cohort)
+        if not casos:
+            continue
+        rows = {r["event_id"]: r
+                for r in json.loads(
+                    (REPORT / f"diagnostico_vent_activa_{cohort}.json")
+                    .read_text(encoding="utf-8"))}
+        idx = json.loads(sorted((ROOT / "datasets" / cohort).glob(
+            f"cases_v*/{cohort}_cases_index.json"))[-1].read_text(
+                encoding="utf-8"))
+        by_id = {e["event_id"]: e for e in idx["events"]}
+        boxes = scan_source_files(
+            config_path(config, "paths", f"{cohort}_raw_dir"), SPECS[cohort])
+        files_by_box = {b: {sf.path.name: sf for sf in fs}
+                        for b, fs in boxes.items()}
+        for c in casos:
+            nxt = c.get("siguiente")
+            ev = by_id.get(c["event_id"])
+            meta = files_by_box.get(c.get("box") or "")
+            if nxt is None or ev is None or not meta:
+                continue
+            t0_h = float(ev["t0_unix"]) / 3600.0
+            t0_next_h = float(by_id[nxt]["t0_unix"]) / 3600.0
+            r = rows.get(c["event_id"])
+            if r is None:
+                continue
+            fin_act = r.get("fin_vent_activa_h")
+            if fin_act is None:
+                continue
+            lo = (fin_act - EDGE_WINDOW_MIN / 60.0) * 60.0
+            hi = fin_act * 60.0
+            edge = [str(meta[n].path) for n in (ev.get("source_files") or [])
+                    if n in meta][-1:]
+            nedge = [str(meta[n].path)
+                     for n in (by_id[nxt].get("source_files") or [])
+                     if n in meta][:1]
+            b_fc = _monitor_median(edge, lo, hi, t0_h * 3600.0)
+            a_fc = _monitor_median(nedge, 0.0, EDGE_WINDOW_MIN,
+                                   t0_next_h * 3600.0)
+            c["d_fc"] = _delta(b_fc["FC"], a_fc["FC"])
+            c["d_spo2"] = _delta(b_fc["SpO2"], a_fc["SpO2"])
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2),
+                    encoding="utf-8")
+    n_fc = sum(1 for k, v in data.items() if not k.endswith("__neg_control")
+               for c in v if c.get("d_fc") is not None)
+    n_spo2 = sum(1 for k, v in data.items() if not k.endswith("__neg_control")
+                 for c in v if c.get("d_spo2") is not None)
+    print(f"Casos con ΔFC medido: {n_fc} · con ΔSpO2: {n_spo2}")
+    return _solo_informe()
+
+
 def main() -> None:
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -173,8 +353,16 @@ def main() -> None:
                    help="Sondear bordes (FC/SpO2 y ficheros del hueco).")
     p.add_argument("--neg-control", action="store_true",
                    help="2c.3: control negativo con pares de hueco > 24 h.")
+    p.add_argument("--solo-informe", action="store_true",
+                   help="Solo reescribe el informe desde el JSON.")
+    p.add_argument("--fc", action="store_true",
+                   help="Recalcula solo ΔFC/ΔSpO2 de los bordes y refresca.")
     p.add_argument("--config", default=str(ROOT / "src/stage0/config/harmonize.yaml"))
     args = p.parse_args()
+    if args.fc:
+        raise SystemExit(_recalc_fc(args.cohorts, args.config))
+    if args.solo_informe:
+        raise SystemExit(_solo_informe())
 
     out: dict[str, list[dict]] = {}
     lines = ["# Fase 1.6e, punto 2c.1 — apagado simultáneo monitor+ventilador", ""]
@@ -234,6 +422,8 @@ def main() -> None:
                           "fragmento": None, "d_peep": None, "d_fio2": None,
                           "d_tv": None, "d_rr": None, "d_fc": None,
                           "d_spo2": None, "clase": "D_indeterminado"}
+            t0_next_h: float | None = None
+            nrow: dict | None = None
             if nxt is not None:
                 nev = by_id[nxt]
                 t0_next_h = float(nev["t0_unix"]) / 3600.0
@@ -279,18 +469,34 @@ def main() -> None:
                 nedge = [str(meta[n].path)
                          for n in (by_id[nxt].get("source_files") or [])
                          if n in meta][:1]
-                b_fc = _monitor_median(edge, lo, hi)
-                a_fc = _monitor_median(nedge, 0.0, EDGE_WINDOW_MIN)
+                b_fc = _monitor_median(edge, lo, hi, t0_h * 3600.0)
+                a_fc = _monitor_median(nedge, 0.0, EDGE_WINDOW_MIN,
+                                       (t0_next_h or t0_h) * 3600.0)
                 info["d_fc"] = _delta(b_fc["FC"], a_fc["FC"])
                 info["d_spo2"] = _delta(b_fc["SpO2"], a_fc["SpO2"])
-                # ¿Hay ficheros (por nombre) dentro del hueco?
+                # ¿Hay ficheros dentro del hueco? El nombre no es fiable en
+                # Clínic (va 1-2 h por detrás del contenido, B2), así que los
+                # candidatos por nombre (±3 h) se confirman con la cabecera,
+                # limitados a PROBE_MAX por evento (leer cabeceras de D: es
+                # caro). Si quedan candidatos sin sondear y ninguno confirmó,
+                # se marca "con ficheros" (conservador: la clase B permite
+                # unir sin ajustes, así que no se declara B por duda).
                 if info["hueco_h"] is not None:
                     lo_h = fin_mon
                     hi_h = fin_mon + info["hueco_h"]
-                    hallados = [n for n in meta
-                                if lo_h < (meta[n].dt_unix / 3600.0 - t0_h) < hi_h]
-                    info["tiene_ficheros"] = bool(hallados)
-                    info["n_ficheros_hueco"] = len(hallados)
+                    cand = [n for n in meta
+                            if lo_h - 3.0 < (meta[n].dt_unix / 3600.0 - t0_h)
+                            < hi_h + 3.0]
+                    reales = []
+                    for n in cand[:PROBE_MAX]:
+                        span = _span_real(meta[n], t0_h)
+                        if span[0] < hi_h and span[1] > lo_h:
+                            reales.append(n)
+                    duda = bool(reales) is False and len(cand) > PROBE_MAX
+                    info["tiene_ficheros"] = bool(reales) or duda
+                    info["n_ficheros_hueco"] = len(reales)
+                    info["n_candidatos_hueco"] = len(cand)
+                    info["hueco_dudoso"] = duda
 
             info["clase"] = classify(info["hueco_h"], info["tiene_ficheros"],
                                      info["empieza_activa"], info["fragmento"],
@@ -301,6 +507,7 @@ def main() -> None:
         resumen: dict[str, int] = {}
         for c in casos:
             resumen[c["clase"]] = resumen.get(c["clase"], 0) + 1
+        n0 = len(lines)
 
         # 2c.3 control negativo: pares consecutivos del MISMO box con hueco > 24 h
         # (casi seguro pacientes distintos) -> tasa de falsos positivos de los
@@ -419,23 +626,11 @@ def main() -> None:
                 "del usuario" if (tasa_a is None or tasa_a > 0.10)
                 else "la tasa de falsos positivos estimada es ≤ 10 %")
             lines += [f"**Veredicto 2c.3**: {veredicto}.", ""]
+            neg["_md"] = lines[n0:]
             out[f"{cohort}__neg_control"] = neg | {"distribuciones": dist,
                                                    "rejilla": grid}
 
-        lines += [f"## {cohort}", "",
-                  f"- Eventos con apagado simultáneo (≤ {EDGE_MIN:.0f} min): "
-                  f"**{len(casos)}**",
-                  f"- Clases: {resumen}", ""]
-        lines.append("| Evento | hueco (h) | ficheros en el hueco | empieza activa "
-                     "| fragmento | ΔPEEP | ΔFiO2 | ΔTV | ΔRR | ΔFC | ΔSpO2 | clase |")
-        lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|")
-        for c in sorted(casos, key=lambda x: (x["clase"], x["event_id"])):
-            lines.append(
-                f"| {c['event_id']} | {c['hueco_h']} | {c['tiene_ficheros']} | "
-                f"{c['empieza_activa']} | {c['fragmento']} | {c['d_peep']} | "
-                f"{c['d_fio2']} | {c['d_tv']} | {c['d_rr']} | {c['d_fc']} | "
-                f"{c['d_spo2']} | {c['clase']} |")
-        lines.append("")
+        lines += _bloque_cohort(cohort, casos)
 
     (REPORT / "apagado_simultaneo.json").write_text(
         json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
