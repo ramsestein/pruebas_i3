@@ -26,3 +26,23 @@
   - sin actividad: `clinic_box4_event_1` → FIO2=4min(max 61.0)
   - sin actividad: `clinic_box4_event_2` → FIO2=134min(max 50.0)
 
+## vitaldb
+
+- Afectados: **50** · controles: 20
+- Con ventilación activa detectada: 43 (86.0 %)
+- **No cambian** con el fix (fin activo ≈ fin actual): 14
+- **Sí cambian** (la actividad acaba antes): 29 (mediana del recorte 8.607999999999976 h, p90 9.014 h)
+- **Sin actividad ninguna** (el evento desaparece): 7
+- Pistas que prolongan sin actividad: {'AWP_WAV': 3, 'FLOW_WAV': 3}
+- Cola nueva ≥ 1 h: 29 · < 1 h: 14
+- **Recuperados** (pasarían a éxito): 29 · siguen censurados: 14 · desaparecen: 7
+- **Control**: cola mediana 24.925 h; 17/20 con cola ≥ 1 h
+
+  - sin actividad: `vitaldb_SICU1_04_event_1` → AWP_WAV=241min(max 0.0) · FLOW_WAV=241min(max 0.0)
+  - sin actividad: `vitaldb_SICU1_05_event_1` → AWP_WAV=721min(max 0.0) · FLOW_WAV=721min(max 0.0)
+  - sin actividad: `vitaldb_SICU1_06_event_1` → AWP_WAV=721min(max 0.0) · FLOW_WAV=721min(max 0.0)
+  - sin actividad: `vitaldb_SICU1_07_event_1` → FIO2=81min(max 100.0) · AWP_WAV=705min(max 1967.2) · FLOW_WAV=705min(max 3503.0)
+  - sin actividad: `vitaldb_SICU1_08_event_1` → AWP_WAV=721min(max 0.0) · FLOW_WAV=721min(max 0.0)
+  - sin actividad: `vitaldb_SICU1_09_event_3` → AWP_WAV=191min(max 0.0) · FLOW_WAV=191min(max 0.0)
+  - sin actividad: `vitaldb_SICU2_09_event_3` → nada
+

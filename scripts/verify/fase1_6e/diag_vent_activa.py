@@ -34,6 +34,7 @@ import argparse
 import json
 import subprocess
 import sys
+import threading
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -290,6 +291,33 @@ def _affected_from_index(index: dict, *, max_tail_h: float = 1.0) -> list[str]:
     return out
 
 
+def _total_gb(paths: Sequence[str], *, budget_s: float = 60.0,
+              fallback_gb: float = 1.0) -> float:
+    """Tamaño total (GB) de una lista de ficheros, con PRESUPUESTO de tiempo.
+
+    ``D:`` tiene rachas en las que un ``stat`` se queda colgado: sin límite, el
+    proceso padre se bloquea para siempre (no hay subproceso que matar, a
+    diferencia del análisis). Si se agota el presupuesto se devuelve
+    ``fallback_gb`` para no quedarse sin timeout.
+    """
+    box: dict[str, float] = {}
+
+    def _work() -> None:
+        try:
+            box["gb"] = sum(Path(p).stat().st_size for p in paths) / 1e9
+        except OSError:
+            box["gb"] = fallback_gb
+
+    th = threading.Thread(target=_work, daemon=True)
+    th.start()
+    th.join(timeout=budget_s)
+    if th.is_alive():
+        print(f"    [aviso] stat colgado > {budget_s:.0f}s: se usa "
+              f"{fallback_gb:.2f} GB para el timeout", flush=True)
+        return fallback_gb
+    return float(box.get("gb", fallback_gb))
+
+
 def _event_paths(ev: dict, by_box_meta: dict) -> list[str]:
     """Rutas de TODOS los ``source_files`` del evento (sin filtrar por hora).
 
@@ -419,7 +447,7 @@ def main() -> None:
         if not paths:
             print(f"  [sin ficheros] {eid}", flush=True)
             continue
-        size_gb = sum(Path(p).stat().st_size for p in paths) / 1e9
+        size_gb = _total_gb(paths)
         tmo = max(args.min_timeout, size_gb * args.s_per_gb)
         tmp = REPORT / f".tmp_{cohort}_{eid}.json"
         png = None

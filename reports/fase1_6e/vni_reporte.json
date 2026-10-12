@@ -1,74 +1,27 @@
 {
-  "clinic": {
-    "n_eventos": 135,
-    "n_con_tramos_multiples": 6,
-    "n_vni_confirmados": 0,
-    "n_no_verificables": 7,
-    "n_invasivos_declarados": 65,
-    "n_eventos_con_vni": 0,
-    "n_eventos_no_verificables": 6,
+  "vitaldb": {
+    "n_eventos": 70,
+    "n_con_tramos_multiples": 1,
+    "n_vni_confirmados": 1,
+    "n_no_verificables": 0,
+    "n_invasivos_por_firma": 46,
+    "n_tramos_decididos_por_modo": 1,
+    "n_tramos_decididos_por_tv_insp": 46,
+    "nota_modo": "**Nota sobre la pista de modo**: en Clínic **no hay** pista de modo (ver el inventario), así que todos los tramos con firma verificable se deciden por `TV_INSP`; en VitalDB sí existe `SET_SIMV` (SIMV = modalidad INVASIVA) y manda el modo cuando está presente: 1 tramos por modo y 46 por `TV_INSP`.",
+    "n_eventos_con_vni": 1,
+    "n_eventos_no_verificables": 0,
     "recuperados_por_la_regla": [],
     "n_recuperados_por_la_regla": 0,
     "detalle": [
       {
-        "event_id": "clinic_box12_event_5",
-        "n_tramos": 2,
-        "vni_confirmados": 0,
-        "no_verificables": 1,
-        "reclasificado": false,
-        "tv_insp_frac_primer_tramo": null,
-        "cola_con_regla_h": 0.018,
-        "cola_sin_regla_h": 0.018
-      },
-      {
-        "event_id": "clinic_box14_event_33",
-        "n_tramos": 2,
-        "vni_confirmados": 0,
-        "no_verificables": 1,
-        "reclasificado": false,
-        "tv_insp_frac_primer_tramo": null,
-        "cola_con_regla_h": 0.025,
-        "cola_sin_regla_h": 0.025
-      },
-      {
-        "event_id": "clinic_box4_event_21",
-        "n_tramos": 2,
-        "vni_confirmados": 0,
-        "no_verificables": 1,
-        "reclasificado": false,
-        "tv_insp_frac_primer_tramo": null,
-        "cola_con_regla_h": 0.03,
-        "cola_sin_regla_h": 0.03
-      },
-      {
-        "event_id": "clinic_box4_event_30",
+        "event_id": "vitaldb_SICU1_03_event_1",
         "n_tramos": 3,
-        "vni_confirmados": 0,
-        "no_verificables": 1,
-        "reclasificado": false,
-        "tv_insp_frac_primer_tramo": null,
-        "cola_con_regla_h": 0.996,
-        "cola_sin_regla_h": 0.996
-      },
-      {
-        "event_id": "clinic_box6_event_7",
-        "n_tramos": 2,
-        "vni_confirmados": 0,
-        "no_verificables": 1,
-        "reclasificado": false,
-        "tv_insp_frac_primer_tramo": null,
-        "cola_con_regla_h": 0.728,
-        "cola_sin_regla_h": 0.728
-      },
-      {
-        "event_id": "clinic_box6_event_9",
-        "n_tramos": 3,
-        "vni_confirmados": 0,
-        "no_verificables": 2,
-        "reclasificado": false,
-        "tv_insp_frac_primer_tramo": null,
-        "cola_con_regla_h": 0.015,
-        "cola_sin_regla_h": 0.015
+        "vni_confirmados": 1,
+        "no_verificables": 0,
+        "reclasificado": true,
+        "tv_insp_frac_primer_tramo": 0.5,
+        "cola_con_regla_h": 1.539,
+        "cola_sin_regla_h": 1.305
       }
     ]
   }

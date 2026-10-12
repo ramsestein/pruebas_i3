@@ -36,7 +36,7 @@ del registro), 12 h antes y hasta `min(max(fin+2 h, fin del monitor), fin+24 h)`
 después, para poder medir también la cola de los controles.
 
 **Selección de ficheros**: se leen **todos** los `source_files` del evento y se
-**enmascara por tiempo**. Ver el bug B2: en Clínic los ficheros de origen **no son
+**enmascara por tiempo**. Ver el bug B4: en Clínic los ficheros de origen **no son
 horarios** (hay grabaciones de 19–48 h), así que seleccionar ficheros por su hora
 de nombre pierde los que cubren la ventana (fue el error de la primera versión del
 diagnóstico: 24 ventanas «vacías» falsas).
@@ -105,7 +105,33 @@ Tampoco hay `LEAK`. Sí hay **ajustes de modo** (`SET_SIMV`, `SET_IE_RATIO`,
 
 ## 4. Hallazgos de integridad (diagnóstico, antes de tocar el builder)
 
-### B5 — el criterio de onda comparaba unidades **crudas** con un umbral en cmH₂O
+### B1 — el índice de VitalDB (v0.4.0, de la 1.6c) mezcla **DOS RELOJES**
+
+`vitaldb_SICU2_16_event_1` (9 ficheros):
+
+- `t0_unix = 2025-01-31 **16:03:24**` → es el **reloj del CONTENIDO** (el inicio del
+  tramo de ventilación, tal y como está en los registros de los `.vital`);
+- `vent_end_h = obs_end_h = duration = 12,8159 h` → 2025-02-01 **04:52:18** →
+  pero los registros de las pistas de ventilador de sus ficheros cubren solo
+  **−1,05 h .. +5,42 h** (15:00-21:28 del 31-ene), y los **nombres** de esos
+  ficheros son del 1-feb **00:00-06:00** (desfase de ~9 h respecto al contenido).
+
+Es decir: el **inicio** del evento viene del reloj del contenido y el **fin** del
+reloj del nombre (el `vent_end` de 04:52 cae dentro de la ventana de nombres
+00:00-06:00 de los ficheros seleccionados). Consecuencia directa: en los eventos
+afectados de VitalDB `vent_end_h == obs_end_h == duration_h`, así que la **cola de
+monitor es 0 por construcción**, no por observación.
+
+**Por eso los resultados de VitalDB de §5 son preliminares y NO se usan**: hay que
+unificar la base temporal en el punto 4 (rebuild de VitalDB) y repetir la
+medición. Es del mismo origen que B4 (selección de ficheros por hora de nombre).
+
+Clínic **no** lo sufre: en `clinic_box2_event_1` el `vent_end_h` del índice
+(39,79 h) coincide con el fin del contenido de su fichero (39,84 h) — los nombres
+van 1-2 h por detrás, pero el índice está en el reloj del contenido, así que el
+diagnóstico de Clínic sí es válido.
+
+### B2 — el criterio de onda comparaba unidades **crudas** con un umbral en cmH₂O
 
 `minute_amplitude` se aplicaba sobre los valores **crudos** de `AWP_WAV`, mientras
 que el umbral (`ACTIVITY_AWP_AMP_MIN_CMH2O = 5.0`) está en cmH₂O. Los valores de
@@ -144,7 +170,7 @@ Clínic: los minutos que activan solo por AWP pasan de 8 832 a 8 518 (−3,6 %) 
 > informe publicado), así que no hay resultados inválidos que retirar, pero el
 > punto 5 debe aplicar la misma conversión antes de comparar.
 
-### B1 — `censor_time_h` en **horas absolutas** en Clínic y VitalDB
+### B3 — `censor_time_h` en **horas absolutas** en Clínic y VitalDB
 
 `build_signal_cases.extubation_decision()` pasa `observation_end_h(episode)`
 (**epoch/3600**) como `observation_end_h` a `resolve_extubation()`, que lo
@@ -167,7 +193,7 @@ cohortes de señal (cualquier cálculo de horizonte a 48 h con ellos es erróneo
 `apply_censor = t_censor <= attempts[idx].extubation_h` siempre da falso, pero la
 rama alternativa devuelve el mismo resultado, así que la etiqueta no cambia.
 
-### B2 — `_files_for_episode()` supone ficheros **horarios**
+### B4 — `_files_for_episode()` supone ficheros **horarios**
 
 `_files_for_episode()` calcula `f_end = f_start + 1.0` («los ficheros de origen son
 horarios»). En Clínic **no lo son**: medidos 39,84 h, 19,24 h, 35,75 h, 48,00 h,
@@ -180,7 +206,7 @@ revisados la selección acertó, pero el criterio es estructuralmente incorrecto
 **Corrección propuesta:** seleccionar por **solape de intervalos reales**
 (`dtstart`/`dtend` de la sonda), no por hora de nombre + 1 h.
 
-### B3 — unidades de `active_vent_span_from_probe()` (corregido en este punto)
+### B5 — unidades de `active_vent_span_from_probe()` (corregido en este punto)
 
 Devolvía **horas** mientras que `vent_span_from_probe()` devuelve **segundos
 epoch**; el llamador (`_to_hours`) volvía a dividir por 3600 y quedaba un tramo de
@@ -193,7 +219,7 @@ actividad: el «último minuto activo completo» alargaba el fin hasta 1 min de 
 eso **invertía la etiqueta D3 en el umbral exacto de 1 h de cola** (caso
 `test_labels_d3_are_consistent_with_attempts`).
 
-### B4 — `box14`: colisión de nombres entre `14/` y `14_2/`
+### B6 — `box14`: colisión de nombres entre `14/` y `14_2/`
 
 `D:\data\clinic_vitals\box14` contiene dos subcarpetas, `14` (556 ficheros) y
 `14_2` (679), con **578 nombres repetidos**. Todos los pares tienen **el mismo
@@ -250,7 +276,7 @@ la actividad acaba exactamente donde acababa el registro (censura correcta: la
 ventilación y el monitor se apagan a la vez, cola 0,000–0,002 h), en **37** la
 actividad acaba antes, y solo en **9** de ellos la cola fisiológica corregida
 llega a 1 h. Es decir: **la corrección recupera 9 eventos, no 75**, y tres de los
-nueve son de `box14` (el box con nombres duplicados, ver B4).
+nueve son de `box14` (el box con nombres duplicados, ver B6).
 
 **Los 13 que desaparecen** (sin actividad ninguna) se parten en:
 
@@ -291,7 +317,7 @@ sospechosa), sin tocar los umbrales (D-a).
 
 `TV_EXP` y `MV_EXP` **separan perfectamente**: ningún minuto dudoso llega al
 umbral. La amplitud de `AWP_WAV` **no separa**, y la causa es un **bug de unidades
-(B5)**: la amplitud se calcula sobre los valores **crudos** de la onda
+(B2)**: la amplitud se calcula sobre los valores **crudos** de la onda
 (`AWP_WAV cmH₂O = −10 + 0,015 × crudo`), así que el umbral «5 cmH₂O» está
 comparándose con **5 unidades crudas ≈ 0,075 cmH₂O**. La excursión real de una
 ventilación clara es ~1240 crudo (≈ 18,6 cmH₂O) y el equivalente a 5 cmH₂O es
@@ -299,13 +325,78 @@ ventilación clara es ~1240 crudo (≈ 18,6 cmH₂O) y el equivalente a 5 cmH₂
 
 Efecto medido en Clínic: los minutos que activan solo por AWP pasan de 8 832 a
 8 518 al corregir las unidades (**−3,6 %**), y **ningún evento depende solo del
-criterio de AWP** → los números de Clínic de arriba son robustos frente a B5.
+criterio de AWP** → los números de Clínic de arriba son robustos frente a B2.
 
 Minutos en **espera** (`vent_standby`, pistas del ventilador presentes pero
 inactivas) en los afectados de Clínic: **5 175** (`AWP_WAV` 3 261, `TV_EXP` 477,
 `VENT_RR` 477, `PIP` 477, `PEEP` 477, `MV_EXP` 6).
 
-### VitalDB
+#### VitalDB
 
-_(pendiente de terminar la ejecución)_
+| Criterio | Clara (mediana) | Sospechosa (mediana) | % ≥ umbral |
+|---|---|---|---|
+| `TV_EXP` ≥ 100 mL | 399 mL (p5 259) | 65 mL (solo 3 min) | **99,8 % vs 0 %** |
+| `MV_EXP` ≥ 1,0 L/min | 6,30 L/min (p5 3,96) | 0,60 L/min (1 min) | **100 % vs 0 %** |
+| amplitud `AWP_WAV` ≥ 5 | 662 | 0 (p95 0) | 100 % vs **3,0 %** |
+
+Separación igual de limpia que en Clínic. Los minutos «sospechosos» de VitalDB son
+muy pocos (3 de `TV_EXP`, 1 de `MV_EXP`) porque en su ventana apenas hay registros
+de pistas de ventilador (coherente con B1). El **3,0 %** de la amplitud de AWP son
+minutos en los que el umbral crudo de 5 seguía pasándose; con la conversión a cmH₂O
+desaparecen.
+
+Minutos en **espera** en los afectados de VitalDB: **5 169** (`AWP_WAV` 5 164,
+`TV_EXP` 3, `VENT_RR` 1, `MV_EXP` 1).
+
+### VitalDB — **preliminar, no fiable** (ver B1)
+
+Escaneo terminado: **76/76** procesados (4 eventos sin `source_files`), 2 pendientes
+por timeout reintentados. Los números salen de los 70 eventos analizados en la
+primera pasada (50 afectados + 20 controles):
+
+| | n |
+|---|---|
+| Con ventilación activa detectada | 43 (86,0 %) |
+| **No cambian** | 14 |
+| **Sí cambian** | 29 |
+| **Sin actividad ninguna** | 7 |
+| **Recuperarían el éxito** | 29 |
+| Controles con cola ≥ 1 h | 17/20 |
+
+Recorte del fin de ventilación: p10 = 5,62 h, **mediana = 8,61 h**, p90 = 9,03 h
+(14 de los 29 son del mismo box, `SICU2_16`).
+
+**No se interpretan**: el recorte tan grande y agrupado, junto con
+`vent_end_h == obs_end_h == duration_h` en todos los afectados, es exactamente lo
+que produce B1 (fin del evento en el reloj del nombre, ~9 h por delante del
+contenido). El diagnóstico de VitalDB se repetirá tras el rebuild del punto 4.
+
+Lo que sí es interpretable de VitalDB: de los 7 eventos sin actividad, 4 tienen
+las ondas AWP/FLOW **planas** (amplitud máxima 0,0 → respirador en espera) y 1 no
+tiene ninguna pista en la ventana; y **2 casos no verificables**
+(`vitaldb_SICU1_07_event_1` con amplitud de AWP 1 967 en crudo ≈ 29 cmH₂O, y
+`vitaldb_SICU2_09_event_3` sin pistas) que no activan el criterio por no haber
+pista `VENT_RR`.
+
+**Controles de VitalDB**: 2/20 sin actividad detectable
+(`vitaldb_SICU2_08_event_3`, `vitaldb_SICU2_09_event_1`) y
+`vitaldb_SICU2_05_event_3` con cola 0,002 h.
+
+### Efecto de la regla de VNI (punto 3) — VitalDB
+
+`scripts/verify/fase1_6e/vni_report.py --cohorts vitaldb --with-mode`:
+
+| | VitalDB |
+|---|---|
+| Tramos de VNI **confirmados** | **1** (en `vitaldb_SICU1_03_event_1`, firma `TV_INSP` = 0,50) |
+| Tramos **no verificables** | 0 |
+| Tramos posteriores con firma verificable que resulta **invasiva** | 46 |
+| Cambios de etiqueta con la regla | **0** (la cola pasa de 1,31 h a 1,54 h: ya era ≥ 1 h) |
+
+**Modo vs TV_INSP** (`vni_report.py --with-mode`, que sondea `SET_SIMV` solo en los
+ficheros de cada tramo candidato): de los 47 tramos con firma verificable, **1 lo
+decide el modo** (`SET_SIMV` = SIMV, modalidad invasiva) y **46 la firma
+`TV_INSP`**. En Clínic **no hay** pista de modo, así que allí todos los tramos con
+firma verificable se deciden por `TV_INSP` (la redacción anterior de «invasivo por
+el modo» era incorrecta y está corregida).
 

@@ -37,6 +37,22 @@ def _pct(n: int, d: int) -> float:
     return round(100.0 * n / d, 1) if d else 0.0
 
 
+def _n_afectados_en_indice(cohort: str) -> int | None:
+    """Nº de eventos afectados según el índice (censurados ``end_of_record``).
+
+    El JSON del diagnóstico puede tener menos filas (eventos sin ``source_files``
+    o con timeout), así que el llamador recorta con ``min``.
+    """
+    idxs = sorted((ROOT / "datasets" / cohort).glob(
+        f"cases_v*/{cohort}_cases_index.json"))
+    if not idxs:
+        return None
+    idx = json.loads(idxs[-1].read_text(encoding="utf-8"))
+    return sum(1 for e in idx["events"]
+               if (e.get("labels") or {}).get("48h", {}).get("censor_cause")
+               == "end_of_record")
+
+
 def summarize(rows: list[dict], n_control: int,
               n_afectados: int | None = None) -> dict:
     if n_afectados is None:
@@ -131,7 +147,12 @@ def main() -> None:
             print(f"[aviso] sin diagnóstico para {cohort}")
             continue
         rows = json.loads(path.read_text(encoding="utf-8"))
-        out[cohort] = summarize(rows, args.control, args.n_afectados)
+        n_afc = args.n_afectados
+        if n_afc is None:
+            n_afc = _n_afectados_en_indice(cohort)
+        if n_afc is not None:
+            n_afc = min(int(n_afc), max(0, len(rows) - args.control))
+        out[cohort] = summarize(rows, args.control, n_afc)
         r = out[cohort]
         lines += [f"## {cohort}", "",
                   f"- Afectados: **{r['n_afectados']}** · controles: {r['n_controles']}",

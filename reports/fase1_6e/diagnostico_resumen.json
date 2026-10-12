@@ -267,5 +267,169 @@
       "clinic_box14_event_7",
       "clinic_box4_event_1"
     ]
+  },
+  "vitaldb": {
+    "n_afectados": 50,
+    "n_controles": 20,
+    "n_sin_actividad": 7,
+    "detalle_sin_actividad": [
+      {
+        "event_id": "vitaldb_SICU1_04_event_1",
+        "tracks": {
+          "AWP_WAV": {
+            "n_min": 241,
+            "max": 0.0,
+            "mediana": 0.0
+          },
+          "FLOW_WAV": {
+            "n_min": 241,
+            "max": 0.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "vitaldb_SICU1_05_event_1",
+        "tracks": {
+          "AWP_WAV": {
+            "n_min": 721,
+            "max": 0.0,
+            "mediana": 0.0
+          },
+          "FLOW_WAV": {
+            "n_min": 721,
+            "max": 0.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "vitaldb_SICU1_06_event_1",
+        "tracks": {
+          "AWP_WAV": {
+            "n_min": 721,
+            "max": 0.0,
+            "mediana": 0.0
+          },
+          "FLOW_WAV": {
+            "n_min": 721,
+            "max": 0.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "vitaldb_SICU1_07_event_1",
+        "tracks": {
+          "FIO2": {
+            "n_min": 81,
+            "max": 100.0,
+            "mediana": 30.7
+          },
+          "AWP_WAV": {
+            "n_min": 705,
+            "max": 1967.2,
+            "mediana": 0.0
+          },
+          "FLOW_WAV": {
+            "n_min": 705,
+            "max": 3503.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "vitaldb_SICU1_08_event_1",
+        "tracks": {
+          "AWP_WAV": {
+            "n_min": 721,
+            "max": 0.0,
+            "mediana": 0.0
+          },
+          "FLOW_WAV": {
+            "n_min": 721,
+            "max": 0.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "vitaldb_SICU1_09_event_3",
+        "tracks": {
+          "AWP_WAV": {
+            "n_min": 191,
+            "max": 0.0,
+            "mediana": 0.0
+          },
+          "FLOW_WAV": {
+            "n_min": 191,
+            "max": 0.0,
+            "mediana": 0.0
+          }
+        },
+        "n_min_pista": "FLOW_WAV"
+      },
+      {
+        "event_id": "vitaldb_SICU2_09_event_3",
+        "tracks": {},
+        "n_min_pista": null
+      }
+    ],
+    "n_no_cambian": 14,
+    "n_cambian": 29,
+    "n_recuperados": 29,
+    "ejemplos_recuperados": [
+      "vitaldb_SICU1_02_event_1",
+      "vitaldb_SICU1_03_event_1",
+      "vitaldb_SICU1_03_event_7",
+      "vitaldb_SICU1_04_event_2",
+      "vitaldb_SICU1_06_event_2",
+      "vitaldb_SICU1_06_event_3",
+      "vitaldb_SICU1_09_event_1",
+      "vitaldb_SICU1_09_event_5",
+      "vitaldb_SICU1_10_event_3",
+      "vitaldb_SICU1_11_event_3",
+      "vitaldb_SICU2_02_event_4",
+      "vitaldb_SICU2_12_event_2"
+    ],
+    "n_siguen_censurados": 14,
+    "mediana_recorte_h": 8.607999999999976,
+    "p90_recorte_h": 9.014,
+    "pistas_que_prolongan": {
+      "AWP_WAV": 3,
+      "FLOW_WAV": 3
+    },
+    "cola_nueva_ge_1h": 29,
+    "cola_nueva_lt_1h": 14,
+    "control_cola_mediana_h": 24.925,
+    "control_cola_ge_1h": 17,
+    "ejemplos_cambian": [
+      "vitaldb_SICU1_02_event_1",
+      "vitaldb_SICU1_03_event_1",
+      "vitaldb_SICU1_03_event_7",
+      "vitaldb_SICU1_04_event_2",
+      "vitaldb_SICU1_06_event_2",
+      "vitaldb_SICU1_06_event_3",
+      "vitaldb_SICU1_09_event_1",
+      "vitaldb_SICU1_09_event_5",
+      "vitaldb_SICU1_10_event_3",
+      "vitaldb_SICU1_11_event_3",
+      "vitaldb_SICU2_02_event_4",
+      "vitaldb_SICU2_12_event_2"
+    ],
+    "ejemplos_sin_actividad": [
+      "vitaldb_SICU1_04_event_1",
+      "vitaldb_SICU1_05_event_1",
+      "vitaldb_SICU1_06_event_1",
+      "vitaldb_SICU1_07_event_1",
+      "vitaldb_SICU1_08_event_1",
+      "vitaldb_SICU1_09_event_3",
+      "vitaldb_SICU2_09_event_3"
+    ]
   }
 }

@@ -1,17 +1,15 @@
 # Fase 1.6e, punto 3 — efecto de la regla de VNI post-extubación (D-b)
 
-## clinic
+## vitaldb
 
-- Eventos analizados: **135** (afectados)
-- Tramos de VNI **confirmados** (reclasificados): **0** en 0 eventos
-- Tramos **no verificables** (`posible_vni_no_verificable`, NO se reclasifican): **7** en 6 eventos
-- Tramo posterior declarado **invasivo** por el modo: 65
+- Eventos analizados: **70** (afectados)
+- Tramos de VNI **confirmados** (reclasificados): **1** en 1 eventos
+- Tramos **no verificables** (`posible_vni_no_verificable`, NO se reclasifican): **0** en 0 eventos
+- Tramos posteriores con firma **verificable** que resulta **invasiva**: **46**
+  (esta medida NO puede usar la pista de modo: la firma se calcula con `TV_INSP`; ver la nota de modo más abajo)
 - **Sensibilidad de la etiqueta**: eventos que pasarían de censura (`end_of_record`) a éxito con la regla: **0**
 
-  - `clinic_box12_event_5`: tramos 2, VNI 0, no verificables 1, firma TV_INSP None, cola con regla 0.018 h (sin regla 0.018 h)
-  - `clinic_box14_event_33`: tramos 2, VNI 0, no verificables 1, firma TV_INSP None, cola con regla 0.025 h (sin regla 0.025 h)
-  - `clinic_box4_event_21`: tramos 2, VNI 0, no verificables 1, firma TV_INSP None, cola con regla 0.03 h (sin regla 0.03 h)
-  - `clinic_box4_event_30`: tramos 3, VNI 0, no verificables 1, firma TV_INSP None, cola con regla 0.996 h (sin regla 0.996 h)
-  - `clinic_box6_event_7`: tramos 2, VNI 0, no verificables 1, firma TV_INSP None, cola con regla 0.728 h (sin regla 0.728 h)
-  - `clinic_box6_event_9`: tramos 3, VNI 0, no verificables 2, firma TV_INSP None, cola con regla 0.015 h (sin regla 0.015 h)
+**Nota sobre la pista de modo**: en Clínic **no hay** pista de modo (ver el inventario), así que todos los tramos con firma verificable se deciden por `TV_INSP`; en VitalDB sí existe `SET_SIMV` (SIMV = modalidad INVASIVA) y manda el modo cuando está presente: 1 tramos por modo y 46 por `TV_INSP`.
+
+  - `vitaldb_SICU1_03_event_1`: tramos 3, VNI 1, no verificables 0, firma TV_INSP 0.5, cola con regla 1.539 h (sin regla 1.305 h)
 
