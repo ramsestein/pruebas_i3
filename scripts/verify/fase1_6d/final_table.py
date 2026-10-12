@@ -77,6 +77,31 @@ def _outcomes(events: list[dict]) -> dict:
     return {"success": success, "censored": censored, "failures": failures}
 
 
+def _censored_return_le12(events: list[dict], *, max_h: float = 12.0) -> int | None:
+    """Censuras seguidas de una vuelta ventilada del mismo box en <= 12 h.
+
+    Campo del indice anotado por ``scripts/verify/fase1_6e/annotate_index.py``
+    (``next_same_box_vent_start_gap_h``): hueco desde el fin de la observacion de
+    este evento hasta el INICIO DE VENTILACION del evento siguiente del mismo
+    box. Son los segmentos que el analisis de sensibilidad excluye (una salida
+    censurada que en realidad era el mismo curso). Si el indice no esta anotado
+    devuelve ``None`` (no es un cero).
+    """
+    if not any("next_same_box_vent_start_gap_h" in e for e in events):
+        return None
+    n = 0
+    for e in events:
+        lab = (e.get("labels") or {}).get(WINDOW) or {}
+        if lab.get("event_type") == "successful_extubation":
+            continue            # no es una censura
+        gap = e.get("next_same_box_vent_start_gap_h")
+        if gap is None:
+            continue
+        if 0.0 <= float(gap) <= max_h:
+            n += 1
+    return n
+
+
 def _d13(events: list[dict]) -> int:
     n = 0
     for e in events:
@@ -136,6 +161,7 @@ def build_row(cohort: str) -> dict | None:
         "d13_pct": None,
         "success_48h": out["success"],
         "censored_48h": out["censored"],
+        "censored_return_le12h": _censored_return_le12(events),
         "failure_events": out["failures"],
         "vars_ok_50": None,
         "vars_ok_80": None,
@@ -181,9 +207,10 @@ def build_row(cohort: str) -> dict | None:
 def to_md(rows: dict[str, dict], partitions: dict) -> list[str]:
     lines = ["# Tabla final de las 4 cohortes (Fase 1.6d, punto 8)", "",
              "| Cohorte | Eventos | D13 | Éxito 48 h | Censura 48 h | "
+             "Censuras con vuelta ventilada ≤ 12 h | "
              "Fallos (≥1) | vars_ok 50 % | vars_ok 80 % | vars_ok 50 % + "
              "ondas | Error de etiqueta | Perfil dominante | Partición |",
-             "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for cohort, r in rows.items():
         part = partitions.get(cohort, {})
         part_s = part.get("criterio", "—")[:70] if part else "—"
@@ -193,14 +220,22 @@ def to_md(rows: dict[str, dict], partitions: dict) -> list[str]:
                 else f"{r['vars_ok_50_con_derivadas']}")
         d13 = ("—" if r["d13_included"] is None
                else f"{r['d13_included']} ({r['d13_pct']} %)")
+        cv12 = ("—" if r.get("censored_return_le12h") is None
+                else f"{r['censored_return_le12h']}")
         lines.append(
             f"| {cohort} | {r['n_events']} | {d13} | {r['success_48h']} | "
-            f"{r['censored_48h']} | {r['failure_events']} | {v50} | {v80} | "
+            f"{r['censored_48h']} | {cv12} | {r['failure_events']} | {v50} | "
+            f"{v80} | "
             f"{v50d} | {r['label_error']} | {r['profile_dominant']} | "
             f"{part_s} |")
     lines += ["", "Notas:", "",
               "- Éxito y censura son mutuamente excluyentes; los eventos con ≥ 1 "
               "fallo van aparte (también existen entre los censurados).",
+              "- **Censuras con vuelta ventilada ≤ 12 h**: censuras cuyo evento "
+              "siguiente del mismo box empieza a ventilar en ≤ 12 h desde el fin "
+              "de la observación (campo `next_same_box_vent_start_gap_h`, "
+              "anotado con `scripts/verify/fase1_6e/annotate_index.py`). Sin "
+              "anotar el índice la celda sale «—», no un cero.",
               "- `vars_ok` (6 variables) es indicador de calidad, nunca filtro; "
               "el filtro es D13 (FC y SpO2 > 50 %).",
               "- `vars_ok + ondas` solo aparece si la validación Bland–Altman "
