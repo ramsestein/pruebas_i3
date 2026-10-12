@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -243,15 +244,19 @@ def _seccion_union(casos: list[dict], *, gap_max_h: float = 2.0,
     return lines
 
 
-def _bloque_cohort(cohort: str, casos: list[dict]) -> list[str]:
+def _bloque_cohort(cohort: str, casos: list[dict],
+                   nota: str | None = None) -> list[str]:
     """Bloque del informe de una cohorte (clases, union y tabla de casos)."""
     resumen: dict[str, int] = {}
     for c in casos:
         resumen[c["clase"]] = resumen.get(c["clase"], 0) + 1
-    out = [f"## {cohort}", "",
-           f"- Eventos con apagado simultaneo (<= {EDGE_MIN:.0f} min): "
-           f"**{len(casos)}**",
-           f"- Clases: {resumen}", ""]
+    out = [f"## {cohort}", ""]
+    if nota:
+        out += [nota, ""]
+    out += [
+        f"- Eventos con apagado simultaneo (<= {EDGE_MIN:.0f} min): "
+        f"**{len(casos)}**",
+        f"- Clases: {resumen}", ""]
     out += _seccion_union(casos)
     out += ["| Evento | hueco (h) | ficheros en el hueco | empieza activa | "
             "fragmento | dPEEP | dFiO2 | dTV | dRR | dFC | dSpO2 | clase |",
@@ -274,8 +279,12 @@ def _solo_informe() -> int:
     md = ["# Fase 1.6e, punto 2c.1 — apagado simultáneo monitor+ventilador", ""]
     for cohort in sorted(k for k in data if not k.endswith("__neg_control")):
         neg = data.get(f"{cohort}__neg_control") or {}
-        md += list(neg.get("_md") or [])
-        md += _bloque_cohort(cohort, data[cohort])
+        nota = ("**PRELIMINAR (B1)**: la base temporal del indice v0.4.0 de "
+                "VitalDB mezcla dos relojes (nombre y contenido); estas horas "
+                "se recalculan en el rebuild v0.6.0. En Clinic NO ocurre."
+                if cohort == "vitaldb" else None)
+        md += _seccion_neg(cohort, neg)
+        md += _bloque_cohort(cohort, data[cohort], nota=nota)
     md_path.write_text("\n".join(md) + "\n", encoding="utf-8")
     print(f"Informe actualizado: {md_path}")
     return 0
@@ -342,6 +351,92 @@ def _recalc_fc(cohorts: list[str], config_path_str: str) -> int:
     return _solo_informe()
 
 
+def _wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float] | None:
+    """Intervalo de confianza del 95 % de Wilson para ``k`` de ``n``.
+
+    Se usa Wilson (y no el normal) porque con n pequeno y proporciones cerca de
+    0 o 1 el intervalo normal da limites imposibles.
+    """
+    if n <= 0:
+        return None
+    p = k / n
+    den = 1.0 + z * z / n
+    centro = (p + z * z / (2 * n)) / den
+    half = (z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / den
+    return (max(0.0, centro - half), min(1.0, centro + half))
+
+
+def _pct(x: float | None, dec: int = 1) -> str:
+    return "—" if x is None else f"{100 * x:.{dec}f} %"
+
+
+def _seccion_neg(cohort: str, neg: dict) -> list[str]:
+    """Tabla del control negativo de 2c.3 con IC 95 % de Wilson (desde JSON)."""
+    cn = neg.get("control_negativo") or {}
+    if not cn:
+        return []
+    out = [f"### {cohort}: 2c.3 control negativo y discriminacion", "",
+           f"Candidatos (hueco <= 12 h, posible mismo curso): "
+           f"**{neg.get('n_candidatos')}**", "",
+           "| Criterio | Pares control (>24 h) | Cumplen | Tasa FP | "
+           "IC 95 % (Wilson) |",
+           "|---|---|---|---|---|"]
+    for k, lab in (("a", "dPEEP <= 3 y dFiO2 <= 20 (D-f)"),
+                   ("b", "a + |dTV| <= 50 mL"),
+                   ("c", "a + |dRR| <= 2"),
+                   ("d", "a + TV y RR")):
+        c = cn.get(k) or {}
+        n = int(c.get("n") or 0)
+        kk = int(c.get("cumplen") or 0)
+        ic = _wilson(kk, n)
+        ic_txt = "—" if ic is None else f"[{_pct(ic[0])}, {_pct(ic[1])}]"
+        out.append(f"| {lab} | {n} | {kk} | {_pct(c.get('tasa_fp'))} | "
+                   f"{ic_txt} |")
+    cumplen_cand = neg.get("candidatos_cumplen") or {}
+    out += ["", f"De los candidatos (<= 12 h), cumplen: {cumplen_cand}", ""]
+    dist = neg.get("distribuciones") or {}
+    if dist:
+        out += ["|Δ| del hueco | grupo | n | p10 | p50 | p90 |",
+                "|---|---|---|---|---|---|"]
+        for var in ("d_peep", "d_fio2", "d_tv"):
+            for grupo in ("control", "candidatos"):
+                vals = sorted(float(x) for x in
+                              (dist.get(grupo, {}).get(var) or []))
+                if not vals:
+                    continue
+                q = [vals[int(0.1 * (len(vals) - 1))], vals[len(vals) // 2],
+                     vals[int(0.9 * (len(vals) - 1))]]
+                out.append(f"| {var} | {grupo} | {len(vals)} | {q[0]:.2f} | "
+                           f"{q[1]:.2f} | {q[2]:.2f} |")
+        out.append("")
+    grid = neg.get("rejilla") or []
+    if grid:
+        out += ["Sensibilidad de la regla a los umbrales de continuidad:", "",
+                "| dPEEP <= | dFiO2 <= | FP (control >24 h) | IC 95 % (Wilson) | "
+                "Candidatos que pasarian |", "|---|---|---|---|---|"]
+        for g in grid:
+            ic = _wilson(int(g["n_fp"]), int(g["n_control"]))
+            ic_txt = ("—" if ic is None
+                      else f"[{_pct(ic[0])}, {_pct(ic[1])}]")
+            out.append(f"| {g['d_peep_max']:g} | {g['d_fio2_max']:g} | "
+                       f"{_pct(g.get('tasa_fp'))} | {ic_txt} | "
+                       f"{_pct(g.get('tasa_candidatos'))} "
+                       f"({g.get('n_candidatos_pasan')}/"
+                       f"{g.get('n_candidatos')}) |")
+        out += ["",
+                "Aun con el umbral mas estricto (dPEEP <= 0,5 y dFiO2 <= 2) la "
+                "tasa de FP queda en el limite (> 10 %) y solo conserva ~59 % de "
+                "los candidatos: el criterio casi no separa, porque PEEP y FiO2 "
+                "se repiten entre pacientes.", ""]
+    tasa_a = ((cn.get("a") or {}).get("tasa_fp"))
+    veredicto = (
+        "la tasa de falsos positivos estimada es **> 10 %** → **NO se aplica** "
+        "la regla de union (D-f) tal cual" if (tasa_a is None or tasa_a > 0.10)
+        else "la tasa de falsos positivos estimada es <= 10 %")
+    out += [f"**Veredicto 2c.3**: {veredicto}.", ""]
+    return out
+
+
 def main() -> None:
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -366,6 +461,19 @@ def main() -> None:
 
     out: dict[str, list[dict]] = {}
     lines = ["# Fase 1.6e, punto 2c.1 — apagado simultáneo monitor+ventilador", ""]
+    # Lo ya sondeado (leer D: es caro) se conserva si esta ejecucion no pide
+    # `--probe`: antes, rehacer los casos sin el borraba `tiene_ficheros` y
+    # dFC/dSpO2 de los casos ya medidos.
+    json_path = REPORT / "apagado_simultaneo.json"
+    previo: dict = (json.loads(json_path.read_text(encoding="utf-8"))
+                    if json_path.exists() else {})
+    previo_casos: dict[str, dict[str, dict]] = {
+        k: {c["event_id"]: c for c in v}
+        for k, v in previo.items()
+        if not k.endswith("__neg_control") and isinstance(v, list)
+    }
+    CAMPOS_SONDA = ("tiene_ficheros", "n_ficheros_hueco", "n_candidatos_hueco",
+                    "hueco_dudoso", "d_fc", "d_spo2")
     for cohort in args.cohorts:
         diag = REPORT / f"diagnostico_vent_activa_{cohort}.json"
         if not diag.exists():
@@ -498,6 +606,12 @@ def main() -> None:
                     info["n_candidatos_hueco"] = len(cand)
                     info["hueco_dudoso"] = duda
 
+            if not args.probe:
+                viejo = previo_casos.get(cohort, {}).get(eid) or {}
+                for k in CAMPOS_SONDA:
+                    if k in viejo:
+                        info[k] = viejo[k]
+
             info["clase"] = classify(info["hueco_h"], info["tiene_ficheros"],
                                      info["empieza_activa"], info["fragmento"],
                                      info.get("continuidad_ajustes"))
@@ -560,82 +674,37 @@ def main() -> None:
                 },
                 "candidatos_cumplen": cand,
             }
-            lines += [f"### {cohort}: 2c.3 control negativo y discriminación", "",
-                      f"Candidatos (hueco ≤ 12 h, posible mismo curso): "
-                      f"**{n_cand}**", "",
-                      "| Criterio | Pares control (>24 h) | Cumplen | Tasa FP |",
-                      "|---|---|---|---|"]
-            for k, lab in (("a", "ΔPEEP ≤ 3 y ΔFiO2 ≤ 20 (D-f)"),
-                           ("b", "a + |ΔTV| ≤ 50 mL"),
-                           ("c", "a + |ΔRR| ≤ 2"),
-                           ("d", "a + TV y RR")):
-                c = neg["control_negativo"][k]
-                tasa = ("—" if c["tasa_fp"] is None
-                        else f"**{100 * c['tasa_fp']:.1f} %**")
-                lines.append(f"| {lab} | {c['n']} | {c['cumplen']} | {tasa} |")
-            lines += ["", f"De los candidatos (≤12 h), cumplen: {cand}", ""]
-            lines += ["|Δ| del hueco | grupo | n | p10 | p50 | p90 |",
-                      "|---|---|---|---|---|---|"]
-            for var in ("d_peep", "d_fio2", "d_tv"):
-                for grupo in ("control", "candidatos"):
-                    vals = sorted(dist[grupo][var])
-                    if not vals:
-                        continue
-                    q = [vals[int(0.1 * (len(vals) - 1))],
-                         vals[len(vals) // 2],
-                         vals[int(0.9 * (len(vals) - 1))]]
-                    lines.append(f"| {var} | {grupo} | {len(vals)} | "
-                                 f"{q[0]:.2f} | {q[1]:.2f} | {q[2]:.2f} |")
-            # Rejilla de umbrales: ¿algún par (dPEEP, dFiO2) discrimina?
+            # Rejilla de umbrales: ¿algun par (dPEEP, dFiO2) discrimina? Se
+            # guarda en el JSON y la tabla la pinta `_seccion_neg`.
             ctl = list(zip(dist["control"]["d_peep"], dist["control"]["d_fio2"]))
             can = list(zip(dist["candidatos"]["d_peep"],
                            dist["candidatos"]["d_fio2"]))
             grid = []
-
-            def _pct(x) -> str:
-                return "—" if x is None else f"{100 * x:.1f} %"
-
-            lines += ["", "Sensibilidad de la regla a los umbrales de "
-                      "continuidad:",
-                      "", "| ΔPEEP ≤ | ΔFiO2 ≤ | FP (control >24 h) | "
-                      "Candidatos que pasarían |", "|---|---|---|---|"]
             for p_peep, p_fio2 in ((3.0, 20.0), (2.0, 10.0), (1.0, 10.0),
                                    (1.0, 5.0), (0.5, 5.0), (0.5, 2.0)):
                 n_fp = sum(1 for a, b in ctl if a <= p_peep and b <= p_fio2)
                 n_ca = sum(1 for a, b in can if a <= p_peep and b <= p_fio2)
-                fp = n_fp / len(ctl) if ctl else None
-                ca = n_ca / len(can) if can else None
                 grid.append({"d_peep_max": p_peep, "d_fio2_max": p_fio2,
                              "n_control": len(ctl), "n_fp": n_fp,
-                             "tasa_fp": fp, "n_candidatos": len(can),
-                             "n_candidatos_pasan": n_ca, "tasa_candidatos": ca})
-                lines.append(
-                    f"| {p_peep:g} | {p_fio2:g} | {_pct(fp)} | {_pct(ca)} "
-                    f"({n_ca}/{len(can)}) |")
-            lines += ["",
-                      "Aun con el umbral más estricto (ΔPEEP ≤ 0,5 y ΔFiO2 ≤ 2) "
-                      "la tasa de FP queda en el límite (> 10 %) y solo "
-                      "conserva ~59 % de los candidatos: el criterio casi no "
-                      "separa, porque PEEP y FiO2 se repiten entre pacientes.",
-                      ""]
-            lines.append("")
-            tasa_a = neg["control_negativo"]["a"]["tasa_fp"]
-            veredicto = (
-                "la tasa de falsos positivos estimada es **> 10 %** → **NO se "
-                "aplica** la regla de unión (D-f) tal cual: requiere decisión "
-                "del usuario" if (tasa_a is None or tasa_a > 0.10)
-                else "la tasa de falsos positivos estimada es ≤ 10 %")
-            lines += [f"**Veredicto 2c.3**: {veredicto}.", ""]
-            neg["_md"] = lines[n0:]
+                             "tasa_fp": (n_fp / len(ctl) if ctl else None),
+                             "n_candidatos": len(can),
+                             "n_candidatos_pasan": n_ca,
+                             "tasa_candidatos": (n_ca / len(can) if can else None)})
+            lines += _seccion_neg(cohort, neg | {"distribuciones": dist,
+                                                 "rejilla": grid})
             out[f"{cohort}__neg_control"] = neg | {"distribuciones": dist,
                                                    "rejilla": grid}
 
         lines += _bloque_cohort(cohort, casos)
 
-    (REPORT / "apagado_simultaneo.json").write_text(
-        json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
-    (REPORT / "apagado_simultaneo.md").write_text("\n".join(lines) + "\n",
-                                                  encoding="utf-8")
+    # El JSON se actualiza en MODO MERGE: cada ejecucion solo reemplaza las
+    # cohortes que se le pasan (antes, correr solo `clinic` borraba el bloque de
+    # `vitaldb` del informe, y una ejecucion sin --neg-control borraba la tabla).
+    previo.update(out)
+    json_path.write_text(json.dumps(previo, ensure_ascii=False, indent=2),
+                         encoding="utf-8")
+    # El .md SIEMPRE se regenera desde el JSON (una sola fuente de verdad).
+    _solo_informe()
     print("\n".join(lines[:12]))
 
 

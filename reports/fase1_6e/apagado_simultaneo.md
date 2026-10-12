@@ -1,5 +1,40 @@
 # Fase 1.6e, punto 2c.1 — apagado simultáneo monitor+ventilador
 
+### clinic: 2c.3 control negativo y discriminacion
+
+Candidatos (hueco <= 12 h, posible mismo curso): **45**
+
+| Criterio | Pares control (>24 h) | Cumplen | Tasa FP | IC 95 % (Wilson) |
+|---|---|---|---|---|
+| dPEEP <= 3 y dFiO2 <= 20 (D-f) | 27 | 16 | 59.3 % | [40.7 %, 75.5 %] |
+| a + |dTV| <= 50 mL | 0 | 0 | — | — |
+| a + |dRR| <= 2 | 0 | 0 | — | — |
+| a + TV y RR | 0 | 0 | — | — |
+
+De los candidatos (<= 12 h), cumplen: {'a': 40, 'b': 0, 'c': 0, 'd': 0}
+
+|Δ| del hueco | grupo | n | p10 | p50 | p90 |
+|---|---|---|---|---|---|
+| d_peep | control | 28 | 0.10 | 1.35 | 4.00 |
+| d_peep | candidatos | 44 | 0.00 | 0.10 | 2.10 |
+| d_fio2 | control | 28 | 0.00 | 10.00 | 40.00 |
+| d_fio2 | candidatos | 44 | 0.00 | 0.00 | 6.00 |
+
+Sensibilidad de la regla a los umbrales de continuidad:
+
+| dPEEP <= | dFiO2 <= | FP (control >24 h) | IC 95 % (Wilson) | Candidatos que pasarian |
+|---|---|---|---|---|
+| 3 | 20 | 60.7 % | [42.4 %, 76.4 %] | 90.9 % (40/44) |
+| 2 | 10 | 39.3 % | [23.6 %, 57.6 %] | 84.1 % (37/44) |
+| 1 | 10 | 28.6 % | [15.3 %, 47.1 %] | 72.7 % (32/44) |
+| 1 | 5 | 17.9 % | [7.9 %, 35.6 %] | 68.2 % (30/44) |
+| 0.5 | 5 | 10.7 % | [3.7 %, 27.2 %] | 68.2 % (30/44) |
+| 0.5 | 2 | 10.7 % | [3.7 %, 27.2 %] | 59.1 % (26/44) |
+
+Aun con el umbral mas estricto (dPEEP <= 0,5 y dFiO2 <= 2) la tasa de FP queda en el limite (> 10 %) y solo conserva ~59 % de los candidatos: el criterio casi no separa, porque PEEP y FiO2 se repiten entre pacientes.
+
+**Veredicto 2c.3**: la tasa de falsos positivos estimada es **> 10 %** → **NO se aplica** la regla de union (D-f) tal cual.
+
 ## clinic
 
 - Eventos con apagado simultaneo (<= 15 min): **63**
@@ -16,6 +51,8 @@
 | Aplicada: sin ficheros y <= 2 h | 0 |
 | Tambien con grabacion (box on, paciente fuera) y <= 6 h | 6 |
 | Tambien con grabacion (box on, paciente fuera) y <= 12 h | 8 |
+
+**Decision (12/10)**: se mantiene la regla ESTRICTA tal cual. Las variantes de la tabla son informativas: en ClinIC no hay ningun caso con grabador parado y hueco <= 2 h, asi que no se une ninguna pareja y los eventos con apagado simultaneo quedan censurados como hasta ahora (`end_of_record`).
 
 | Evento | hueco (h) | ficheros en el hueco | empieza activa | fragmento | dPEEP | dFiO2 | dTV | dRR | dFC | dSpO2 | clase |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -82,4 +119,78 @@
 | clinic_box8_event_8 | 58.107 | True | None | None | None | None | None | None | 14.0 | 2.4 | C_salida |
 | clinic_box9_event_4 | 1571.931 | True | None | None | None | None | None | None | 15.0 | -2.2 | C_salida |
 | clinic_box2_event_5 | 2.165 | True | True | True | 5.0 | 52.0 | -59.5 | 4.0 | -24.0 | 2.8 | D_indeterminado |
+
+### vitaldb: 2c.3 control negativo y discriminacion
+
+Candidatos (hueco <= 12 h, posible mismo curso): **15**
+
+| Criterio | Pares control (>24 h) | Cumplen | Tasa FP | IC 95 % (Wilson) |
+|---|---|---|---|---|
+| dPEEP <= 3 y dFiO2 <= 20 (D-f) | 2 | 1 | 50.0 % | [9.5 %, 90.5 %] |
+| a + |dTV| <= 50 mL | 0 | 0 | — | — |
+| a + |dRR| <= 2 | 0 | 0 | — | — |
+| a + TV y RR | 0 | 0 | — | — |
+
+De los candidatos (<= 12 h), cumplen: {'a': 1, 'b': 0, 'c': 0, 'd': 0}
+
+|Δ| del hueco | grupo | n | p10 | p50 | p90 |
+|---|---|---|---|---|---|
+| d_peep | control | 2 | 0.75 | 5.30 | 0.75 |
+| d_peep | candidatos | 1 | 2.20 | 2.20 | 2.20 |
+| d_fio2 | control | 2 | 10.40 | 31.30 | 10.40 |
+| d_fio2 | candidatos | 12 | 0.00 | 0.15 | 0.40 |
+
+Sensibilidad de la regla a los umbrales de continuidad:
+
+| dPEEP <= | dFiO2 <= | FP (control >24 h) | IC 95 % (Wilson) | Candidatos que pasarian |
+|---|---|---|---|---|
+| 3 | 20 | 50.0 % | [9.5 %, 90.5 %] | 100.0 % (1/1) |
+| 2 | 10 | 0.0 % | [0.0 %, 65.8 %] | 0.0 % (0/1) |
+| 1 | 10 | 0.0 % | [0.0 %, 65.8 %] | 0.0 % (0/1) |
+| 1 | 5 | 0.0 % | [0.0 %, 65.8 %] | 0.0 % (0/1) |
+| 0.5 | 5 | 0.0 % | [0.0 %, 65.8 %] | 0.0 % (0/1) |
+| 0.5 | 2 | 0.0 % | [0.0 %, 65.8 %] | 0.0 % (0/1) |
+
+Aun con el umbral mas estricto (dPEEP <= 0,5 y dFiO2 <= 2) la tasa de FP queda en el limite (> 10 %) y solo conserva ~59 % de los candidatos: el criterio casi no separa, porque PEEP y FiO2 se repiten entre pacientes.
+
+**Veredicto 2c.3**: la tasa de falsos positivos estimada es **> 10 %** → **NO se aplica** la regla de union (D-f) tal cual.
+
+## vitaldb
+
+**PRELIMINAR (B1)**: la base temporal del indice v0.4.0 de VitalDB mezcla dos relojes (nombre y contenido); estas horas se recalculan en el rebuild v0.6.0. En Clinic NO ocurre.
+
+- Eventos con apagado simultaneo (<= 15 min): **15**
+- Clases: {'C_salida': 15}
+
+### Union de cursos (regla estrecha, D-f)
+
+- Cumplen (a) hueco <= 2 h, (b) sin ficheros en el hueco y (c) la region siguiente empieza ventilada: **0**
+- Descartados por (c) (no vuelve ventilada en <= 15 min): 0
+- Sin sondeo (`tiene_ficheros = None`): 2 (sin leer el hueco la regla no se puede evaluar)
+
+| Variante | Uniones en esta cohorte |
+|---|---|
+| Aplicada: sin ficheros y <= 2 h | 0 |
+| Tambien con grabacion (box on, paciente fuera) y <= 6 h | 0 |
+| Tambien con grabacion (box on, paciente fuera) y <= 12 h | 0 |
+
+**Decision (12/10)**: se mantiene la regla ESTRICTA tal cual. Las variantes de la tabla son informativas: en ClinIC no hay ningun caso con grabador parado y hueco <= 2 h, asi que no se une ninguna pareja y los eventos con apagado simultaneo quedan censurados como hasta ahora (`end_of_record`).
+
+| Evento | hueco (h) | ficheros en el hueco | empieza activa | fragmento | dPEEP | dFiO2 | dTV | dRR | dFC | dSpO2 | clase |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| vitaldb_SICU1_03_event_6 | 91.008 | True | True | False | None | None | -238.0 | 10.0 | -9.0 | 1.7 | C_salida |
+| vitaldb_SICU1_04_event_5 | None | None | None | None | None | None | None | None | None | None | C_salida |
+| vitaldb_SICU1_05_event_2 | None | None | None | None | None | None | None | None | None | None | C_salida |
+| vitaldb_SICU1_09_event_2 | 806.013 | True | False | False | None | None | None | None | 5.0 | -2.7 | C_salida |
+| vitaldb_SICU1_09_event_4 | 91.007 | True | True | False | None | None | 86.0 | 5.0 | 23.0 | 0.0 | C_salida |
+| vitaldb_SICU1_10_event_1 | 805.951 | True | False | False | None | None | 153.5 | -1.0 | -6.0 | 2.1 | C_salida |
+| vitaldb_SICU1_10_event_2 | 92.007 | True | True | False | None | None | -94.75 | -4.0 | -5.0 | 0.0 | C_salida |
+| vitaldb_SICU1_11_event_1 | 814.575 | True | None | None | None | None | None | None | None | None | C_salida |
+| vitaldb_SICU1_12_event_2 | 18.691 | True | None | None | None | None | None | None | 17.0 | -0.6 | C_salida |
+| vitaldb_SICU2_05_event_3 | 92.007 | True | None | None | None | None | None | None | None | None | C_salida |
+| vitaldb_SICU2_07_event_1 | 675.007 | True | None | None | None | None | None | None | 3.0 | 0.0 | C_salida |
+| vitaldb_SICU2_11_event_2 | 321.825 | True | False | False | -0.75 | -10.4 | 31.0 | -7.05 | None | None | C_salida |
+| vitaldb_SICU2_12_event_1 | 674.006 | True | False | False | -5.3 | 31.3 | -18.0 | 7.55 | 0.0 | 2.4 | C_salida |
+| vitaldb_SICU2_14_event_1 | 674.006 | True | False | False | None | None | 275.25 | -1.8 | -22.0 | 0.0 | C_salida |
+| vitaldb_SICU2_19_event_1 | 738.183 | True | False | False | None | None | -120.5 | 10.15 | None | None | C_salida |
 
