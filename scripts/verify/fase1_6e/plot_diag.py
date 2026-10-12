@@ -41,6 +41,25 @@ from diag_vent_activa import REPORT, _event_paths, plot_event  # noqa: E402
 EPS_H = 0.1
 
 
+def _apagado(cohort: str, clases: str, n_por_clase: int) -> list[str]:
+    """Eventos de 2c.1 (apagado simultáneo) de las clases pedidas.
+
+    Toma los ids de ``apagado_simultaneo.json`` (clase A/B/C/D) y devuelve hasta
+    ``n_por_clase`` por clase. OJO: la clase B (grabador parado) puede tener muy
+    pocos casos: en Clínic hay UNO, así que no se pueden dibujar cinco.
+    """
+    rep = REPORT / "apagado_simultaneo.json"
+    if not rep.exists():
+        return []
+    data = json.loads(rep.read_text(encoding="utf-8")).get(cohort) or []
+    out: list[str] = []
+    for letra in [c.strip().upper() for c in clases.split(",") if c.strip()]:
+        sel = [c["event_id"] for c in sorted(data, key=lambda x: x["event_id"])
+               if str(c.get("clase") or "").upper().startswith(letra)]
+        out += sel[:n_por_clase]
+    return out
+
+
 def _select(rows: list[dict], how: str, n: int, n_afectados: int) -> list[dict]:
     afc = rows[:n_afectados]
     if how == "recuperados":
@@ -81,7 +100,9 @@ def main() -> None:
     p.add_argument("--config", default=str(ROOT / "src/stage0/config/harmonize.yaml"))
     p.add_argument("--select", default="recuperados",
                    choices=["recuperados", "cambian", "sin_actividad",
-                            "controles", "vni_no_verificable"])
+                            "controles", "vni_no_verificable", "apagado"])
+    p.add_argument("--clase", default="A,B,C",
+                   help="Clases de 2c.1 para --select apagado (A,B,C,D).")
     p.add_argument("--n", type=int, default=9)
     p.add_argument("--n-afectados", type=int, default=None,
                    help="Nº de filas de afectados (antes de los controles).")
@@ -104,7 +125,11 @@ def main() -> None:
         n_afc = sum(1 for r in rows
                     if (by_id.get(r["event_id"], {}).get("labels") or {})
                     .get("48h", {}).get("censor_cause") == "end_of_record")
-    sel = _select(rows, args.select, args.n, n_afc)
+    if args.select == "apagado":
+        ids = set(_apagado(args.cohort, args.clase, args.n))
+        sel = [r for r in rows if r["event_id"] in ids]
+    else:
+        sel = _select(rows, args.select, args.n, n_afc)
     print(f"[{args.cohort}] seleccionados {len(sel)} ({args.select})", flush=True)
 
     out_dir = REPORT / "figs_diag"
