@@ -40,10 +40,13 @@ import sys
 import threading
 from pathlib import Path
 
+import numpy as np
+
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
 from src.common.paths import config_path  # noqa: E402
+from src.common.vital_signals import read_track_series  # noqa: E402
 from src.create_dataset.build_signal_cases import (  # noqa: E402
     SPECS,
     scan_source_files,
@@ -89,50 +92,95 @@ def _medir_con_presupuesto(fn, *, budget_s: float):
     def _work() -> None:
         try:
             caja["v"] = fn()
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             caja["v"] = None
+            caja["err"] = f"{type(exc).__name__}: {exc}"
 
     th = threading.Thread(target=_work, daemon=True)
     th.start()
     th.join(timeout=budget_s)
     if th.is_alive():
         return False, None
+    if caja.get("err"):
+        print(f"    [aviso] medida fallida: {caja['err']}", flush=True)
     return True, caja.get("v")
 
 
 def _deltas_de_ficheros(prev: dict, nxt: dict, meta: dict, *,
-                        budget_s: float) -> dict:
-    """Mide los 4 deltas leyendo los ficheros (ventanas de 30 min de 2c.1)."""
-    def _dos_ultimos(files: list) -> list:
-        return sorted(files, key=lambda f: f.dt_unix)[-2:]
+                        budget_s: float) -> tuple[dict, str]:
+    """Mide los 4 deltas leyendo los ficheros (ventanas de 30 min de 2c.1).
 
-    def _dos_primeros(files: list) -> list:
-        return sorted(files, key=lambda f: f.dt_unix)[:2]
+    Devuelve ``(deltas, motivo)``: ``motivo`` explica que falte algo
+    (``timeout``, ``sin <pista>``...). Se leen las CUATRO pistas en una sola
+    pasada por lado (dos lecturas por pareja, no ocho).
+    """
+    def _de_corte(meta: dict, corte_epoch: float) -> list:
+        """Los 2 ficheros del box que probablemente CUBREN el corte.
 
-    def _de(e: dict) -> list:
-        return [meta[n] for n in (e.get("source_files") or []) if n in meta]
+        No se usa la lista ``source_files`` del evento: en v0.5.0 puede faltar el
+        ultimo tramo (el fichero que cubre el fin de la ventilacion no estaba
+        incluido, y la ventana se quedaba sin datos). Se eligen por NOMBRE
+        alrededor del corte, con margen de 26 h (grabaciones de 19-48 h) y
+        quedandose con los mas cercanos anteriores.
+        """
+        corte_h = corte_epoch / 3600.0
+        cand = [f for f in meta.values()
+                if corte_h - 26.0 <= f.dt_unix / 3600.0 <= corte_h + 1.0]
+        cand.sort(key=lambda f: f.dt_unix)
+        return cand[-2:]
 
+    tracks = [PEEP_T[0], FIO2_T[0], TV_T[0], RR_T[0]]
     att_prev = prev.get("attempts") or []
     att_next = nxt.get("attempts") or []
     if not att_prev or not att_next:
-        return {}
-    f_prev = _dos_ultimos(_de(prev))
-    f_next = _dos_primeros(_de(nxt))
+        return {k: None for k in ("d_peep", "d_fio2", "d_tv", "d_rr")}, "sin intentos"
     t0p, t0n = float(prev["t0_unix"]), float(nxt["t0_unix"])
     vp = float(att_prev[-1].get("vent_end_h") or 0.0)
     vn = float(att_next[0].get("vent_start_h") or 0.0)
+    f_prev = _de_corte(meta, t0p + vp * 3600.0)
+    f_next = _de_corte(meta, t0n + vn * 3600.0)
+    if not f_prev or not f_next:
+        return ({k: None for k in ("d_peep", "d_fio2", "d_tv", "d_rr")},
+                "sin ficheros del box alrededor del corte")
+    ok_a, ser_a = _medir_con_presupuesto(
+        lambda: read_track_series([str(f.path) for f in f_prev], tracks,
+                                  t0_unix=t0p),
+        budget_s=budget_s)
+    ok_b, ser_b = _medir_con_presupuesto(
+        lambda: read_track_series([str(f.path) for f in f_next], tracks,
+                                  t0_unix=t0n),
+        budget_s=budget_s)
+    motivos: list[str] = []
+    if not ok_a or not ok_b:
+        motivos.append("timeout al leer")
+        ser_a = ser_a or {}
+        ser_b = ser_b or {}
+
+    def _med(serie, tr, lo_h, hi_h, *, ultimo_si_vacio: bool = False) -> float | None:
+        """Mediana en la ventana; si esta vacia y se pide, usa el ultimo tramo
+        CON DATOS de 30 min (el fin de ventilacion del indice puede caer mas
+        alla de lo grabado: v0.5.0 no incluye el ultimo fichero, B2)."""
+        t, v = (serie or {}).get(tr, (None, None))
+        if t is None or len(t) == 0:
+            return None
+        h = t / 3600.0
+        sel = (h >= lo_h) & (h <= hi_h)
+        if not sel.any() and ultimo_si_vacio:
+            fin = float(h.max())
+            sel = (h >= fin - 0.5) & (h <= fin)
+        return float(np.median(v[sel])) if sel.any() else None
+
     out: dict[str, float | None] = {}
-    for clave, tr in (("d_peep", PEEP_T), ("d_fio2", FIO2_T),
-                      ("d_tv", TV_T), ("d_rr", RR_T)):
-        ok_a, a = _medir_con_presupuesto(
-            lambda tr=tr: _median_window(f_prev, t0p, tr, vp - 0.5, vp),
-            budget_s=budget_s)
-        ok_b, b = _medir_con_presupuesto(
-            lambda tr=tr: _median_window(f_next, t0n, tr, vn, vn + 0.5),
-            budget_s=budget_s)
-        out[clave] = (b - a) if (ok_a and ok_b and a is not None
-                                 and b is not None) else None
-    return out
+    for clave, tr in (("d_peep", PEEP_T[0]), ("d_fio2", FIO2_T[0]),
+                      ("d_tv", TV_T[0]), ("d_rr", RR_T[0])):
+        a = _med(ser_a, tr, vp - 0.5, vp, ultimo_si_vacio=True)
+        b = _med(ser_b, tr, vn, vn + 0.5)
+        if a is None or b is None:
+            motivos.append(f"sin {tr.split('/')[-1]} en la ventana")
+            out[clave] = None
+        else:
+            out[clave] = b - a
+    return out, "; ".join(dict.fromkeys(motivos))
 
 
 def _pares(idx: dict) -> list[dict]:
@@ -191,6 +239,8 @@ def main() -> None:
     p.add_argument("--index", default=None)
     p.add_argument("--medir-faltantes", action="store_true",
                    help="Mide los deltas de los pares no cubiertos por 2c.1.")
+    p.add_argument("--limite", type=int, default=None,
+                   help="Mide solo los primeros N pares (depuracion).")
     p.add_argument("--budget-s", type=float, default=180.0)
     p.add_argument("--json", default=None)
     p.add_argument("--md", default=None)
@@ -218,6 +268,7 @@ def main() -> None:
 
     # Deltas: de la sonda si existen, si no (y se pide) medidos dirigidamente.
     n_medidos_sonda = n_medidos_directo = n_sin_medir = 0
+    n_intentos = 0
     for p in paso2:
         eid = p["prev"]["event_id"]
         if eid in medidos:
@@ -227,13 +278,16 @@ def main() -> None:
             p["origen_deltas"] = "sonda_2c1"
             n_medidos_sonda += 1
             continue
-        if args.medir_faltantes:
-            d = _deltas_de_ficheros(p["prev"], p["next"],
-                                    meta_por_box.get(p["box"], {}),
-                                    budget_s=args.budget_s)
+        if args.medir_faltantes and (args.limite is None
+                                     or n_intentos < args.limite):
+            n_intentos += 1
+            d, motivo = _deltas_de_ficheros(p["prev"], p["next"],
+                                            meta_por_box.get(p["box"], {}),
+                                            budget_s=args.budget_s)
             p["deltas"] = d
             p["origen_deltas"] = "medido_dirigido"
-            if any(v is not None for v in d.values()):
+            p["motivo"] = motivo
+            if all(d.get(k) is not None for k in ("d_tv", "d_rr")):
                 n_medidos_directo += 1
             else:
                 n_sin_medir += 1
@@ -241,6 +295,7 @@ def main() -> None:
             p["deltas"] = {k: None for k in
                            ("d_peep", "d_fio2", "d_tv", "d_rr")}
             p["origen_deltas"] = "sin_medir"
+            p["motivo"] = "no medido (falta --medir-faltantes)"
             n_sin_medir += 1
 
     paso3 = [p for p in paso2 if p["deltas"].get("d_tv") is not None
@@ -288,6 +343,16 @@ def main() -> None:
     print(f"deltas: sonda {n_medidos_sonda} · medidos dirigidos {n_medidos_directo}"
           f" · sin medir {n_sin_medir}")
     print(f"controles disponibles (hueco > 24 h, con TV y FR): {len(controles)}")
+    con_motivo = [(p["prev"]["event_id"], p.get("motivo") or "")
+                  for p in paso2 if p["deltas"].get("d_tv") is None
+                  or p["deltas"].get("d_rr") is None]
+    if con_motivo:
+        print(f"{len(con_motivo)} parejas sin TV/FR medibles:")
+        razones: dict[str, int] = {}
+        for _eid, m in con_motivo:
+            razones[m] = razones.get(m, 0) + 1
+            print(f"  - {_eid}: {m}")
+        print(f"  motivos: {razones}")
     if paso4:
         desf = sorted(p["desfase_vent_monitor_h"] for p in paso4)
         print(f"desfase vent-monitor en las candidatas: p10 "
@@ -306,6 +371,9 @@ def main() -> None:
                         "desfase_vent_monitor_h": p["desfase_vent_monitor_h"],
                         "deltas": p["deltas"], "origen_deltas": p["origen_deltas"]}
                        for p in paso4],
+        "sin_medir": [{**_id_estable(p), "motivo": p.get("motivo")}
+                      for p in paso2 if p["deltas"].get("d_tv") is None
+                      or p["deltas"].get("d_rr") is None],
         "controles_disponibles": [
             {**_id_estable(p), "gap_h": p["gap_h"],
              "desfase_vent_monitor_h": p["desfase_vent_monitor_h"]}
