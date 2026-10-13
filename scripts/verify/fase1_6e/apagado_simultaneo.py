@@ -128,7 +128,15 @@ def _monitor_median(paths: list[str], lo_min: float, hi_min: float,
 
 
 def _pair_deltas(prev: dict, nxt: dict) -> dict:
-    """Δ de ajustes entre los últimos 30 min de ``prev`` y los primeros de ``nxt``."""
+    """Δ de ajustes entre los últimos 30 min de ``prev`` y los primeros de ``nxt``.
+
+    OJO con las CLAVES: deben ser ``d_peep``/``d_fio2``/``d_tv``/``d_rr``, que son
+    las que consume `_criterios`. Antes se derivaban del nombre de la variable
+    (``d_tv_exp``, ``d_vent_rr``) y por eso las variantes b/c/d salian siempre 0
+    pares ("no evaluadas" sin serlo).
+    """
+    alias = {"PEEP": "d_peep", "FIO2": "d_fio2", "TV_EXP": "d_tv",
+             "VENT_RR": "d_rr"}
     fin = prev.get("fin_vent_activa_h")
     if fin is None:
         return {}
@@ -138,7 +146,7 @@ def _pair_deltas(prev: dict, nxt: dict) -> dict:
     n0 = (min(act) if act else 0) / 60.0
     after = {k: _median_in(nxt, k, n0 * 60.0, (n0 + 0.5) * 60.0)
              for k in ("PEEP", "FIO2", "TV_EXP", "VENT_RR")}
-    return {f"d_{k.lower()}": _delta(before[k], after[k]) for k in before}
+    return {alias[k]: _delta(before[k], after[k]) for k in before}
 
 
 def continuidad_ok(d: dict) -> bool | None:
@@ -182,7 +190,7 @@ def classify(gap_h: float | None, gap_has_files: bool | None,
     return "D_indeterminado"
 
 
-def _seccion_union(casos: list[dict], *, gap_max_h: float = 2.0,
+def _seccion_union(cohort: str, casos: list[dict], *, gap_max_h: float = 2.0,
                    return_min: float = 15.0) -> list[str]:
     """Seccion del informe: pares que cumplen la regla ESTRECHA de union (2c.2).
 
@@ -228,11 +236,17 @@ def _seccion_union(casos: list[dict], *, gap_max_h: float = 2.0,
         lines.append(f"| Tambien con grabacion (box on, paciente fuera) y "
                      f"<= {gmax:g} h | {n} |")
     lines += ["",
-              "**Decision (12/10)**: se mantiene la regla ESTRICTA tal cual. Las "
-              "variantes de la tabla son informativas: en ClinIC no hay ningun "
-              "caso con grabador parado y hueco <= 2 h, asi que no se une "
-              "ninguna pareja y los eventos con apagado simultaneo quedan "
-              "censurados como hasta ahora (`end_of_record`).", ""]
+              f"**Conclusion ({cohort})**: se mantiene la regla ESTRICTA. " +
+              (f"Se unen **{len(cumplen)}** parejas de {cohort} "
+               f"(grabador parado y hueco <= {gap_max_h:g} h)." if cumplen else
+               f"En {cohort} no hay ninguna pareja con grabador parado y hueco "
+               f"<= {gap_max_h:g} h (la unica candidata de ese tipo tiene un "
+               f"hueco mayor), asi que no se une ninguna y los apagados "
+               f"simultaneos quedan censurados como hasta ahora "
+               f"(`end_of_record`).") +
+              " Las variantes de la tabla son informativas, no se aplican. "
+              f"Total de eventos con apagado simultaneo en {cohort}: "
+              f"{len(casos)}.", ""]
     if cumplen:
         lines += ["| Evento (primero del par) | hueco (h) | dPEEP | dFiO2 | "
                   "dFC | dSpO2 |", "|---|---|---|---|---|---|"]
@@ -257,7 +271,7 @@ def _bloque_cohort(cohort: str, casos: list[dict],
         f"- Eventos con apagado simultaneo (<= {EDGE_MIN:.0f} min): "
         f"**{len(casos)}**",
         f"- Clases: {resumen}", ""]
-    out += _seccion_union(casos)
+    out += _seccion_union(cohort, casos)
     out += ["| Evento | hueco (h) | ficheros en el hueco | empieza activa | "
             "fragmento | dPEEP | dFiO2 | dTV | dRR | dFC | dSpO2 | clase |",
             "|---|---|---|---|---|---|---|---|---|---|---|---|"]
@@ -286,14 +300,25 @@ def _solo_informe() -> int:
         md += _seccion_neg(cohort, neg)
         md += _bloque_cohort(cohort, data[cohort], nota=nota)
     md += ["## Notas de interpretacion", "",
-           "1. **Las variantes con TV y FR NO se han evaluado.** Las filas "
-           "`+ |dTV| <= 50 mL` y `+ |dRR| <= 2` tienen 0 pares de control porque "
-           "en esas ventanas no hay valores de TV_EXP/VENT_RR, no porque salgan "
-           "0 %. La conclusion de que la continuidad no discrimina esta "
-           "demostrada **solo para PEEP y FiO2**, que son ajustes y se repiten "
-           "entre pacientes; el TV y la FR medidos son propios de cada paciente "
-           "y podrian discriminar mejor. No cambia la decision (regla estricta), "
-           "pero el criterio queda marcado como **no evaluado**.", "",
+           "1. **TV y FR SI se evaluan, y discriminan mucho mejor que los "
+           "ajustes.** Las variantes b/c/d salian 0 pares por un fallo de nombres "
+           "de clave en `_pair_deltas` (generaba `d_tv_exp`/`d_vent_rr` y el "
+           "criterio buscaba `d_tv`/`d_rr`), no porque no hubiera datos: ya estan "
+           "calculadas con su IC de Wilson. Con las 27 parejas de control:", "",
+           "   - a) PEEP y FiO2: **59,3 %** [40,7 %, 75,5 %] de falsos positivos "
+           "- no discrimina (son ajustes que se repiten entre pacientes).", "",
+           "   - b) a + |dTV| <= 50 mL: **22,2 %** [10,6 %, 40,8 %].", "",
+           "   - c) a + |dRR| <= 2: **11,1 %** [3,9 %, 28,1 %].", "",
+           "   - d) a + TV y FR: **3,7 %** [0,7 %, 18,3 %]. El TV y la FR medidos "
+           "son propios de cada paciente, y anadirlos baja el FP de 59 % a 3,7 %.", "",
+           "   **Consecuencia**: el punto de parada de 2c.3 (> 10 % de FP) se "
+           "basaba en la variante a. La variante d queda por debajo en la "
+           "estimacion puntual (limite superior 18,3 %). Aplicarla uniria 21 de "
+           "las 45 parejas candidatas de Clinic. **Requiere decision del "
+           "usuario**: cambiar la regla implica rehacer el rebuild v0.6.0, que ya "
+           "esta aplicando la regla estricta.", "",
+           "   (La fila con 0 pares de control se imprime como **no evaluado**, "
+           "nunca como \"0 %\".)", "",
            "2. **La clase A/B/C/D tiene dos cifras porque son dos criterios "
            "distintos**, no porque haya un error:", "",
            "   - El diagnostico (con lectura de ficheros) da **A = 6** entre los "
@@ -444,7 +469,7 @@ def _seccion_neg(cohort: str, neg: dict) -> list[str]:
     if dist:
         out += ["|Δ| del hueco | grupo | n | p10 | p50 | p90 |",
                 "|---|---|---|---|---|---|"]
-        for var in ("d_peep", "d_fio2", "d_tv"):
+        for var in ("d_peep", "d_fio2", "d_tv", "d_rr"):
             for grupo in ("control", "candidatos"):
                 vals = sorted(float(x) for x in
                               (dist.get(grupo, {}).get(var) or []))
@@ -679,8 +704,10 @@ def main() -> None:
             tot = {k: 0 for k in "abcd"}
             cand = {k: 0 for k in "abcd"}
             n_cand = 0
-            dist = {"control": {"d_peep": [], "d_fio2": [], "d_tv": []},
-                    "candidatos": {"d_peep": [], "d_fio2": [], "d_tv": []}}
+            dist = {"control": {"d_peep": [], "d_fio2": [], "d_tv": [],
+                               "d_rr": []},
+                    "candidatos": {"d_peep": [], "d_fio2": [], "d_tv": [],
+                                   "d_rr": []}}
             for b, lst in by_box.items():
                 for i in range(len(lst) - 1):
                     eid_a, eid_b = lst[i][1], lst[i + 1][1]
@@ -698,7 +725,7 @@ def main() -> None:
                     cual = ("control" if gap > 24.0
                             else "candidatos" if gap <= 12.0 else None)
                     if cual is not None:
-                        for k in ("d_peep", "d_fio2", "d_tv"):
+                        for k in ("d_peep", "d_fio2", "d_tv", "d_rr"):
                             if d.get(k) is not None:
                                 dist[cual][k].append(abs(float(d[k])))
                     if gap > 24.0:            # control negativo (DISTINTOS)

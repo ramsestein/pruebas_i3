@@ -7,14 +7,11 @@ Candidatos (hueco <= 12 h, posible mismo curso): **45**
 | Criterio | Pares control (>24 h) | Cumplen | Tasa FP | IC 95 % (Wilson) |
 |---|---|---|---|---|
 | dPEEP <= 3 y dFiO2 <= 20 (D-f) | 27 | 16 | 59.3 % | [40.7 %, 75.5 %] |
-| a + |dTV| <= 50 mL | 0 | — | **no evaluado** | — |
-| a + |dRR| <= 2 | 0 | — | **no evaluado** | — |
-| a + TV y RR | 0 | — | **no evaluado** | — |
+| a + |dTV| <= 50 mL | 27 | 6 | 22.2 % | [10.6 %, 40.8 %] |
+| a + |dRR| <= 2 | 27 | 3 | 11.1 % | [3.9 %, 28.1 %] |
+| a + TV y RR | 27 | 1 | 3.7 % | [0.7 %, 18.3 %] |
 
-**No evaluado**: en los pares de control no hay valores de TV_EXP/VENT_RR en las ventanas de ±30 min, asi que las filas b/c/d NO se han podido juzgar (no es que salgan 0 %). La conclusion de que la continuidad no discrimina esta demostrada **solo para PEEP y FiO2**, que son AJUSTES y se repiten entre pacientes; el TV y la FR medidos son propios de cada paciente y podrian discriminar mejor. No cambia la decision (regla estricta), pero el criterio queda marcado como no evaluado.
-
-
-De los candidatos (<= 12 h), cumplen: {'a': 40, 'b': 0, 'c': 0, 'd': 0}
+De los candidatos (<= 12 h), cumplen: {'a': 40, 'b': 29, 'c': 24, 'd': 21}
 
 |Δ| del hueco | grupo | n | p10 | p50 | p90 |
 |---|---|---|---|---|---|
@@ -22,6 +19,10 @@ De los candidatos (<= 12 h), cumplen: {'a': 40, 'b': 0, 'c': 0, 'd': 0}
 | d_peep | candidatos | 44 | 0.00 | 0.10 | 2.10 |
 | d_fio2 | control | 28 | 0.00 | 10.00 | 40.00 |
 | d_fio2 | candidatos | 44 | 0.00 | 0.00 | 6.00 |
+| d_tv | control | 28 | 22.00 | 128.00 | 250.50 |
+| d_tv | candidatos | 44 | 1.00 | 18.00 | 86.00 |
+| d_rr | control | 28 | 1.00 | 3.00 | 9.00 |
+| d_rr | candidatos | 44 | 0.00 | 2.00 | 7.00 |
 
 Sensibilidad de la regla a los umbrales de continuidad:
 
@@ -55,7 +56,7 @@ Aun con el umbral mas estricto (dPEEP <= 0,5 y dFiO2 <= 2) la tasa de FP queda e
 | Tambien con grabacion (box on, paciente fuera) y <= 6 h | 6 |
 | Tambien con grabacion (box on, paciente fuera) y <= 12 h | 8 |
 
-**Decision (12/10)**: se mantiene la regla ESTRICTA tal cual. Las variantes de la tabla son informativas: en ClinIC no hay ningun caso con grabador parado y hueco <= 2 h, asi que no se une ninguna pareja y los eventos con apagado simultaneo quedan censurados como hasta ahora (`end_of_record`).
+**Conclusion (clinic)**: se mantiene la regla ESTRICTA. En clinic no hay ninguna pareja con grabador parado y hueco <= 2 h (la unica candidata de ese tipo tiene un hueco mayor), asi que no se une ninguna y los apagados simultaneos quedan censurados como hasta ahora (`end_of_record`). Las variantes de la tabla son informativas, no se aplican. Total de eventos con apagado simultaneo en clinic: 63.
 
 | Evento | hueco (h) | ficheros en el hueco | empieza activa | fragmento | dPEEP | dFiO2 | dTV | dRR | dFC | dSpO2 | clase |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -130,14 +131,11 @@ Candidatos (hueco <= 12 h, posible mismo curso): **15**
 | Criterio | Pares control (>24 h) | Cumplen | Tasa FP | IC 95 % (Wilson) |
 |---|---|---|---|---|
 | dPEEP <= 3 y dFiO2 <= 20 (D-f) | 2 | 1 | 50.0 % | [9.5 %, 90.5 %] |
-| a + |dTV| <= 50 mL | 0 | — | **no evaluado** | — |
-| a + |dRR| <= 2 | 0 | — | **no evaluado** | — |
-| a + TV y RR | 0 | — | **no evaluado** | — |
+| a + |dTV| <= 50 mL | 2 | 1 | 50.0 % | [9.5 %, 90.5 %] |
+| a + |dRR| <= 2 | 2 | 0 | 0.0 % | [0.0 %, 65.8 %] |
+| a + TV y RR | 2 | 0 | 0.0 % | [0.0 %, 65.8 %] |
 
-**No evaluado**: en los pares de control no hay valores de TV_EXP/VENT_RR en las ventanas de ±30 min, asi que las filas b/c/d NO se han podido juzgar (no es que salgan 0 %). La conclusion de que la continuidad no discrimina esta demostrada **solo para PEEP y FiO2**, que son AJUSTES y se repiten entre pacientes; el TV y la FR medidos son propios de cada paciente y podrian discriminar mejor. No cambia la decision (regla estricta), pero el criterio queda marcado como no evaluado.
-
-
-De los candidatos (<= 12 h), cumplen: {'a': 1, 'b': 0, 'c': 0, 'd': 0}
+De los candidatos (<= 12 h), cumplen: {'a': 1, 'b': 1, 'c': 1, 'd': 1}
 
 |Δ| del hueco | grupo | n | p10 | p50 | p90 |
 |---|---|---|---|---|---|
@@ -145,6 +143,10 @@ De los candidatos (<= 12 h), cumplen: {'a': 1, 'b': 0, 'c': 0, 'd': 0}
 | d_peep | candidatos | 1 | 2.20 | 2.20 | 2.20 |
 | d_fio2 | control | 2 | 10.40 | 31.30 | 10.40 |
 | d_fio2 | candidatos | 12 | 0.00 | 0.15 | 0.40 |
+| d_tv | control | 10 | 18.00 | 120.50 | 275.25 |
+| d_tv | candidatos | 15 | 1.50 | 37.00 | 104.50 |
+| d_rr | control | 9 | 1.00 | 5.00 | 10.00 |
+| d_rr | candidatos | 15 | 0.00 | 1.90 | 6.78 |
 
 Sensibilidad de la regla a los umbrales de continuidad:
 
@@ -180,7 +182,7 @@ Aun con el umbral mas estricto (dPEEP <= 0,5 y dFiO2 <= 2) la tasa de FP queda e
 | Tambien con grabacion (box on, paciente fuera) y <= 6 h | 0 |
 | Tambien con grabacion (box on, paciente fuera) y <= 12 h | 0 |
 
-**Decision (12/10)**: se mantiene la regla ESTRICTA tal cual. Las variantes de la tabla son informativas: en ClinIC no hay ningun caso con grabador parado y hueco <= 2 h, asi que no se une ninguna pareja y los eventos con apagado simultaneo quedan censurados como hasta ahora (`end_of_record`).
+**Conclusion (vitaldb)**: se mantiene la regla ESTRICTA. En vitaldb no hay ninguna pareja con grabador parado y hueco <= 2 h (la unica candidata de ese tipo tiene un hueco mayor), asi que no se une ninguna y los apagados simultaneos quedan censurados como hasta ahora (`end_of_record`). Las variantes de la tabla son informativas, no se aplican. Total de eventos con apagado simultaneo en vitaldb: 15.
 
 | Evento | hueco (h) | ficheros en el hueco | empieza activa | fragmento | dPEEP | dFiO2 | dTV | dRR | dFC | dSpO2 | clase |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -202,7 +204,19 @@ Aun con el umbral mas estricto (dPEEP <= 0,5 y dFiO2 <= 2) la tasa de FP queda e
 
 ## Notas de interpretacion
 
-1. **Las variantes con TV y FR NO se han evaluado.** Las filas `+ |dTV| <= 50 mL` y `+ |dRR| <= 2` tienen 0 pares de control porque en esas ventanas no hay valores de TV_EXP/VENT_RR, no porque salgan 0 %. La conclusion de que la continuidad no discrimina esta demostrada **solo para PEEP y FiO2**, que son ajustes y se repiten entre pacientes; el TV y la FR medidos son propios de cada paciente y podrian discriminar mejor. No cambia la decision (regla estricta), pero el criterio queda marcado como **no evaluado**.
+1. **TV y FR SI se evaluan, y discriminan mucho mejor que los ajustes.** Las variantes b/c/d salian 0 pares por un fallo de nombres de clave en `_pair_deltas` (generaba `d_tv_exp`/`d_vent_rr` y el criterio buscaba `d_tv`/`d_rr`), no porque no hubiera datos: ya estan calculadas con su IC de Wilson. Con las 27 parejas de control:
+
+   - a) PEEP y FiO2: **59,3 %** [40,7 %, 75,5 %] de falsos positivos - no discrimina (son ajustes que se repiten entre pacientes).
+
+   - b) a + |dTV| <= 50 mL: **22,2 %** [10,6 %, 40,8 %].
+
+   - c) a + |dRR| <= 2: **11,1 %** [3,9 %, 28,1 %].
+
+   - d) a + TV y FR: **3,7 %** [0,7 %, 18,3 %]. El TV y la FR medidos son propios de cada paciente, y anadirlos baja el FP de 59 % a 3,7 %.
+
+   **Consecuencia**: el punto de parada de 2c.3 (> 10 % de FP) se basaba en la variante a. La variante d queda por debajo en la estimacion puntual (limite superior 18,3 %). Aplicarla uniria 21 de las 45 parejas candidatas de Clinic. **Requiere decision del usuario**: cambiar la regla implica rehacer el rebuild v0.6.0, que ya esta aplicando la regla estricta.
+
+   (La fila con 0 pares de control se imprime como **no evaluado**, nunca como "0 %".)
 
 2. **La clase A/B/C/D tiene dos cifras porque son dos criterios distintos**, no porque haya un error:
 

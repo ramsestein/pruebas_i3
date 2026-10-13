@@ -17,12 +17,11 @@ que solo se usan para el analisis de sensibilidad:
   con ``--probar``; sin el, A nunca se asigna (cae a D, conservador) y la clase
   debe leerse como aproximada. **Definicion unica**: la anotacion con
   ``--probar`` sobre el indice v0.6.0.
-- ``next_return_ventilated_30min``: la region siguiente del mismo box tiene
-  ventilacion activa en <= 30 min de su t0. OJO: sale **casi siempre cierto** en
-  Clinic (168 de 181) porque los pacientes llegan intubados de quirofano; por si
-  solo no informa.
-- ``next_return_ventilated_12h``: el campo INFORMATIVO: vuelve ventilado **y** el
-  hueco es <= 12 h. Es la base de la columna (c) de la tabla final.
+- ``return_ventilated_within_12h``: **el campo informativo**: el evento siguiente
+  del mismo box empieza ventilado **y** el hueco es <= 12 h. (El primitivo "vuelve
+  ventilado en <= 30 min" salia cierto en 168 de 181 eventos de Clinic, porque
+  los pacientes llegan intubados de quirofano: por si solo no informaba, asi que
+  NO se guarda.) Es la base de la columna (c) de la tabla final.
 - ``next_same_box_vent_start_gap_h``: hueco desde el fin de la observacion de
   este evento hasta el inicio de la ventilacion del evento siguiente del mismo
   box (crudo, para el analisis de sensibilidad).
@@ -248,29 +247,23 @@ def main() -> None:
         return [por_nombre[n] for n in (e.get("source_files") or [])
                 if n in por_nombre]
 
-    n_prev_gap = n_cls = n_next = n_next12 = n_cont = 0
+    n_prev_gap = n_cls = n_ret12 = n_cont = 0
     clases: dict[str, int] = {}
     detalle: list[dict] = []
     for b, evs in by_box.items():
         files = boxes.get(b, [])
         for i, e in enumerate(evs):
-            # next_return_ventilated_30min: casi siempre cierto en Clinic (los
-            # pacientes llegan intubados de quirofano), asi que por si solo no
-            # sirve. Lo informativo es el campo COMBINADO con el hueco.
+            # return_ventilated_within_12h: vuelve ventilado Y hueco <= 12 h. El
+            # primitivo "en <= 30 min" no se guarda: salia cierto en 168 de 181
+            # eventos de Clinic (llegan intubados de quirofano) y no informaba.
             nxt = evs[i + 1] if i + 1 < len(evs) else None
-            e["next_return_ventilated_30min"] = (
-                bool(nxt is not None and _starts_ventilated(nxt, RETURN_MIN_30)))
-            n_next += int(e["next_return_ventilated_30min"])
-            # Hueco hasta el INICIO DE VENTILACION del evento siguiente del mismo
-            # box: es la base de la columna (c) "censuras por salida con vuelta
-            # ventilada <= 12 h".
             gap_next = (round(float(nxt["t0_unix"]) / 3600.0 - _exit_h(e), 4)
                         if nxt is not None else None)
             e["next_same_box_vent_start_gap_h"] = gap_next
-            e["next_return_ventilated_12h"] = bool(
+            e["return_ventilated_within_12h"] = bool(
                 gap_next is not None and 0.0 <= gap_next <= MAX_GAP_H
                 and _starts_ventilated(nxt, RETURN_MIN_30))
-            n_next12 += int(e["next_return_ventilated_12h"])
+            n_ret12 += int(e["return_ventilated_within_12h"])
             if i == 0:
                 e["prev_exit_same_box_gap_h"] = None
                 e["prev_exit_class"] = None
@@ -312,9 +305,7 @@ def main() -> None:
     print(f"- prev_exit_same_box_gap_h relleno: {n_prev_gap}")
     print(f"- prev_exit_class: {n_cls} -> {clases} (continuidad de ajustes "
           f"evaluada en {n_cont} pares)")
-    print(f"- next_return_ventilated_30min = True: {n_next} "
-          f"(casi siempre: llegan intubados)\n"
-          f"- next_return_ventilated_12h = True: {n_next12} (el informativo)")
+    print(f"- return_ventilated_within_12h = True: {n_ret12}")
     if args.dry_run:
         # Por que se asigna cada clase: hueco y evidencia de ficheros del par.
         por_clase: dict[str, list[dict]] = {}
