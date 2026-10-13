@@ -38,6 +38,7 @@ import hashlib
 import json
 import random
 import sys
+import threading
 from pathlib import Path
 
 import numpy as np
@@ -67,6 +68,9 @@ SEMILLA = 20261013
 N_CONTROLES = 12
 MARGEN_H = 6.0            # ventana antes/despues
 GAP_CONTROL_H = 24.0      # controles: pacientes distintos
+SHA_CACHE = REPORT / "sha_contenido_cache.json"
+SHA_BUDGET_S = 240.0      # presupuesto por fichero (D: tiene rachas de bloqueo)
+SHA_CHUNK = 8 * 1024 * 1024
 # Variante d (13/10)
 D_PEEP = 3.0
 D_FIO2 = 20.0
@@ -116,6 +120,13 @@ def _dos_ultimos(files: list) -> list:
 
 def _dos_primeros(files: list) -> list:
     return sorted(files, key=lambda f: f.dt_unix)[:2]
+
+
+def _ficheros_del_corte(prev: dict, nxt: dict, meta: dict) -> tuple[list, list]:
+    """Ficheros a cada lado del corte: los dos ultimos del 1.o y los dos 1.os del 2.o."""
+    f_prev = _dos_ultimos(_ficheros_de(prev, meta))
+    f_next = _dos_primeros(_ficheros_de(nxt, meta))
+    return f_prev, f_next
 
 
 def _desde_cascada(path: Path, idx_por_id: dict) -> dict:
@@ -185,6 +196,83 @@ def _mediana(serie: tuple[np.ndarray, np.ndarray] | None) -> float | None:
     return None if serie is None else float(np.nanmedian(serie[1]))
 
 
+def _con_presupuesto(fn, *, budget_s: float):
+    """Ejecuta ``fn`` en un hilo con presupuesto. Devuelve ``(ok, valor, error)``.
+
+    Hace falta en `D:`: un `stat` o un `read` puede quedarse colgado horas. El
+    hilo es daemon: si se pasa el presupuesto se abandona y se reporta el
+    motivo, nunca se bloquea el paquete entero.
+    """
+    caja: dict = {}
+
+    def _run() -> None:
+        try:
+            caja["v"] = fn()
+        except BaseException as exc:  # noqa: BLE001
+            caja["err"] = f"{type(exc).__name__}: {exc}"
+
+    h = threading.Thread(target=_run, daemon=True)
+    h.start()
+    h.join(budget_s)
+    if h.is_alive():
+        return False, None, "timeout"
+    if "err" in caja:
+        return False, None, caja["err"]
+    return True, caja.get("v"), None
+
+
+def _carga_sha_cache() -> dict:
+    if not SHA_CACHE.exists():
+        return {}
+    try:
+        return json.loads(SHA_CACHE.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _guarda_sha_cache(cache: dict) -> None:
+    SHA_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    SHA_CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=1),
+                         encoding="utf-8")
+
+
+def _sha_contenido(path: Path, cache: dict, *,
+                   budget_s: float) -> tuple[str | None, int | None, str]:
+    """SHA-256 del **CONTENIDO** del fichero (streaming), con cache y presupuesto.
+
+    Punto 4 del encargo: la clave va con el SHA-256 del contenido, no del
+    nombre (el nombre no prueba que el fichero sea el mismo; el contenido si).
+
+    Devuelve ``(hex, tamano_bytes, motivo)``. La cache (`reports/fase1_6e/
+    sha_contenido_cache.json`) evita releer los mismos ficheros entre tandas.
+    """
+    clave = str(path)
+    ok, st, err = _con_presupuesto(lambda: path.stat(), budget_s=30.0)
+    if not ok:
+        return None, None, f"no se pudo medir el fichero ({err})"
+    firma = f"{st.st_size}|{int(st.st_mtime)}"
+    prev = cache.get(clave)
+    if prev and prev.get("firma") == firma and prev.get("sha256"):
+        return prev["sha256"], st.st_size, ""
+
+    def _hash() -> str:
+        d = hashlib.sha256()
+        with open(path, "rb") as fh:
+            while True:
+                b = fh.read(SHA_CHUNK)
+                if not b:
+                    break
+                d.update(b)
+        return d.hexdigest()
+
+    ok, hexa, err = _con_presupuesto(_hash, budget_s=budget_s)
+    if not ok:
+        cache[clave] = {"firma": firma, "sha256": None, "motivo": err}
+        return None, st.st_size, f"sha del contenido no calculado ({err})"
+    cache[clave] = {"firma": firma, "sha256": hexa, "motivo": ""}
+    return hexa, st.st_size, ""
+
+
 def _pintar(pareja: dict, meta: dict, idx_por_id: dict, png: Path,
             codigo: str, *, con_tabla: bool = True) -> bool:
     import matplotlib
@@ -193,8 +281,7 @@ def _pintar(pareja: dict, meta: dict, idx_por_id: dict, png: Path,
 
     prev = idx_por_id[pareja["prev"]]
     nxt = idx_por_id[pareja["next"]]
-    f_prev = _dos_ultimos(_ficheros_de(prev, meta))
-    f_next = _dos_primeros(_ficheros_de(nxt, meta))
+    f_prev, f_next = _ficheros_del_corte(prev, nxt, meta)
     t0_prev = float(prev["t0_unix"])
     t0_next = float(nxt["t0_unix"])
     vp = float((prev.get("attempts") or [{}])[-1].get("vent_end_h") or 0.0)
@@ -302,6 +389,10 @@ def main() -> None:
     p.add_argument("--solo-lista", action="store_true",
                    help="Solo cuenta candidatas y controles (no pinta PNG).")
     p.add_argument("--max-pares", type=int, default=None)
+    p.add_argument("--sin-sha", action="store_true",
+                   help="No calcular el SHA-256 del contenido (mas rapido).")
+    p.add_argument("--sha-budget-s", type=float, default=SHA_BUDGET_S,
+                   help="Presupuesto por fichero al hashear (D: se cuelga).")
     p.add_argument("--config", default=str(CONFIG))
     args = p.parse_args()
 
@@ -355,6 +446,7 @@ def main() -> None:
         seleccion = seleccion[: args.max_pares]
     claves: dict[str, dict] = {}
     sin_casar: list[dict] = []
+    sha_cache = _carga_sha_cache()
     out_dir = Path(args.out_dir) if args.out_dir else REPORT / "adjudicacion" / args.cohort
     for n, par_ in enumerate(seleccion, start=1):
         codigo = f"P{n:02d}"
@@ -368,16 +460,37 @@ def main() -> None:
         meta = meta_por_box.get(par_["box"], {})
         _pintar({**par_, "prev": eid_prev, "next": eid_next},
                 meta, idx_por_id, out_dir / f"{codigo}.png", codigo)
+        f_prev, f_next = _ficheros_del_corte(
+            idx_por_id[eid_prev], idx_por_id[eid_next], meta)
+        f_prev = f_prev[-1] if f_prev else None
+        f_next = f_next[0] if f_next else None
+        sha_prev = sha_next = None
+        size_prev = size_next = None
+        if not args.sin_sha:
+            if f_prev is not None:
+                sha_prev, size_prev, mot = _sha_contenido(
+                    f_prev.path, sha_cache, budget_s=args.sha_budget_s)
+                if mot:
+                    print(f"  {codigo}: SHA prev {mot}", flush=True)
+            if f_next is not None:
+                sha_next, size_next, mot = _sha_contenido(
+                    f_next.path, sha_cache, budget_s=args.sha_budget_s)
+                if mot:
+                    print(f"  {codigo}: SHA next {mot}", flush=True)
+            _guarda_sha_cache(sha_cache)
         claves[codigo] = {
             "tipo": par_["tipo"],
             # Identificadores ESTABLES (nunca event_id posicional)
             "box": par_["box"],
             "prev_end_epoch": par_.get("prev_end_epoch"),
             "next_start_epoch": par_.get("next_start_epoch"),
-            "prev_file": par_.get("prev_file"),
-            "prev_file_sha256": par_.get("prev_file_sha256"),
-            "next_file": par_.get("next_file"),
-            "next_file_sha256": par_.get("next_file_sha256"),
+            # Fichero de origen que cubre el corte a cada lado.
+            "prev_file": None if f_prev is None else f_prev.path.name,
+            "prev_file_size": size_prev,
+            "prev_file_sha256_content": sha_prev,
+            "next_file": None if f_next is None else f_next.path.name,
+            "next_file_size": size_next,
+            "next_file_sha256_content": sha_next,
             "gap_h": par_.get("gap_h"),
             "desfase_vent_monitor_h": par_.get("desfase_vent_monitor_h"),
             **(par_.get("deltas") or {}),
@@ -448,11 +561,16 @@ cambies la columna `codigo`.**
                f"(de {len(par['controles'])} disponibles)",
                f"- Semilla: `{args.semilla}` · codigos `P01`…`P{n:02d}`",
                f"- Clave (FUERA del repo): `{clave_path}`",
-               f"- SHA-256 de la clave: `{sha}`", "",
+               f"- SHA-256 de la clave: `{sha}`",
+               f"- Identificadores por pareja: box + epoch del fin del primer "
+               f"tramo + epoch del inicio del segundo, y el fichero de origen "
+               f"que cubre el corte a cada lado con su **SHA-256 del CONTENIDO** "
+               f"(no del nombre) y su tamano. Sin `--sin-sha`.",
+               "",
                "Identificadores ESTABLES por pareja (nunca `event_id` "
                "posicional): box + epoch del fin del primer tramo + epoch del "
-               "inicio del segundo + hash del NOMBRE del fichero de origen de "
-               "cada lado. Al aplicar la adjudicacion se empareja por esos "
+               "inicio del segundo + SHA-256 del CONTENIDO del fichero de origen "
+               "de cada lado. Al aplicar la adjudicacion se empareja por esos "
                "tiempos (±15 min).", ""]
     if sin_casar:
         informe += [f"**{len(sin_casar)} parejas NO casaron por tiempos** y no se "

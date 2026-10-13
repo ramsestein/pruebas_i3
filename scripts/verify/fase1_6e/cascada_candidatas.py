@@ -36,6 +36,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import random
 import sys
 import threading
 from pathlib import Path
@@ -65,6 +66,10 @@ from annotate_index import (  # noqa: E402
 CONFIG = ROOT / "src/stage0/config/harmonize.yaml"
 REPORT = ROOT / "reports" / "fase1_6e"
 D_PEEP, D_FIO2, D_TV, D_RR = 3.0, 20.0, 50.0, 2.0
+GAP_CONTROL_H = 24.0       # negativo: parejas separadas > 24 h = pacientes distintos
+SEMILLA_CONTROLES = 20261013
+N_CONTROLES = 12
+MAX_INTENTOS_CONTROL = 30
 PEEP_T = ("Intellivue/PEEP_CMH2O",)
 FIO2_T = ("Intellivue/FIO2",)
 TV_T = ("Intellivue/TV_EXP",)
@@ -74,6 +79,11 @@ RR_T = ("Intellivue/VENT_RR",)
 def _sha_nombre(nombre: str) -> str:
     """SHA-256 del NOMBRE del fichero (identificador estable, sin leerlo)."""
     return hashlib.sha256(nombre.encode("utf-8")).hexdigest()
+
+
+def _deltas_de_cache(v: dict) -> dict:
+    """Los 4 deltas desde una entrada de cache (ignora las claves auxiliares)."""
+    return {k: v.get(k) for k in ("d_peep", "d_fio2", "d_tv", "d_rr")}
 
 
 def _es_censurado(e: dict) -> bool:
@@ -239,8 +249,8 @@ def _id_estable(par: dict) -> dict:
                                 + float(att[-1].get("vent_end_h") or 0.0)
                                 * 3600.0, 1),
         "next_start_epoch": round(float(nxt["t0_unix"]), 1),
-        "prev_file": f_prev, "prev_file_sha256": _sha_nombre(f_prev),
-        "next_file": f_next, "next_file_sha256": _sha_nombre(f_next),
+        "prev_file": f_prev, "prev_file_sha256_nombre": _sha_nombre(f_prev),
+        "next_file": f_next, "next_file_sha256_nombre": _sha_nombre(f_next),
     }
 
 
@@ -253,9 +263,18 @@ def main() -> None:
     p.add_argument("--cohort", required=True, choices=sorted(SPECS))
     p.add_argument("--index", default=None)
     p.add_argument("--medir-faltantes", action="store_true",
+                   help="Mide leyendo D: las parejas sin deltas de la sonda.")
+    p.add_argument("--reintentar-fallos", action="store_true",
+                   help="Vuelve a intentar las parejas ya intentadas y fallidas.")
                    help="Mide los deltas de los pares no cubiertos por 2c.1.")
     p.add_argument("--limite", type=int, default=None,
                    help="Mide solo los primeros N pares (depuracion).")
+    p.add_argument("--cache-deltas", default=str(REPORT / "deltas_medidos.json"),
+                   help="Cache de deltas ya medidos (evita repetir lecturas).")
+    p.add_argument("--n-controles", type=int, default=N_CONTROLES,
+                   help="Controles medibles que se intentan reunir.")
+    p.add_argument("--max-intentos-control", type=int, default=MAX_INTENTOS_CONTROL,
+                   help="Tope de pares de control que se intentan medir.")
     p.add_argument("--budget-s", type=float, default=180.0)
     p.add_argument("--json", default=None)
     p.add_argument("--md", default=None)
@@ -282,6 +301,39 @@ def main() -> None:
     paso2 = [p for p in paso1 if p["vuelve"]]
 
     # Deltas: de la sonda si existen, si no (y se pide) medidos dirigidamente.
+    # Cache de deltas medidos: clave = identificador ESTABLE de la pareja. Leer
+    # D: es caro (ficheros de hasta 366 MB) y un relanzamiento no debe repetirlo.
+    cache_path = Path(args.cache_deltas)
+    cache: dict[str, dict] = ({}
+        if not cache_path.exists()
+        else json.loads(cache_path.read_text(encoding="utf-8")))
+
+    def _clave_cache(p: dict) -> str:
+        prev, nxt = p["prev"], p["next"]
+        att = prev.get("attempts") or [{}]
+        return (f"{p['box']}|"
+                f"{float(prev['t0_unix']) + float(att[-1].get('vent_end_h') or 0.0) * 3600.0:.1f}|"
+                f"{float(nxt['t0_unix']):.1f}")
+
+    def _guarda_cache() -> None:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(json.dumps(cache, ensure_ascii=False, indent=1),
+                              encoding="utf-8")
+
+    n_cache = 0
+    # Sembrado: si ya hay un JSON de cascada de esta cohorte, sus candidatas ya
+    # tienen deltas medidos -> se meten en la cache para no releer lo mismo.
+    if args.json and Path(args.json).exists():
+        try:
+            previo = json.loads(Path(args.json).read_text(encoding="utf-8"))
+            for c in previo.get("candidatas") or []:
+                if c.get("deltas", {}).get("d_tv") is not None:
+                    k = (f"{c['box']}|{float(c['prev_end_epoch']):.1f}|"
+                         f"{float(c['next_start_epoch']):.1f}")
+                    cache.setdefault(k, dict(c["deltas"]))
+            print(f"cache sembrada desde {args.json}: {len(cache)} entradas")
+        except Exception as exc:  # noqa: BLE001
+            print(f"[aviso] no se pudo sembrar la cache: {exc}")
     n_medidos_sonda = n_medidos_directo = n_sin_medir = 0
     n_intentos = 0
     for p in paso2:
@@ -295,6 +347,17 @@ def main() -> None:
             continue
         if args.medir_faltantes and (args.limite is None
                                      or n_intentos < args.limite):
+            clave = _clave_cache(p)
+            if clave in cache and not args.reintentar_fallos:
+                p["deltas"] = _deltas_de_cache(cache[clave])
+                p["origen_deltas"] = "cache"
+                p["motivo"] = cache[clave].get("_motivo", "")
+                n_cache += 1
+                if p["deltas"].get("d_tv") is not None:
+                    n_medidos_directo += 1
+                else:
+                    n_sin_medir += 1
+                continue
             n_intentos += 1
             d, motivo = _deltas_de_ficheros(p["prev"], p["next"],
                                             meta_por_box.get(p["box"], {}),
@@ -302,6 +365,8 @@ def main() -> None:
             p["deltas"] = d
             p["origen_deltas"] = "medido_dirigido"
             p["motivo"] = motivo
+            cache[clave] = {**d, "_motivo": motivo}
+            _guarda_cache()
             if all(d.get(k) is not None for k in ("d_tv", "d_rr")):
                 n_medidos_directo += 1
             else:
@@ -323,11 +388,41 @@ def main() -> None:
              and abs(p["deltas"]["d_tv"]) <= D_TV
              and abs(p["deltas"]["d_rr"]) <= D_RR]
     # Controles para la adjudicacion: pacientes distintos (hueco > 24 h) del
-    # mismo box, con TV y FR medibles a ambos lados.
-    controles = [p for p in pares
-                 if p["gap_h"] > 24.0
-                 and p.get("deltas", {}).get("d_tv") is not None
-                 and p.get("deltas", {}).get("d_rr") is not None]
+    # mismo box, con TV y FR medibles a ambos lados. Se miden en orden ALEATORIO
+    # con semilla fija y se para al reunir los pedidos (leer D: es caro).
+    pool = [p for p in pares if p["gap_h"] > GAP_CONTROL_H]
+    rnd = random.Random(SEMILLA_CONTROLES)
+    rnd.shuffle(pool)
+    controles: list[dict] = []
+    intentos_control = 0
+    if args.medir_faltantes:
+        for p in pool:
+            if len(controles) >= args.n_controles:
+                break
+            if intentos_control >= args.max_intentos_control:
+                break
+            intentos_control += 1
+            clave = _clave_cache(p)
+            if clave in cache and not args.reintentar_fallos:
+                p["deltas"] = _deltas_de_cache(cache[clave])
+                n_cache += 1
+            else:
+                d, motivo = _deltas_de_ficheros(p["prev"], p["next"],
+                                                meta_por_box.get(p["box"], {}),
+                                                budget_s=args.budget_s)
+                p["deltas"] = d
+                p["motivo"] = motivo
+                cache[clave] = {**d, "_motivo": motivo}
+                _guarda_cache()
+            if all(p["deltas"].get(k) is not None for k in ("d_tv", "d_rr")):
+                controles.append(p)
+    else:
+        controles = [p for p in pool
+                     if p.get("deltas", {}).get("d_tv") is not None
+                     and p.get("deltas", {}).get("d_rr") is not None]
+    print(f"controles medidos: {len(controles)} de {len(pool)} pares con "
+          f"hueco > {GAP_CONTROL_H:.0f} h (intentos {intentos_control})")
+    print(f"deltas desde cache: {n_cache}")
 
     notas = [
         "Por que estos numeros no coinciden con el 45 -> 21 -> 7 del informe "
@@ -400,17 +495,40 @@ def main() -> None:
                                    encoding="utf-8")
         print(f"JSON: {args.json}")
     if args.md:
-        Path(args.md).write_text(
-            f"# Cascada de candidatas — {args.cohort}\n\n"
-            + "\n".join(tabla) + "\n\n"
-            + "\n".join(notas) + "\n\n"
-            f"- Indice: `{index_path.relative_to(ROOT)}`\n"
-            f"- Deltas: sonda 2c.1 {n_medidos_sonda} · medidos dirigidos "
-            f"{n_medidos_directo} · sin medir {n_sin_medir}\n"
-            f"- Controles disponibles: {len(controles)}\n"
-            "- Identificadores estables: box + epochs + hash del nombre de los "
-            "ficheros de origen (nunca `event_id` posicional).\n",
-            encoding="utf-8")
+        md = [f"# Cascada de candidatas — {args.cohort}", "",
+              *tabla, "", *notas, "",
+              f"- Indice: `{index_path.relative_to(ROOT)}`",
+              f"- Deltas: sonda 2c.1 {n_medidos_sonda} · medidos dirigidos "
+              f"{n_medidos_directo} · sin medir {n_sin_medir}"
+              f" (desde cache {n_cache})",
+              f"- Controles medidos: {len(controles)} de {len(pool)} pares con "
+              f"hueco > {GAP_CONTROL_H:.0f} h (intentos {intentos_control})",
+              "- Identificadores estables: box + epochs + SHA-256 del NOMBRE de "
+              "los ficheros de origen (nunca `event_id` posicional). El SHA-256 "
+              "del CONTENIDO va en la clave de adjudicacion.", ""]
+        md += [f"## Parejas sin TV/FR medibles ({len(con_motivo)})", "",
+               "`motivo` = por que no se pudo medir esa pareja (no es 0, es "
+               "`no evaluado`).", "",
+               "| Pareja (evento previo) | Motivo |", "|---|---|"]
+        for _eid, m in con_motivo:
+            md.append(f"| `{_eid}` | {m or '—'} |")
+        md += ["", f"### Candidatas variante d ({len(paso4)})", "",
+               "| Box | prev_end_epoch | next_start_epoch | Hueco h | "
+               "Desfase vent-monitor h | dPEEP | dFiO2 | dTV | dFR |",
+               "|---|---|---|---|---|---|---|---|---|"]
+        for c in salida["candidatas"]:
+            d = c["deltas"]
+
+            def _f(x: object) -> str:
+                return "—" if x is None else f"{float(x):.2f}"
+
+            md.append(f"| {c['box']} | {c['prev_end_epoch']:.0f} | "
+                      f"{c['next_start_epoch']:.0f} | {c['gap_h']:.2f} | "
+                      f"{c['desfase_vent_monitor_h']:.2f} | {_f(d.get('d_peep'))} | "
+                      f"{_f(d.get('d_fio2'))} | {_f(d.get('d_tv'))} | "
+                      f"{_f(d.get('d_rr'))} |")
+        md.append("")
+        Path(args.md).write_text("\n".join(md), encoding="utf-8")
         print(f"MD: {args.md}")
 
 
