@@ -1,0 +1,236 @@
+{
+  "cohort": "vitaldb",
+  "index": "datasets\\vitaldb\\cases_v0.4.0_aa142f35\\vitaldb_cases_index.json",
+  "cascada": {
+    "paso0": 72,
+    "paso1": 21,
+    "paso2": 21,
+    "paso3": 0,
+    "paso4": 0
+  },
+  "n_deltas_sonda": 0,
+  "n_deltas_directos": 0,
+  "n_sin_medir": 21,
+  "candidatas": [],
+  "sin_medir": [
+    {
+      "box": "SICU1_06",
+      "prev_end_epoch": 1739802963.2,
+      "next_start_epoch": 1739802963.1,
+      "prev_file": "SICU1_06_250217_140000.vital",
+      "prev_file_sha256": "6175404b7842d22bc46a23d5c89ed071b2d93cf0d417291a915ade3385a17813",
+      "next_file": "SICU1_06_250217_140000.vital",
+      "next_file_sha256": "6175404b7842d22bc46a23d5c89ed071b2d93cf0d417291a915ade3385a17813",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU1_06",
+      "prev_end_epoch": 1739858391.6,
+      "next_start_epoch": 1739858391.6,
+      "prev_file": "SICU1_06_250218_050000.vital",
+      "prev_file_sha256": "c7adc2a169cc0c42c527bdb42f9a5c1dc15d800aadd702530cabb266ea9cc6ce",
+      "next_file": "SICU1_06_250218_050000.vital",
+      "next_file_sha256": "c7adc2a169cc0c42c527bdb42f9a5c1dc15d800aadd702530cabb266ea9cc6ce",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU1_09",
+      "prev_end_epoch": 1735883164.1,
+      "next_start_epoch": 1735883164.2,
+      "prev_file": "SICU1_09_250103_050000.vital",
+      "prev_file_sha256": "fb056bd27bfca03f8b0010a962d427e09338995afe75b7f1b6299949ad33e208",
+      "next_file": "SICU1_09_250103_050000.vital",
+      "next_file_sha256": "fb056bd27bfca03f8b0010a962d427e09338995afe75b7f1b6299949ad33e208",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU1_09",
+      "prev_end_epoch": 1739497637.5,
+      "next_start_epoch": 1739497637.5,
+      "prev_file": "SICU1_09_250214_010000.vital",
+      "prev_file_sha256": "8ebf593588d755364fbcbc401d1aa66248250f747e1f91659123a38b3bbee67a",
+      "next_file": "SICU1_09_250214_010000.vital",
+      "next_file_sha256": "8ebf593588d755364fbcbc401d1aa66248250f747e1f91659123a38b3bbee67a",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU1_11",
+      "prev_end_epoch": 1740024353.2,
+      "next_start_epoch": 1740032609.8,
+      "prev_file": "SICU1_11_250220_050000.vital",
+      "prev_file_sha256": "568461a7096f5c18cda7c752bc0fb994af73d288fa6955d9ada799f0f7bb5f91",
+      "next_file": "SICU1_11_250220_060000.vital",
+      "next_file_sha256": "4b693c76eec5ecf06c2a2cf7d5cb9408fcca4e44af55556d2bcfda5d319713bc",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_09",
+      "prev_end_epoch": 1739900535.7,
+      "next_start_epoch": 1739900535.5,
+      "prev_file": "SICU2_09_250218_170000.vital",
+      "prev_file_sha256": "a3592865e2e84a3ceca80198e0f15f7bf25e06b49cd2f5bcceb472be26ec2e51",
+      "next_file": "SICU2_09_250218_170000.vital",
+      "next_file_sha256": "a3592865e2e84a3ceca80198e0f15f7bf25e06b49cd2f5bcceb472be26ec2e51",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_12",
+      "prev_end_epoch": 1739240855.4,
+      "next_start_epoch": 1739240855.4,
+      "prev_file": "SICU2_12_250211_020000.vital",
+      "prev_file_sha256": "b225ab06b8f4fd789a1f395f3b06a9968d6d7eb627d6ec48443ab7f6c0fd3c73",
+      "next_file": "SICU2_12_250211_020000.vital",
+      "next_file_sha256": "b225ab06b8f4fd789a1f395f3b06a9968d6d7eb627d6ec48443ab7f6c0fd3c73",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1738385542.0,
+      "next_start_epoch": 1738394225.9,
+      "prev_file": "SICU2_16_250201_060000.vital",
+      "prev_file_sha256": "94e8808e5f7e01978ee7fdca644eef5d9143439d49fc8c4ae99e37a7dd70b877",
+      "next_file": "SICU2_16_250201_062915.vital",
+      "next_file_sha256": "5ed9b7f0ac7258bb7fe530245dd2aa280238ca38b550abab94977a79ec64ca32",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1738394245.7,
+      "next_start_epoch": 1738401865.7,
+      "prev_file": "SICU2_16_250201_080000.vital",
+      "prev_file_sha256": "432d81d6f2de7d167b85099d0479105423260c2f7520ec5e4527c8ad7af9ac6e",
+      "next_file": "SICU2_16_250201_082641.vital",
+      "next_file_sha256": "adce8bc44d0a7cca0933ac90a19d0cd3adff1904703a2c08111e756237b5d64c",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1738437601.8,
+      "next_start_epoch": 1738445874.0,
+      "prev_file": "SICU2_16_250201_200857.vital",
+      "prev_file_sha256": "3ec48c560fd16b9d6c9cbbc47330e81fa1b4098f95acdaa791acd5e026394642",
+      "next_file": "SICU2_16_250201_205016.vital",
+      "next_file_sha256": "c847a00dba8a1063e297dc19a1234e04535e20609ef44e95d6e4351ae775609a",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1738466175.1,
+      "next_start_epoch": 1738474537.4,
+      "prev_file": "SICU2_16_250202_040000.vital",
+      "prev_file_sha256": "a9370494e230e0598f466bfb2fd61e451184d552d323993039e81e46b6b4e824",
+      "next_file": "SICU2_16_250202_060000.vital",
+      "next_file_sha256": "e1652cf6e21b644b02b338f5cbfad24a1099af55aef1def8138f1de2db65d37d",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1738482858.4,
+      "next_start_epoch": 1738482858.5,
+      "prev_file": "SICU2_16_250202_073741.vital",
+      "prev_file_sha256": "0197368053a3344651e4ad0c96087e527d309e7ab13abf3ff1f762b4b464f816",
+      "next_file": "SICU2_16_250202_065819.vital",
+      "next_file_sha256": "0e884a40ac9736de6b181a09d25bd0d70ffc5332b1fde2ce25d0c6075f94efa7",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1738530714.7,
+      "next_start_epoch": 1738530714.6,
+      "prev_file": "SICU2_16_250202_210551.vital",
+      "prev_file_sha256": "77603f892c65c5130cecfc55fa30fee0d7297467e8f954ac050f676b34e259e1",
+      "next_file": "SICU2_16_250202_201749.vital",
+      "next_file_sha256": "3be644ed2314b9e727c8aef9d77e5768fd9f573f026cadc881c99b49512776d6",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1738636585.5,
+      "next_start_epoch": 1738644780.8,
+      "prev_file": "SICU2_16_250204_030000.vital",
+      "prev_file_sha256": "36c31574730dbdbca750343fcacdcedc880c95cd8701251c9ee5ba7883fe0f55",
+      "next_file": "SICU2_16_250204_040000.vital",
+      "next_file_sha256": "77f21e929ae69df979e7204800cd23fbe777c3b3c93e1e10f3b9b9e59f4552b8",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1738804053.5,
+      "next_start_epoch": 1738825464.0,
+      "prev_file": "SICU2_16_250206_020000.vital",
+      "prev_file_sha256": "f70c3fe648105e2063bef6d5b9dab7be01a83b00083e3dd4e3e4ebe415f3d8f1",
+      "next_file": "SICU2_16_250206_060749.vital",
+      "next_file_sha256": "6cc9ad547f346fa67675afa89a76b08164fb45e482165474482bea8fa30505c1",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1738830539.6,
+      "next_start_epoch": 1738848484.5,
+      "prev_file": "SICU2_16_250206_080000.vital",
+      "prev_file_sha256": "26a1d4a27193c7c6e4bddbf8ca92abcda8a5bc2f7ad98591db51948d344b4573",
+      "next_file": "SICU2_16_250206_130000.vital",
+      "next_file_sha256": "7dcee9606f86564dc2d60482c00d0ec154f89f92a09b62c185dc8c352690d636",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1738950921.5,
+      "next_start_epoch": 1738950921.5,
+      "prev_file": "SICU2_16_250207_170000.vital",
+      "prev_file_sha256": "c40a270ec4eec4df2a5eaf0c024739e8a6716804e0345d8637fcc2f0f058f687",
+      "next_file": "SICU2_16_250207_170000.vital",
+      "next_file_sha256": "c40a270ec4eec4df2a5eaf0c024739e8a6716804e0345d8637fcc2f0f058f687",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1738985522.5,
+      "next_start_epoch": 1738996915.0,
+      "prev_file": "SICU2_16_250208_040000.vital",
+      "prev_file_sha256": "ba0b16f8d783daa0fc65fed9a362fb14073fc543ab2eb3393882fae85f5b1745",
+      "next_file": "SICU2_16_250208_060000.vital",
+      "next_file_sha256": "227fa743acaa550a7006ecfdd61b7d804f27bfa52001d6dccceff8d1e623459d",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1739003816.9,
+      "next_start_epoch": 1739025318.3,
+      "prev_file": "SICU2_16_250208_110000.vital",
+      "prev_file_sha256": "a5c76405b8feaf4bdd0e72b46c2d1b56440cc4a08dc91e9aec14f6242365b54a",
+      "next_file": "SICU2_16_250208_140000.vital",
+      "next_file_sha256": "5263c6fecef36d331cecef9c2b1e9ac38aacdc884f51d7bf8babb70165e00fee",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1739036061.0,
+      "next_start_epoch": 1739036060.9,
+      "prev_file": "SICU2_16_250208_170000.vital",
+      "prev_file_sha256": "93578e6d87b7f0f607444c1b67fb024316d74f7fde4653d9a6faaf3ff70fcb98",
+      "next_file": "SICU2_16_250208_170000.vital",
+      "next_file_sha256": "93578e6d87b7f0f607444c1b67fb024316d74f7fde4653d9a6faaf3ff70fcb98",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    },
+    {
+      "box": "SICU2_16",
+      "prev_end_epoch": 1739124796.7,
+      "next_start_epoch": 1739136674.1,
+      "prev_file": "",
+      "prev_file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "next_file": "SICU2_16_250209_220000.vital",
+      "next_file_sha256": "896a8bf4fcd4257dcfe3add896a9b2334250254bf1a3865b8ee7d77940783b77",
+      "motivo": "sin PEEP_CMH2O en la ventana; sin FIO2 en la ventana; sin TV_EXP en la ventana; sin VENT_RR en la ventana"
+    }
+  ],
+  "controles_disponibles": [],
+  "notas": [
+    "Por que estos numeros no coinciden con el 45 -> 21 -> 7 del informe de 2c.3 (todas las causas son de BASE o de FILTRO, no de calculo):",
+    "",
+    "- **45** era 'hueco <= 12 h' contado SOLO sobre los pares cuyo primer evento analizo la sonda (135 de 181 eventos), y **sin exigir que el primero estuviera censurado**. Aqui el paso 1 recorre TODOS los pares (168) y exige censura: 62.",
+    "- **21** exigia las cuatro diferencias medidas (cobertura de la sonda). Aqui el paso 3 cae a 19 porque quedan 38 pares sin medir: con `--medir-faltantes` suben los pasos 3 y 4.",
+    "- **7** (commit 1f048cc) anadia el filtro de **apagado simultaneo <= 15 min**. Ese filtro YA NO se aplica: el desfase fin-de-ventilador vs fin-de-monitor se informa como columna por pareja.",
+    "- El paso 2 no resta nada porque 'vuelve con ventilacion activa' es casi siempre cierto en Clinic (llegan intubados de quirofano)."
+  ]
+}

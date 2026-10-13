@@ -70,6 +70,9 @@ GAP_CONTROL_H = 24.0       # negativo: parejas separadas > 24 h = pacientes dist
 SEMILLA_CONTROLES = 20261013
 N_CONTROLES = 12
 MAX_INTENTOS_CONTROL = 30
+# Delta -> pista del ventilador que hay que medir a cada lado del corte.
+_PISTA_DE = {"d_peep": "PEEP_CMH2O", "d_fio2": "FIO2",
+             "d_tv": "TV_EXP", "d_rr": "VENT_RR"}
 PEEP_T = ("Intellivue/PEEP_CMH2O",)
 FIO2_T = ("Intellivue/FIO2",)
 TV_T = ("Intellivue/TV_EXP",)
@@ -84,6 +87,20 @@ def _sha_nombre(nombre: str) -> str:
 def _deltas_de_cache(v: dict) -> dict:
     """Los 4 deltas desde una entrada de cache (ignora las claves auxiliares)."""
     return {k: v.get(k) for k in ("d_peep", "d_fio2", "d_tv", "d_rr")}
+
+
+def _cache_completa(v: dict) -> bool:
+    """Entrada de cache UTILIZABLE: o estan los 4 deltas, o consta el motivo.
+
+    - Si estan los 4 deltas, la pareja es medible y el motivo no hace falta
+      (las entradas sembradas de un JSON anterior no lo guardan).
+    - Si falta algun delta, la pareja saldra en el informe como `no evaluado`,
+      asi que HACE FALTA el motivo: sin el, se reintenta la medida.
+    """
+    if all(v.get(k) is not None
+           for k in ("d_peep", "d_fio2", "d_tv", "d_rr")):
+        return True
+    return "_motivo" in v
 
 
 def _es_censurado(e: dict) -> bool:
@@ -265,7 +282,7 @@ def main() -> None:
     p.add_argument("--medir-faltantes", action="store_true",
                    help="Mide leyendo D: las parejas sin deltas de la sonda.")
     p.add_argument("--reintentar-fallos", action="store_true",
-                   help="Vuelve a intentar las parejas ya intentadas y fallidas.")
+                   help="Vuelve a intentar TODO lo que ya este en cache.")
     p.add_argument("--limite", type=int, default=None,
                    help="Mide solo los primeros N pares (depuracion).")
     p.add_argument("--cache-deltas", default=str(REPORT / "deltas_medidos.json"),
@@ -303,9 +320,14 @@ def main() -> None:
     # Cache de deltas medidos: clave = identificador ESTABLE de la pareja. Leer
     # D: es caro (ficheros de hasta 366 MB) y un relanzamiento no debe repetirlo.
     cache_path = Path(args.cache_deltas)
-    cache: dict[str, dict] = ({}
-        if not cache_path.exists()
-        else json.loads(cache_path.read_text(encoding="utf-8")))
+    cache: dict[str, dict] = {}
+    if cache_path.exists():
+        try:
+            cache = json.loads(cache_path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            # Una escritura interrumpida (kill, corte de D:) deja el JSON a
+            # medias. Mejor perder la cache que no poder arrancar.
+            print(f"[aviso] cache de deltas ilegible ({exc}): se empieza de cero")
 
     def _clave_cache(p: dict) -> str:
         prev, nxt = p["prev"], p["next"]
@@ -341,18 +363,36 @@ def main() -> None:
             c = medidos[eid]
             p["deltas"] = {k: c.get(k) for k in
                            ("d_peep", "d_fio2", "d_tv", "d_rr")}
-            p["origen_deltas"] = "sonda_2c1"
-            n_medidos_sonda += 1
-            continue
+            faltan = [tr for k, tr in _PISTA_DE.items()
+                      if p["deltas"].get(k) is None]
+            # Si la sonda no saco todas las pistas de ESA pareja, se intenta la
+            # medida dirigida (union de ficheros del evento + del box y respaldo
+            # simetrico), que es precisamente lo que arregla el B2. Si tampoco
+            # sale, la pareja queda con su motivo, nunca en blanco.
+            if not faltan or not args.medir_faltantes:
+                p["origen_deltas"] = "sonda_2c1"
+                p["motivo"] = ("" if not faltan else
+                               "sonda 2c.1: sin " + ", ".join(faltan)
+                               + " en la ventana")
+                n_medidos_sonda += 1
+                if faltan:
+                    n_sin_medir += 1
+                continue
+            p["motivo"] = "sonda 2c.1: sin " + ", ".join(faltan)
         if args.medir_faltantes and (args.limite is None
                                      or n_intentos < args.limite):
             clave = _clave_cache(p)
-            if clave in cache and not args.reintentar_fallos:
+            usar_cache = clave in cache and not args.reintentar_fallos
+            if (usar_cache and not _cache_completa(cache[clave])
+                    and args.medir_faltantes):
+                usar_cache = False  # entrada incompleta: se reintenta
+            if usar_cache:
                 p["deltas"] = _deltas_de_cache(cache[clave])
                 p["origen_deltas"] = "cache"
                 p["motivo"] = cache[clave].get("_motivo", "")
                 n_cache += 1
-                if p["deltas"].get("d_tv") is not None:
+                if all(p["deltas"].get(k) is not None
+                       for k in ("d_tv", "d_rr")):
                     n_medidos_directo += 1
                 else:
                     n_sin_medir += 1
@@ -362,19 +402,32 @@ def main() -> None:
                                             meta_por_box.get(p["box"], {}),
                                             budget_s=args.budget_s)
             p["deltas"] = d
+            # Si faltaba algo de la sonda, se queda el motivo de la sonda al
+            # principio para no perder por que NO se pudo cerrar antes.
             p["origen_deltas"] = "medido_dirigido"
-            p["motivo"] = motivo
-            cache[clave] = {**d, "_motivo": motivo}
+            p["motivo"] = "; ".join(x for x in
+                                    (p.get("motivo") if eid in medidos else "",
+                                     motivo) if x)
+            cache[clave] = {**d, "_motivo": p["motivo"]}
             _guarda_cache()
             if all(d.get(k) is not None for k in ("d_tv", "d_rr")):
                 n_medidos_directo += 1
             else:
                 n_sin_medir += 1
         else:
-            p["deltas"] = {k: None for k in
-                           ("d_peep", "d_fio2", "d_tv", "d_rr")}
-            p["origen_deltas"] = "sin_medir"
-            p["motivo"] = "no medido (falta --medir-faltantes)"
+            # Sin medicion dirigida: se conserva lo que dio la sonda (si dio
+            # algo) y se dice claramente que no se intento medir el resto.
+            if eid not in medidos:
+                p["deltas"] = {k: None for k in
+                               ("d_peep", "d_fio2", "d_tv", "d_rr")}
+                p["origen_deltas"] = "sin_medir"
+                p["motivo"] = "no medido (falta --medir-faltantes)"
+            else:
+                p["origen_deltas"] = "sonda_2c1"
+                p["motivo"] = ("sonda 2c.1: sin "
+                               + ", ".join(tr for k, tr in _PISTA_DE.items()
+                                           if p["deltas"].get(k) is None)
+                               + " en la ventana (sin medicion dirigida)")
             n_sin_medir += 1
 
     paso3 = [p for p in paso2 if p["deltas"].get("d_tv") is not None
@@ -402,7 +455,14 @@ def main() -> None:
                 break
             intentos_control += 1
             clave = _clave_cache(p)
-            if clave in cache and not args.reintentar_fallos:
+            usar_cache = clave in cache and not args.reintentar_fallos
+            # Para un CONTROL basta con TV y FR (no se filtra por PEEP/FiO2).
+            if (usar_cache and args.medir_faltantes
+                    and not (cache[clave].get("d_tv") is not None
+                             and cache[clave].get("d_rr") is not None)
+                    and "_motivo" not in cache[clave]):
+                usar_cache = False
+            if usar_cache:
                 p["deltas"] = _deltas_de_cache(cache[clave])
                 n_cache += 1
             else:
