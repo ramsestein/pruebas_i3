@@ -31,7 +31,8 @@ minutos puede tener PEEP, FiO2, TV y FR idénticos a los de antes.
 ### 3. La medida con la que se filtraba la población no refleja la señal
 
 En `box9`, una candidata con **hueco declarado 0,00 h** muestra en la ventana
-ancha (`reports/fase1_6e/_tmp_ventana.png`):
+ancha (`reports/fase1_6e/figs/ventana_ancha_box9.png`, reproducible con
+`python scripts/verify/fase1_6e/ventana_ancha.py --box box9 --gap 0.0`):
 
 - un agujero de **~1 h en FC/SpO2 justo en el corte**;
 - **caídas de TV_EXP de 1,5-2,5 h** sin ningún dato de ventilador, varias veces,
@@ -72,5 +73,6 @@ solo deja un curso partido), la opción conservadora es obligada.
 
 - `scripts/verify/fase1_6e/cascada_candidatas.py` + `reports/fase1_6e/cascada_clinic.{json,md}`
 - `reports/fase1_6e/adjudicacion/clinic/` (paquete cancelado)
-- `reports/fase1_6e/_tmp_ventana.png` (ventana ancha de `box9`; artefacto de
-  diagnóstico, no versionado)
+- `scripts/verify/fase1_6e/ventana_ancha.py` +
+  `reports/fase1_6e/figs/ventana_ancha_box9.png` (vista del corte con eje de
+  tiempo continuo y el hueco visible; es la figura que descarta la unión)
