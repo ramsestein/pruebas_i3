@@ -22,8 +22,32 @@ medianas despues - antes.
               encaja).
 - `dudoso`  → no te atreves a decidir. **Se tratara como no unir.**
 
-Escribe la decision en `hoja.csv` (y un comentario breve si quieres). **No
-cambies la columna `codigo`.**
+## Como rellenarlo (paso a paso)
+
+1. Abre `hoja.csv` (VSCode, Excel o LibreOffice). Tiene **una fila por pareja**
+   con las columnas `codigo,decision,comentario`; `decision` y `comentario`
+   estan VACIAS.
+2. Abre el PNG con ese mismo codigo (`P01.png`, `P02.png`, ...) y mira el corte.
+3. Escribe en la columna `decision` UNA de estas tres palabras exactas:
+   `mismo`, `distinto` o `dudoso` (minusculas, sin acentos, sin espacios).
+4. Si quieres, anota el motivo en `comentario` (texto libre, no se parsea).
+5. Guarda el fichero **como CSV** (Excel en espanol: "CSV UTF-8 (delimitado por
+   comas)"; el lector acepta tambien punto y coma).
+
+Ejemplo de las tres primeras filas ya rellenas:
+
+```
+codigo,decision,comentario
+P01,mismo,TV y FR identicos a los dos lados
+P02,distinto,cambia el patron de ventilacion por completo
+P03,dudoso,mitad izquierda con muy pocos datos
+```
+
+- Si dejas la decision EN BLANCO se cuenta como `dudoso` (no se une).
+- **No cambies la columna `codigo` ni anadas/quites filas:** es lo unico que
+  dice a que pareja corresponde cada decision.
+- Con 34 filas son unos 20-30 minutos. Marca sin miedo: la duda ya es una
+  respuesta valida.
 
 ## Importante
 

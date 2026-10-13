@@ -42,11 +42,22 @@ DECISIONES = ("mismo", "distinto", "dudoso")
 
 
 def _carga_hoja(path: Path) -> tuple[dict[str, str], list[str]]:
-    """Devuelve (decision por codigo, problemas). Vacio = dudoso."""
+    """Devuelve (decision por codigo, problemas). Vacio = dudoso.
+
+    Tolera lo que hace Excel en espanol: BOM, separador `;` en vez de `,` y
+    cabeceras con espacios o en mayusculas ("Codigo").
+    """
     decisiones: dict[str, str] = {}
     problemas: list[str] = []
-    with path.open(newline="", encoding="utf-8") as fh:
-        for fila in csv.DictReader(fh):
+    with path.open(newline="", encoding="utf-8-sig") as fh:
+        muestra = fh.read(4096)
+        fh.seek(0)
+        try:
+            dialecto = csv.Sniffer().sniff(muestra, delimiters=",;\t")
+        except csv.Error:
+            dialecto = csv.excel
+        for fila in csv.DictReader(fh, dialect=dialecto):
+            fila = {(k or "").strip().lower(): v for k, v in fila.items()}
             cod = (fila.get("codigo") or "").strip()
             dec = (fila.get("decision") or "").strip().lower()
             if not cod:
