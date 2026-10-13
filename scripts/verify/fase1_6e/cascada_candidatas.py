@@ -266,7 +266,6 @@ def main() -> None:
                    help="Mide leyendo D: las parejas sin deltas de la sonda.")
     p.add_argument("--reintentar-fallos", action="store_true",
                    help="Vuelve a intentar las parejas ya intentadas y fallidas.")
-                   help="Mide los deltas de los pares no cubiertos por 2c.1.")
     p.add_argument("--limite", type=int, default=None,
                    help="Mide solo los primeros N pares (depuracion).")
     p.add_argument("--cache-deltas", default=str(REPORT / "deltas_medidos.json"),
