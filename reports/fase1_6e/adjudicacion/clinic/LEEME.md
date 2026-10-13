@@ -1,5 +1,9 @@
 # Adjudicacion visual ciega — clinic (181 eventos)
 
+> **CANCELADO (13/10/2026): NO adjudiques esta hoja.** La union de cursos queda
+> **desactivada** (opcion a). Motivo en `CANCELADO.md` y en
+> `reports/fase1_6e/decision_union.md`. Este LEEME se conserva solo como traza.
+
 Tienes **34 parejas** (22 candidatas + 12 controles) en
 PNG, en orden aleatorio y con codigo anonimo. **No sabes cuales son controles**
 (de pacientes distintos) ni los huecos ni las clases: es a proposito.

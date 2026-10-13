@@ -68,12 +68,24 @@ def _name(hours: float) -> str:
     return f"tok1_{dt.strftime('%y%m%d_%H%M%S')}.vital"
 
 
-def _seg(tmp_path: Path, box: str = "box2"):
+def _seg(tmp_path: Path, box: str = "box2", *, unir: bool = True):
     boxes = scan_source_files(tmp_path, CLINIC_SPEC)
-    return segment_box(box, boxes[box])
+    return segment_box(box, boxes[box], unir_cursos=unir)
 
 
 class TestUnionDeCursos:
+    def test_por_defecto_no_une_nunca(self, tmp_path: Path):
+        """Decision 13/10 (opcion a): `unir_cursos` esta OFF por defecto.
+
+        Aunque se cumplan TODAS las condiciones de la regla estricta, sin pedir
+        la union explicitamente no se une nada: el cohorte de analisis tiene 0
+        uniones.
+        """
+        self._box(tmp_path, gap_h=1.5)
+        seg = _seg(tmp_path, unir=False)
+        assert seg.unions == []
+        assert len(seg.episodes) == 2
+
     def _box(self, tmp_path: Path, *, gap_h: float = 1.5,
              fichero_en_hueco: bool = False) -> None:
         # Region 1: 0-2 h ventilada.

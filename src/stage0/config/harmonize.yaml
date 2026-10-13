@@ -5,7 +5,7 @@
 # Todos los parámetros vienen de aquí.
 # =============================================================================
 
-version: "0.6.0"
+version: "0.6.1"
 
 # ── Rutas ──────────────────────────────────────────────────────────────────────
 paths:
@@ -469,10 +469,20 @@ fase1_6e:
     segment_gap_min: 5.0 # une la contigüidad entre ficheros al segmentar
   # Punto 2c: unión de cursos partidos por un apagado simultáneo (D-f) y
   # fragmentos de registro (D-i). Constantes en build_signal_cases.py.
-  # El criterio de continuidad de ajustes (PEEP/FiO2) NO se usa: el control
-  # negativo de 2c.3 dio 59,3 % de falsos positivos con pacientes distintos.
+  #
+  # DECISIÓN 13/10 (opción a, `reports/fase1_6e/decision_union.md`): NO se une
+  # nada. `enabled: false` es el valor por defecto y el único aceptado para el
+  # cohorte de análisis.
+  #   - El hueco con el que se filtraba (`obs_end_h` del índice) NO refleja la
+  #     señal: hay candidatas con "hueco 0,00 h" declarado y ~1 h sin FC/SpO2
+  #     justo en el corte, y caídas de TV_EXP de 1,5-2,5 h dentro del mismo box.
+  #   - La adjudicación visual no es viable: "¿es el mismo paciente?" no se
+  #     puede responder con 12 h de constantes vitales.
+  #   - Unir una extubación fallida con su reintubación BORRARÍA la variable del
+  #     estudio. Ante la duda, no unir.
   union:
-    gap_max_h: 2.0 # (a) hueco monitor->monitor máximo
+    enabled: false # decisión 13/10: cursos partidos NO se unen
+    gap_max_h: 2.0 # (a) hueco monitor->monitor máximo (solo si enabled)
     return_min: 15.0 # (c) la región siguiente empieza ventilada
     # (b) en el hueco no puede haber ningún fichero: el grabador estaba parado
     min_region_h: 0.5 # D-i: región de registro mínima (integridad, no objetivo)

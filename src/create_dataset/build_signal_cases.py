@@ -137,6 +137,12 @@ SPECS: dict[str, CohortSpec] = {"clinic": CLINIC_SPEC, "vitaldb": VITALDB_SPEC}
 
 # Fase 1.6e (punto 2c, D-f/D-i): union de cursos partidos por un apagado
 # simultaneo y exclusion de fragmentos de registro.
+# DECISION 13/10 (opcion a, `reports/fase1_6e/decision_union.md`): la union esta
+# DESACTIVADA. El hueco con el que se filtraba no refleja la senal (candidatas
+# con "hueco 0,00 h" y ~1 h sin FC/SpO2 justo en el corte) y unir una extubacion
+# fallida con su reintubacion borraria la variable del estudio. `enabled: true`
+# en `fase1_6e.union` la reactiva SOLO como analisis de sensibilidad.
+UNION_ENABLED: bool = False
 UNION_GAP_MAX_H: float = 2.0    # (a) hueco maximo del apagado que se une
 UNION_RETURN_MIN: float = 15.0  # (c) vuelve ventilado en <= 15 min de monitor
 MIN_REGION_H: float = 0.5       # (D-i) region de registro minima (30 min)
@@ -362,6 +368,7 @@ def segment_box(
     disconnect_gap_h: float = 2.0,
     patient_gap_h: float = 1.0,
     no_patient_fraction: float = 0.8,
+    unir_cursos: bool = UNION_ENABLED,
 ) -> BoxSegmentation:
     """Segmenta un box en episodios aplicando D1/D2/D4 sobre las señales."""
     vent_spans: list[Span] = []
@@ -460,9 +467,15 @@ def segment_box(
         no_patient_fraction=no_patient_fraction,
     )
 
-    # Fase 1.6e (punto 2c, D-f): une los cursos partidos por un apagado
-    # simultaneo de monitor y ventilador cuando el paciente vuelve ventilado.
-    episodes, uniones = join_courses(episodes, files, probes, monitor_spans)
+    # Fase 1.6e (punto 2c, D-f): la union de cursos partidos por un apagado
+    # simultaneo esta DESACTIVADA por decision del 13/10 (opcion a): el hueco
+    # con el que se filtraba no refleja la senal y unir una extubacion fallida
+    # con su reintubacion borraria la variable del estudio. `join_courses`
+    # sigue disponible (`unir_cursos=True`) como analisis de sensibilidad.
+    if unir_cursos:
+        episodes, uniones = join_courses(episodes, files, probes, monitor_spans)
+    else:
+        uniones = []
     # D-i: los fragmentos de registro que queden (no absorbidos por la union) se
     # conservan marcados, nunca se borran.
     for ep in episodes:
@@ -1188,10 +1201,12 @@ def output_root(config: dict, cohort: str) -> tuple[Path, str]:
     return Path(base), version
 
 
-def _segment_box_task(args: tuple[str, list[SourceFile]]) -> tuple[str, BoxSegmentation]:
+def _segment_box_task(
+    args: tuple[str, list[SourceFile], bool],
+) -> tuple[str, BoxSegmentation]:
     """Trabajo por box para el pool de procesos (debe ser de nivel de módulo)."""
-    box, files = args
-    return box, segment_box(box, files)
+    box, files, unir = args
+    return box, segment_box(box, files, unir_cursos=unir)
 
 
 def filter_boxes(
@@ -1292,18 +1307,28 @@ def run_cohort(
         boxes = dict(list(boxes.items())[:limit_boxes])
 
     results: list[tuple[str, BoxSegmentation]] = []
+    # Decision 13/10 (opcion a): la union de cursos esta desactivada por defecto.
+    # El config manda: solo se activa con `fase1_6e.union.enabled: true`.
+    unir = bool(
+        ((config.get("fase1_6e") or {}).get("union") or {})
+        .get("enabled", UNION_ENABLED)
+    )
+    logger.info("[%s] union de cursos: %s", cohort,
+                "ACTIVADA" if unir else "desactivada (decision 13/10)")
     if probe_fn is not None:
         # Reutiliza una caché de sondas (escaneo previo): no se re-parsea nada.
         for box, files in boxes.items():
-            results.append((box, segment_box(box, files, probe_fn=probe_fn)))
+            results.append((box, segment_box(box, files, probe_fn=probe_fn,
+                                             unir_cursos=unir)))
     elif workers and workers > 1:
         from concurrent.futures import ProcessPoolExecutor
+        tareas = [(box, files, unir) for box, files in boxes.items()]
         with ProcessPoolExecutor(max_workers=workers) as ex:
-            for box, seg in ex.map(_segment_box_task, list(boxes.items())):
+            for box, seg in ex.map(_segment_box_task, tareas):
                 results.append((box, seg))
     else:
         for box, files in boxes.items():
-            results.append((box, segment_box(box, files)))
+            results.append((box, segment_box(box, files, unir_cursos=unir)))
 
     if do_merge and out_dir.exists():
         raise FileExistsError(
