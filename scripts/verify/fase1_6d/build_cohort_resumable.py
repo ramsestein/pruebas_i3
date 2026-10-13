@@ -33,6 +33,7 @@ import argparse
 import json
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -49,6 +50,33 @@ from src.create_dataset.build_signal_cases import (  # noqa: E402
 from src.stage0.io.versioning import load_config  # noqa: E402
 
 CONFIG = ROOT / "src/stage0/config/harmonize.yaml"
+
+
+def _total_gb(paths: list, *, budget_s: float = 120.0,
+              fallback_gb: float = 4.0) -> float:
+    """Tamano total (GB) de una lista de ficheros, con PRESUPUESTO de tiempo.
+
+    ``D:`` tiene rachas en las que un ``stat`` se queda colgado: sin limite, el
+    driver se bloquea para siempre (paso: 20 h de reloj con 0,03 s de CPU en la
+    reconstruccion de Clinic del 12/10). Si se agota el presupuesto se devuelve
+    ``fallback_gb`` para no quedarse sin timeout y se avisa.
+    """
+    box: dict[str, float] = {}
+
+    def _work() -> None:
+        try:
+            box["gb"] = sum(Path(p).stat().st_size for p in paths) / 1e9
+        except OSError:
+            box["gb"] = fallback_gb
+
+    th = threading.Thread(target=_work, daemon=True)
+    th.start()
+    th.join(timeout=budget_s)
+    if th.is_alive():
+        print(f"    [aviso] stat colgado > {budget_s:.0f} s: se usa "
+              f"{fallback_gb:.1f} GB para el timeout", flush=True)
+        return fallback_gb
+    return float(box.get("gb", fallback_gb))
 
 
 def main() -> None:
@@ -92,9 +120,16 @@ def main() -> None:
     print(f"[{cohort}] {len(names)} boxes, {total_files} ficheros de origen",
           flush=True)
 
+    gb_por_box: dict[str, float] = {}
+
+    def _box_gb(box: str) -> float:
+        """GB del box, memorizado y con presupuesto (el stat de D: se cuelga)."""
+        if box not in gb_por_box:
+            gb_por_box[box] = _total_gb([str(f.path) for f in boxes[box]])
+        return gb_por_box[box]
+
     def _box_timeout(box: str) -> float:
-        gb = sum(f.path.stat().st_size for f in boxes[box]) / 1e9
-        return max(args.box_timeout, gb * args.timeout_per_gb)
+        return max(args.box_timeout, _box_gb(box) * args.timeout_per_gb)
 
     status: dict[str, dict] = {}
     pendientes: list[str] = []
@@ -111,7 +146,7 @@ def main() -> None:
                "--cohort", cohort, "--no-merge", "--boxes", box,
                "--workers", str(args.workers), "--out-dir", str(box_out)]
         tmo = _box_timeout(box)
-        gb = sum(f.path.stat().st_size for f in boxes[box]) / 1e9
+        gb = _box_gb(box)
         ok = False
         last = ""
         for attempt in range(1, args.retries + 2):
