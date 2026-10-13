@@ -7,9 +7,12 @@ Candidatos (hueco <= 12 h, posible mismo curso): **45**
 | Criterio | Pares control (>24 h) | Cumplen | Tasa FP | IC 95 % (Wilson) |
 |---|---|---|---|---|
 | dPEEP <= 3 y dFiO2 <= 20 (D-f) | 27 | 16 | 59.3 % | [40.7 %, 75.5 %] |
-| a + |dTV| <= 50 mL | 0 | 0 | — | — |
-| a + |dRR| <= 2 | 0 | 0 | — | — |
-| a + TV y RR | 0 | 0 | — | — |
+| a + |dTV| <= 50 mL | 0 | — | **no evaluado** | — |
+| a + |dRR| <= 2 | 0 | — | **no evaluado** | — |
+| a + TV y RR | 0 | — | **no evaluado** | — |
+
+**No evaluado**: en los pares de control no hay valores de TV_EXP/VENT_RR en las ventanas de ±30 min, asi que las filas b/c/d NO se han podido juzgar (no es que salgan 0 %). La conclusion de que la continuidad no discrimina esta demostrada **solo para PEEP y FiO2**, que son AJUSTES y se repiten entre pacientes; el TV y la FR medidos son propios de cada paciente y podrian discriminar mejor. No cambia la decision (regla estricta), pero el criterio queda marcado como no evaluado.
+
 
 De los candidatos (<= 12 h), cumplen: {'a': 40, 'b': 0, 'c': 0, 'd': 0}
 
@@ -127,9 +130,12 @@ Candidatos (hueco <= 12 h, posible mismo curso): **15**
 | Criterio | Pares control (>24 h) | Cumplen | Tasa FP | IC 95 % (Wilson) |
 |---|---|---|---|---|
 | dPEEP <= 3 y dFiO2 <= 20 (D-f) | 2 | 1 | 50.0 % | [9.5 %, 90.5 %] |
-| a + |dTV| <= 50 mL | 0 | 0 | — | — |
-| a + |dRR| <= 2 | 0 | 0 | — | — |
-| a + TV y RR | 0 | 0 | — | — |
+| a + |dTV| <= 50 mL | 0 | — | **no evaluado** | — |
+| a + |dRR| <= 2 | 0 | — | **no evaluado** | — |
+| a + TV y RR | 0 | — | **no evaluado** | — |
+
+**No evaluado**: en los pares de control no hay valores de TV_EXP/VENT_RR en las ventanas de ±30 min, asi que las filas b/c/d NO se han podido juzgar (no es que salgan 0 %). La conclusion de que la continuidad no discrimina esta demostrada **solo para PEEP y FiO2**, que son AJUSTES y se repiten entre pacientes; el TV y la FR medidos son propios de cada paciente y podrian discriminar mejor. No cambia la decision (regla estricta), pero el criterio queda marcado como no evaluado.
+
 
 De los candidatos (<= 12 h), cumplen: {'a': 1, 'b': 0, 'c': 0, 'd': 0}
 
@@ -193,4 +199,20 @@ Aun con el umbral mas estricto (dPEEP <= 0,5 y dFiO2 <= 2) la tasa de FP queda e
 | vitaldb_SICU2_12_event_1 | 674.006 | True | False | False | -5.3 | 31.3 | -18.0 | 7.55 | 0.0 | 2.4 | C_salida |
 | vitaldb_SICU2_14_event_1 | 674.006 | True | False | False | None | None | 275.25 | -1.8 | -22.0 | 0.0 | C_salida |
 | vitaldb_SICU2_19_event_1 | 738.183 | True | False | False | None | None | -120.5 | 10.15 | None | None | C_salida |
+
+## Notas de interpretacion
+
+1. **Las variantes con TV y FR NO se han evaluado.** Las filas `+ |dTV| <= 50 mL` y `+ |dRR| <= 2` tienen 0 pares de control porque en esas ventanas no hay valores de TV_EXP/VENT_RR, no porque salgan 0 %. La conclusion de que la continuidad no discrimina esta demostrada **solo para PEEP y FiO2**, que son ajustes y se repiten entre pacientes; el TV y la FR medidos son propios de cada paciente y podrian discriminar mejor. No cambia la decision (regla estricta), pero el criterio queda marcado como **no evaluado**.
+
+2. **La clase A/B/C/D tiene dos cifras porque son dos criterios distintos**, no porque haya un error:
+
+   - El diagnostico (con lectura de ficheros) da **A = 6** entre los 135 eventos que puede analizar, con la continuidad de ajustes (PEEP/FiO2) evaluada.
+
+   - La anotacion del indice da **A = 20** con el criterio aproximado (solo senal) y **A = 0** si no se sondea (cae a D, conservador). El indice no puede evaluar la continuidad de ajustes sin `--probar`.
+
+   - Ademas, `simultaneous_shutdown` del builder compara con el fin de la REGION, mientras 2c.1 usa el fin de la observacion FISIOLOGICA. Con el test de 2c.1 (ya implementado en `annotate_index.py`) los pares pasan de 36 a 106.
+
+   **Definicion unica**: la de 2c.1, aplicada con `--probar` sobre el indice v0.6.0 (misma base que el diagnostico que se corra sobre ese indice). Hasta esa anotacion, `prev_exit_class` debe leerse como aproximado.
+
+3. **`next_return_ventilated_30min` es casi siempre cierto** (168 de 181 en Clinic): los pacientes llegan intubados de quirofano. Por si solo no informa. El campo util es el COMBINADO `next_return_ventilated_12h` (68 de 181), que exige ademas hueco <= 12 h, y es la base de la columna (c) de la tabla final.
 

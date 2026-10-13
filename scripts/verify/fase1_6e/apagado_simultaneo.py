@@ -285,6 +285,37 @@ def _solo_informe() -> int:
                 if cohort == "vitaldb" else None)
         md += _seccion_neg(cohort, neg)
         md += _bloque_cohort(cohort, data[cohort], nota=nota)
+    md += ["## Notas de interpretacion", "",
+           "1. **Las variantes con TV y FR NO se han evaluado.** Las filas "
+           "`+ |dTV| <= 50 mL` y `+ |dRR| <= 2` tienen 0 pares de control porque "
+           "en esas ventanas no hay valores de TV_EXP/VENT_RR, no porque salgan "
+           "0 %. La conclusion de que la continuidad no discrimina esta "
+           "demostrada **solo para PEEP y FiO2**, que son ajustes y se repiten "
+           "entre pacientes; el TV y la FR medidos son propios de cada paciente "
+           "y podrian discriminar mejor. No cambia la decision (regla estricta), "
+           "pero el criterio queda marcado como **no evaluado**.", "",
+           "2. **La clase A/B/C/D tiene dos cifras porque son dos criterios "
+           "distintos**, no porque haya un error:", "",
+           "   - El diagnostico (con lectura de ficheros) da **A = 6** entre los "
+           "135 eventos que puede analizar, con la continuidad de ajustes "
+           "(PEEP/FiO2) evaluada.", "",
+           "   - La anotacion del indice da **A = 20** con el criterio "
+           "aproximado (solo senal) y **A = 0** si no se sondea (cae a D, "
+           "conservador). El indice no puede evaluar la continuidad de ajustes "
+           "sin `--probar`.", "",
+           "   - Ademas, `simultaneous_shutdown` del builder compara con el fin "
+           "de la REGION, mientras 2c.1 usa el fin de la observacion "
+           "FISIOLOGICA. Con el test de 2c.1 (ya implementado en "
+           "`annotate_index.py`) los pares pasan de 36 a 106.", "",
+           "   **Definicion unica**: la de 2c.1, aplicada con `--probar` sobre el "
+           "indice v0.6.0 (misma base que el diagnostico que se corra sobre ese "
+           "indice). Hasta esa anotacion, `prev_exit_class` debe leerse como "
+           "aproximado.", "",
+           "3. **`next_return_ventilated_30min` es casi siempre cierto** (168 de "
+           "181 en Clinic): los pacientes llegan intubados de quirofano. Por si "
+           "solo no informa. El campo util es el COMBINADO "
+           "`next_return_ventilated_12h` (68 de 181), que exige ademas hueco "
+           "<= 12 h, y es la base de la columna (c) de la tabla final.", ""]
     md_path.write_text("\n".join(md) + "\n", encoding="utf-8")
     print(f"Informe actualizado: {md_path}")
     return 0
@@ -388,10 +419,25 @@ def _seccion_neg(cohort: str, neg: dict) -> list[str]:
         c = cn.get(k) or {}
         n = int(c.get("n") or 0)
         kk = int(c.get("cumplen") or 0)
+        if n == 0:
+            # 0 pares NO es "0 % de falsos positivos": es que la variable no se
+            # pudo medir en las ventanas de +-30 min de los pares de control.
+            out.append(f"| {lab} | 0 | — | **no evaluado** | — |")
+            continue
         ic = _wilson(kk, n)
         ic_txt = "—" if ic is None else f"[{_pct(ic[0])}, {_pct(ic[1])}]"
         out.append(f"| {lab} | {n} | {kk} | {_pct(c.get('tasa_fp'))} | "
                    f"{ic_txt} |")
+    if any(int((cn.get(k) or {}).get("n") or 0) == 0 for k in "bcd"):
+        out += ["",
+                "**No evaluado**: en los pares de control no hay valores de "
+                "TV_EXP/VENT_RR en las ventanas de ±30 min, asi que las filas "
+                "b/c/d NO se han podido juzgar (no es que salgan 0 %). La "
+                "conclusion de que la continuidad no discrimina esta demostrada "
+                "**solo para PEEP y FiO2**, que son AJUSTES y se repiten entre "
+                "pacientes; el TV y la FR medidos son propios de cada paciente y "
+                "podrian discriminar mejor. No cambia la decision (regla "
+                "estricta), pero el criterio queda marcado como no evaluado.", ""]
     cumplen_cand = neg.get("candidatos_cumplen") or {}
     out += ["", f"De los candidatos (<= 12 h), cumplen: {cumplen_cand}", ""]
     dist = neg.get("distribuciones") or {}

@@ -9,18 +9,23 @@ que solo se usan para el analisis de sensibilidad:
   fisiologica, ``obs_end_h``) del evento ANTERIOR del mismo box hasta el t0 de
   este evento. Solo se rellena si este evento **empieza ya ventilado**
   (``arrived_ventilated``); si no, es ``None``.
-- ``prev_exit_class``: clase (A/B/C/D) de esa salida anterior, con los mismos
-  criterios de 2c.1. Requiere que la salida fuese un apagado simultaneo
-  (``simultaneous_shutdown``), mirar si el hueco tiene ficheros y si la region
-  siguiente vuelve ventilada. **Diferencia con 2c.1**: aqui NO se puede evaluar
-  la continuidad de ajustes (PEEP/FiO2) porque el indice no guarda series, asi
-  que A significa "vuelta ventilada por evidencia de senal" y D se reserva a
-  la evidencia ausente (ficheros del hueco no comprobados).
+- ``prev_exit_class``: clase (A/B/C/D) de esa salida anterior, con los MISMOS
+  criterios que 2c.1 y el mismo test de apagado simultaneo (|fin de ventilacion
+  activa - fin de la observacion FISIOLOGICA| <= 15 min; NO el flag
+  `simultaneous_shutdown` del builder, que compara con el fin de la REGION).
+  La continuidad de ajustes (|dPEEP| <= 3 y |dFiO2| <= 20) solo se puede evaluar
+  con ``--probar``; sin el, A nunca se asigna (cae a D, conservador) y la clase
+  debe leerse como aproximada. **Definicion unica**: la anotacion con
+  ``--probar`` sobre el indice v0.6.0.
 - ``next_return_ventilated_30min``: la region siguiente del mismo box tiene
-  ventilacion activa en <= 30 min de su t0 (``attempts[0].vent_start_h``).
-  Para eventos que llegaron ya ventilados, su t0 ES el inicio de la region, asi
-  que es exactamente "<= 30 min desde el inicio de la region"; para el resto el
-  t0 es el inicio de la ventilacion y el campo es trivialmente cierto.
+  ventilacion activa en <= 30 min de su t0. OJO: sale **casi siempre cierto** en
+  Clinic (168 de 181) porque los pacientes llegan intubados de quirofano; por si
+  solo no informa.
+- ``next_return_ventilated_12h``: el campo INFORMATIVO: vuelve ventilado **y** el
+  hueco es <= 12 h. Es la base de la columna (c) de la tabla final.
+- ``next_same_box_vent_start_gap_h``: hueco desde el fin de la observacion de
+  este evento hasta el inicio de la ventilacion del evento siguiente del mismo
+  box (crudo, para el analisis de sensibilidad).
 
 No cambia NINGUNA etiqueta: es anotacion para excluir despues los segmentos de
 vuelta y las salidas con vuelta ventilada.
@@ -39,11 +44,13 @@ import shutil
 import sys
 from pathlib import Path
 
+import numpy as np
+
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
 from src.common.paths import config_path  # noqa: E402
-from src.common.vital_signals import probe_vital_file  # noqa: E402
+from src.common.vital_signals import probe_vital_file, read_track_series  # noqa: E402
 from src.create_dataset.build_signal_cases import (  # noqa: E402
     SPECS,
     file_span_h,
@@ -59,17 +66,91 @@ EPS = 1e-9
 
 
 def _classify(gap_h: float | None, has_files: bool | None,
-              next_starts_ventilated: bool) -> str:
-    """A/B/C/D con la evidencia disponible en el indice (ver docstring)."""
+              next_starts_ventilated: bool,
+              cont_ok: bool | None = None) -> str:
+    """A/B/C/D con la MISMA logica que 2c.1 (`classify` del diagnostico).
+
+    ``cont_ok`` (|dPEEP| <= 3 y |dFiO2| <= 20) solo se puede evaluar con
+    ``--probar``; sin el, A significa "vuelta ventilada por evidencia de senal"
+    y D "evidencia ausente". Por eso las cifras de A pueden diferir entre el
+    diagnostico (con ficheros) y una anotacion sin sondear.
+    """
     if gap_h is None or gap_h > MAX_GAP_H + EPS:
         return "C_salida"
     if not next_starts_ventilated:
         return "C_salida"
     if has_files is False:
-        return "B_parada_grabador"
-    if has_files is True:
+        return "B_parada_grabador" if cont_ok is not False else "D_indeterminado"
+    if cont_ok is True:
         return "A_vuelta_ventilada"
     return "D_indeterminado"
+
+
+def _es_apagado_simultaneo(prev: dict, *, tol_h: float = 0.25) -> bool:
+    """Test de 2c.1: |fin de ventilacion ACTIVA - fin de observacion FISIOLOGICA|.
+
+    NO se usa el flag `simultaneous_shutdown` del builder, que compara el fin del
+    intento con el fin de la REGION (otra cosa: la region puede seguir con ondas
+    planas). Las dos cifras estan en el indice.
+    """
+    att = prev.get("attempts") or []
+    if not att or prev.get("obs_end_h") is None:
+        return False
+    fin_vent = float(att[-1].get("vent_end_h") or 0.0)
+    return abs(float(prev["obs_end_h"]) - fin_vent) <= tol_h + EPS
+
+
+PEEP_H2O_MIN = 3.0       # 2c.1: |dPEEP| <= 3 cmH2O
+FIO2_PCT_MIN = 20.0      # 2c.1: |dFiO2| <= 20 %
+VENTANA_H = 0.5          # 30 min antes de la salida / despues de la vuelta
+
+
+def _median_window(files: list, t0_unix: float, track_names: tuple[str, ...],
+                   lo_h: float, hi_h: float) -> float | None:
+    """Mediana de la primera pista disponible en ``[lo_h, hi_h]`` horas de t0."""
+    if not files:
+        return None
+    series = read_track_series([str(f.path) for f in files], list(track_names),
+                               t0_unix=t0_unix)
+    for name in track_names:
+        t, v = series.get(name, (None, None))
+        if t is None or len(t) == 0:
+            continue
+        sel = (t / 3600.0 >= lo_h) & (t / 3600.0 <= hi_h)
+        if sel.any():
+            return float(np.median(v[sel]))
+    return None
+
+
+def _continuidad_ajustes(prev: dict, nxt: dict, files_prev: list,
+                         files_nxt: list, box_files: list) -> bool | None:
+    """|dPEEP| <= 3 y |dFiO2| <= 20 (2c.1) leyendo los ficheros (``--probar``).
+
+    Devuelve ``None`` si no se puede medir (como en 2c.1, donde esos pares
+    quedaban indeterminados).
+    """
+    att_prev = prev.get("attempts") or []
+    att_next = nxt.get("attempts") or []
+    if not att_prev or not att_next:
+        return None
+    exit_prev = float(att_prev[-1].get("vent_end_h") or 0.0)
+    vent_next = float(att_next[0].get("vent_start_h") or 0.0)
+    t0_prev = float(prev["t0_unix"])
+    t0_next = float(nxt["t0_unix"])
+    peep_b = _median_window(files_prev, t0_prev,
+                            ("Intellivue/PEEP_CMH2O",),
+                            exit_prev - VENTANA_H, exit_prev)
+    peep_a = _median_window(files_nxt, t0_next,
+                            ("Intellivue/PEEP_CMH2O",),
+                            vent_next, vent_next + VENTANA_H)
+    fio2_b = _median_window(files_prev, t0_prev, ("Intellivue/FIO2",),
+                            exit_prev - VENTANA_H, exit_prev)
+    fio2_a = _median_window(files_nxt, t0_next, ("Intellivue/FIO2",),
+                            vent_next, vent_next + VENTANA_H)
+    if peep_b is None or peep_a is None or fio2_b is None or fio2_a is None:
+        return None
+    return (abs(peep_a - peep_b) <= PEEP_H2O_MIN + EPS
+            and abs(fio2_a - fio2_b) <= FIO2_PCT_MIN + EPS)
 
 
 def _hueco_con_ficheros(
@@ -162,13 +243,20 @@ def main() -> None:
             return False
         return float(att[0].get("vent_start_h") or 0.0) <= max_min + EPS
 
-    n_prev_gap = n_cls = n_next = 0
+    def _files_of(e: dict) -> list:
+        por_nombre = {f.path.name: f for f in boxes.get(e["box"], [])}
+        return [por_nombre[n] for n in (e.get("source_files") or [])
+                if n in por_nombre]
+
+    n_prev_gap = n_cls = n_next = n_next12 = n_cont = 0
     clases: dict[str, int] = {}
     detalle: list[dict] = []
     for b, evs in by_box.items():
         files = boxes.get(b, [])
         for i, e in enumerate(evs):
-            # next_return_ventilated_30min
+            # next_return_ventilated_30min: casi siempre cierto en Clinic (los
+            # pacientes llegan intubados de quirofano), asi que por si solo no
+            # sirve. Lo informativo es el campo COMBINADO con el hueco.
             nxt = evs[i + 1] if i + 1 < len(evs) else None
             e["next_return_ventilated_30min"] = (
                 bool(nxt is not None and _starts_ventilated(nxt, RETURN_MIN_30)))
@@ -176,9 +264,13 @@ def main() -> None:
             # Hueco hasta el INICIO DE VENTILACION del evento siguiente del mismo
             # box: es la base de la columna (c) "censuras por salida con vuelta
             # ventilada <= 12 h".
-            e["next_same_box_vent_start_gap_h"] = (
-                round(float(nxt["t0_unix"]) / 3600.0 - _exit_h(e), 4)
-                if nxt is not None else None)
+            gap_next = (round(float(nxt["t0_unix"]) / 3600.0 - _exit_h(e), 4)
+                        if nxt is not None else None)
+            e["next_same_box_vent_start_gap_h"] = gap_next
+            e["next_return_ventilated_12h"] = bool(
+                gap_next is not None and 0.0 <= gap_next <= MAX_GAP_H
+                and _starts_ventilated(nxt, RETURN_MIN_30))
+            n_next12 += int(e["next_return_ventilated_12h"])
             if i == 0:
                 e["prev_exit_same_box_gap_h"] = None
                 e["prev_exit_class"] = None
@@ -190,29 +282,39 @@ def main() -> None:
                 n_prev_gap += 1
             else:
                 e["prev_exit_same_box_gap_h"] = None
-            if prev.get("simultaneous_shutdown"):
+            if _es_apagado_simultaneo(prev):
                 has_files, n_cand = _hueco_con_ficheros(
                     files, float(prev["t0_unix"]) / 3600.0, _exit_h(prev),
                     float(e["t0_unix"]) / 3600.0, probar=args.probar)
-                cls = _classify(gap, has_files, _starts_ventilated(e, RETURN_MIN))
+                cont_ok = (_continuidad_ajustes(prev, e, _files_of(prev),
+                                               _files_of(e), files)
+                           if args.probar else None)
+                if cont_ok is not None:
+                    n_cont += 1
+                cls = _classify(gap, has_files, _starts_ventilated(e, RETURN_MIN),
+                                cont_ok)
             else:
                 # La salida anterior NO fue un apagado simultaneo: no es una de
                 # las clases de 2c.1. Para la sensibilidad se usan el hueco y
-                # `next_return_ventilated_30min`.
+                # `next_return_ventilated_12h`.
                 has_files, n_cand, cls = None, None, None
+                cont_ok = None
             e["prev_exit_class"] = cls
             detalle.append({"box": b, "prev": prev["event_id"], "next": e["event_id"],
                             "gap_h": round(gap, 3), "has_files": has_files
-                            if prev.get("simultaneous_shutdown") else None,
+                            if has_files is not None else None,
                             "clase": cls, "n_files_box": len(files),
-                            "n_cand": n_cand})
+                            "n_cand": n_cand, "cont_ok": cont_ok})
             if cls:
                 clases[cls] = clases.get(cls, 0) + 1
                 n_cls += 1
 
     print(f"- prev_exit_same_box_gap_h relleno: {n_prev_gap}")
-    print(f"- prev_exit_class: {n_cls} -> {clases}")
-    print(f"- next_return_ventilated_30min = True: {n_next}")
+    print(f"- prev_exit_class: {n_cls} -> {clases} (continuidad de ajustes "
+          f"evaluada en {n_cont} pares)")
+    print(f"- next_return_ventilated_30min = True: {n_next} "
+          f"(casi siempre: llegan intubados)\n"
+          f"- next_return_ventilated_12h = True: {n_next12} (el informativo)")
     if args.dry_run:
         # Por que se asigna cada clase: hueco y evidencia de ficheros del par.
         por_clase: dict[str, list[dict]] = {}
