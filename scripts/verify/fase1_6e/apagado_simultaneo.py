@@ -482,7 +482,8 @@ def _seccion_neg(cohort: str, neg: dict) -> list[str]:
         out.append("")
     grid = neg.get("rejilla") or []
     if grid:
-        out += ["Sensibilidad de la regla a los umbrales de continuidad:", "",
+        out += ["Sensibilidad de la regla SOLO con ajustes (PEEP y FiO2), que es "
+                "la variante a:", "",
                 "| dPEEP <= | dFiO2 <= | FP (control >24 h) | IC 95 % (Wilson) | "
                 "Candidatos que pasarian |", "|---|---|---|---|---|"]
         for g in grid:
@@ -494,17 +495,46 @@ def _seccion_neg(cohort: str, neg: dict) -> list[str]:
                        f"{_pct(g.get('tasa_candidatos'))} "
                        f"({g.get('n_candidatos_pasan')}/"
                        f"{g.get('n_candidatos')}) |")
+        peor = max(grid, key=lambda g: g.get("tasa_fp") or 0.0)
+        mejor = min(grid, key=lambda g: g.get("tasa_fp") or 1.0)
         out += ["",
-                "Aun con el umbral mas estricto (dPEEP <= 0,5 y dFiO2 <= 2) la "
-                "tasa de FP queda en el limite (> 10 %) y solo conserva ~59 % de "
-                "los candidatos: el criterio casi no separa, porque PEEP y FiO2 "
-                "se repiten entre pacientes.", ""]
-    tasa_a = ((cn.get("a") or {}).get("tasa_fp"))
-    veredicto = (
-        "la tasa de falsos positivos estimada es **> 10 %** → **NO se aplica** "
-        "la regla de union (D-f) tal cual" if (tasa_a is None or tasa_a > 0.10)
-        else "la tasa de falsos positivos estimada es <= 10 %")
-    out += [f"**Veredicto 2c.3**: {veredicto}.", ""]
+                f"Ningun umbral de la variante a baja de forma util: el mas "
+                f"estricto (dPEEP <= {mejor['d_peep_max']:g} y dFiO2 <= "
+                f"{mejor['d_fio2_max']:g}) se queda en {_pct(mejor.get('tasa_fp'))} "
+                f"de FP conservando {_pct(mejor.get('tasa_candidatos'))} de los "
+                f"candidatos. El problema no es el umbral: PEEP y FiO2 son AJUSTES "
+                f"y se repiten entre pacientes. Lo que discrimina son las "
+                f"variables del paciente (TV y FR), que se evaluan en la tabla de "
+                f"variantes de arriba.", ""]
+    # Veredicto generado por variante desde los datos (antes era un texto fijo
+    # que contradecia la tabla tras arreglar el calculo de TV/FR).
+    etiquetas = {"a": "a) PEEP y FiO2", "b": "b) a + |dTV| <= 50 mL",
+                 "c": "c) a + |dRR| <= 2", "d": "d) a + TV y FR"}
+    lineas_v = []
+    for k in "abcd":
+        c = cn.get(k) or {}
+        n = int(c.get("n") or 0)
+        kk = int(c.get("cumplen") or 0)
+        if n == 0:
+            lineas_v.append(f"{etiquetas[k]}: **no evaluado** (0 parejas de "
+                            f"control con esas variables)")
+            continue
+        ic = _wilson(kk, n)
+        ic_txt = "—" if ic is None else f"[{_pct(ic[0])}, {_pct(ic[1])}]"
+        pasa = (c.get("tasa_fp") is not None and c["tasa_fp"] <= 0.10)
+        lineas_v.append(f"{etiquetas[k]}: {_pct(c.get('tasa_fp'))} {ic_txt} "
+                        f"→ {'por debajo' if pasa else 'por encima'} del umbral "
+                        f"del 10 %")
+    out += ["**Veredicto por variante** (FP en las parejas de control de "
+            f"{cohort}):", ""]
+    out += [f"- {ln}" for ln in lineas_v]
+    out += ["",
+            "**Decision (13/10)**: se aplica la **variante d** (PEEP, FiO2, TV y "
+            "FR, hueco <= 12 h y vuelta con ventilacion activa), pero **solo en "
+            "las parejas que el usuario confirme en una adjudicacion visual "
+            "ciega** (`scripts/verify/fase1_6e/adjudicacion.py`). La regla "
+            "estricta (0 uniones) queda como analisis de sensibilidad sobre "
+            "v0.6.0.", ""]
     return out
 
 

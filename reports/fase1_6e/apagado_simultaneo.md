@@ -24,7 +24,7 @@ De los candidatos (<= 12 h), cumplen: {'a': 40, 'b': 29, 'c': 24, 'd': 21}
 | d_rr | control | 28 | 1.00 | 3.00 | 9.00 |
 | d_rr | candidatos | 44 | 0.00 | 2.00 | 7.00 |
 
-Sensibilidad de la regla a los umbrales de continuidad:
+Sensibilidad de la regla SOLO con ajustes (PEEP y FiO2), que es la variante a:
 
 | dPEEP <= | dFiO2 <= | FP (control >24 h) | IC 95 % (Wilson) | Candidatos que pasarian |
 |---|---|---|---|---|
@@ -35,9 +35,16 @@ Sensibilidad de la regla a los umbrales de continuidad:
 | 0.5 | 5 | 10.7 % | [3.7 %, 27.2 %] | 68.2 % (30/44) |
 | 0.5 | 2 | 10.7 % | [3.7 %, 27.2 %] | 59.1 % (26/44) |
 
-Aun con el umbral mas estricto (dPEEP <= 0,5 y dFiO2 <= 2) la tasa de FP queda en el limite (> 10 %) y solo conserva ~59 % de los candidatos: el criterio casi no separa, porque PEEP y FiO2 se repiten entre pacientes.
+Ningun umbral de la variante a baja de forma util: el mas estricto (dPEEP <= 0.5 y dFiO2 <= 5) se queda en 10.7 % de FP conservando 68.2 % de los candidatos. El problema no es el umbral: PEEP y FiO2 son AJUSTES y se repiten entre pacientes. Lo que discrimina son las variables del paciente (TV y FR), que se evaluan en la tabla de variantes de arriba.
 
-**Veredicto 2c.3**: la tasa de falsos positivos estimada es **> 10 %** → **NO se aplica** la regla de union (D-f) tal cual.
+**Veredicto por variante** (FP en las parejas de control de clinic):
+
+- a) PEEP y FiO2: 59.3 % [40.7 %, 75.5 %] → por encima del umbral del 10 %
+- b) a + |dTV| <= 50 mL: 22.2 % [10.6 %, 40.8 %] → por encima del umbral del 10 %
+- c) a + |dRR| <= 2: 11.1 % [3.9 %, 28.1 %] → por encima del umbral del 10 %
+- d) a + TV y FR: 3.7 % [0.7 %, 18.3 %] → por debajo del umbral del 10 %
+
+**Decision (13/10)**: se aplica la **variante d** (PEEP, FiO2, TV y FR, hueco <= 12 h y vuelta con ventilacion activa), pero **solo en las parejas que el usuario confirme en una adjudicacion visual ciega** (`scripts/verify/fase1_6e/adjudicacion.py`). La regla estricta (0 uniones) queda como analisis de sensibilidad sobre v0.6.0.
 
 ## clinic
 
@@ -148,7 +155,7 @@ De los candidatos (<= 12 h), cumplen: {'a': 1, 'b': 1, 'c': 1, 'd': 1}
 | d_rr | control | 9 | 1.00 | 5.00 | 10.00 |
 | d_rr | candidatos | 15 | 0.00 | 1.90 | 6.78 |
 
-Sensibilidad de la regla a los umbrales de continuidad:
+Sensibilidad de la regla SOLO con ajustes (PEEP y FiO2), que es la variante a:
 
 | dPEEP <= | dFiO2 <= | FP (control >24 h) | IC 95 % (Wilson) | Candidatos que pasarian |
 |---|---|---|---|---|
@@ -159,9 +166,16 @@ Sensibilidad de la regla a los umbrales de continuidad:
 | 0.5 | 5 | 0.0 % | [0.0 %, 65.8 %] | 0.0 % (0/1) |
 | 0.5 | 2 | 0.0 % | [0.0 %, 65.8 %] | 0.0 % (0/1) |
 
-Aun con el umbral mas estricto (dPEEP <= 0,5 y dFiO2 <= 2) la tasa de FP queda en el limite (> 10 %) y solo conserva ~59 % de los candidatos: el criterio casi no separa, porque PEEP y FiO2 se repiten entre pacientes.
+Ningun umbral de la variante a baja de forma util: el mas estricto (dPEEP <= 3 y dFiO2 <= 20) se queda en 50.0 % de FP conservando 100.0 % de los candidatos. El problema no es el umbral: PEEP y FiO2 son AJUSTES y se repiten entre pacientes. Lo que discrimina son las variables del paciente (TV y FR), que se evaluan en la tabla de variantes de arriba.
 
-**Veredicto 2c.3**: la tasa de falsos positivos estimada es **> 10 %** → **NO se aplica** la regla de union (D-f) tal cual.
+**Veredicto por variante** (FP en las parejas de control de vitaldb):
+
+- a) PEEP y FiO2: 50.0 % [9.5 %, 90.5 %] → por encima del umbral del 10 %
+- b) a + |dTV| <= 50 mL: 50.0 % [9.5 %, 90.5 %] → por encima del umbral del 10 %
+- c) a + |dRR| <= 2: 0.0 % [0.0 %, 65.8 %] → por debajo del umbral del 10 %
+- d) a + TV y FR: 0.0 % [0.0 %, 65.8 %] → por debajo del umbral del 10 %
+
+**Decision (13/10)**: se aplica la **variante d** (PEEP, FiO2, TV y FR, hueco <= 12 h y vuelta con ventilacion activa), pero **solo en las parejas que el usuario confirme en una adjudicacion visual ciega** (`scripts/verify/fase1_6e/adjudicacion.py`). La regla estricta (0 uniones) queda como analisis de sensibilidad sobre v0.6.0.
 
 ## vitaldb
 
