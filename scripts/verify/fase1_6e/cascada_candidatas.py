@@ -1,0 +1,335 @@
+#!/usr/bin/env python3
+"""
+scripts/verify/fase1_6e/cascada_candidatas.py
+=============================================
+Fase 1.6e — cascada de candidatas a unir (D-f revisada, variante d) y medicion
+dirigida de las diferencias que falten.
+
+Cascada (cada paso es un AND del anterior), por cohorte:
+
+1. **Pares consecutivos del mismo box con el primero CENSURADO y hueco <= 12 h.**
+2. **+ vuelve con ventilacion activa** (criterio del indice: inicio del intento).
+3. **+ deltas medibles** (TV y FR a ambos lados; y PEEP/FiO2 para la variante d).
+4. **+ variante d**: |dPEEP| <= 3, |dFiO2| <= 20, |dTV| <= 50 mL, |dRR| <= 2.
+
+NO se exige apagado simultaneo <= 15 min: el desfase entre el fin del ventilador
+y el fin del monitor se **informa como columna**, no se usa como filtro.
+
+Los deltas ya medidos se toman de la sonda 2c.1 (`apagado_simultaneo.json`);
+para los pares que entren y no esten medidos se leen los ficheros de forma
+dirigida (`--medir-faltantes`), con presupuesto de tiempo: un `stat`/lectura
+colgada de D: no puede bloquear el proceso.
+
+Los identificadores de pareja son ESTABLES (nunca `event_id` posicional):
+box + epoch del fin del primer tramo + epoch del inicio del segundo + hash del
+NOMBRE del fichero de origen de cada lado.
+
+Uso:
+    python scripts/verify/fase1_6e/cascada_candidatas.py --cohort clinic \
+        --json reports/fase1_6e/cascada_clinic.json
+    python scripts/verify/fase1_6e/cascada_candidatas.py --cohort clinic \
+        --medir-faltantes --json ...
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import sys
+import threading
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT))
+
+from src.common.paths import config_path  # noqa: E402
+from src.create_dataset.build_signal_cases import (  # noqa: E402
+    SPECS,
+    scan_source_files,
+)
+from src.stage0.io.versioning import load_config  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from annotate_index import (  # noqa: E402
+    EPS,
+    MAX_GAP_H,
+    RETURN_MIN,
+    _median_window,
+    _starts_ventilated,
+)
+
+CONFIG = ROOT / "src/stage0/config/harmonize.yaml"
+REPORT = ROOT / "reports" / "fase1_6e"
+D_PEEP, D_FIO2, D_TV, D_RR = 3.0, 20.0, 50.0, 2.0
+PEEP_T = ("Intellivue/PEEP_CMH2O",)
+FIO2_T = ("Intellivue/FIO2",)
+TV_T = ("Intellivue/TV_EXP",)
+RR_T = ("Intellivue/VENT_RR",)
+
+
+def _sha_nombre(nombre: str) -> str:
+    """SHA-256 del NOMBRE del fichero (identificador estable, sin leerlo)."""
+    return hashlib.sha256(nombre.encode("utf-8")).hexdigest()
+
+
+def _es_censurado(e: dict) -> bool:
+    lab = (e.get("labels") or {}).get("48h") or {}
+    return lab.get("event_type") != "successful_extubation"
+
+
+def _medir_con_presupuesto(fn, *, budget_s: float):
+    """Ejecuta ``fn`` en un hilo con presupuesto; devuelve (ok, valor).
+
+    ``D:`` tiene rachas en las que una lectura se queda colgada: sin esto el
+    proceso se bloquea para siempre (ya paso con el driver).
+    """
+    caja: dict = {}
+
+    def _work() -> None:
+        try:
+            caja["v"] = fn()
+        except Exception:  # noqa: BLE001
+            caja["v"] = None
+
+    th = threading.Thread(target=_work, daemon=True)
+    th.start()
+    th.join(timeout=budget_s)
+    if th.is_alive():
+        return False, None
+    return True, caja.get("v")
+
+
+def _deltas_de_ficheros(prev: dict, nxt: dict, meta: dict, *,
+                        budget_s: float) -> dict:
+    """Mide los 4 deltas leyendo los ficheros (ventanas de 30 min de 2c.1)."""
+    def _dos_ultimos(files: list) -> list:
+        return sorted(files, key=lambda f: f.dt_unix)[-2:]
+
+    def _dos_primeros(files: list) -> list:
+        return sorted(files, key=lambda f: f.dt_unix)[:2]
+
+    def _de(e: dict) -> list:
+        return [meta[n] for n in (e.get("source_files") or []) if n in meta]
+
+    att_prev = prev.get("attempts") or []
+    att_next = nxt.get("attempts") or []
+    if not att_prev or not att_next:
+        return {}
+    f_prev = _dos_ultimos(_de(prev))
+    f_next = _dos_primeros(_de(nxt))
+    t0p, t0n = float(prev["t0_unix"]), float(nxt["t0_unix"])
+    vp = float(att_prev[-1].get("vent_end_h") or 0.0)
+    vn = float(att_next[0].get("vent_start_h") or 0.0)
+    out: dict[str, float | None] = {}
+    for clave, tr in (("d_peep", PEEP_T), ("d_fio2", FIO2_T),
+                      ("d_tv", TV_T), ("d_rr", RR_T)):
+        ok_a, a = _medir_con_presupuesto(
+            lambda tr=tr: _median_window(f_prev, t0p, tr, vp - 0.5, vp),
+            budget_s=budget_s)
+        ok_b, b = _medir_con_presupuesto(
+            lambda tr=tr: _median_window(f_next, t0n, tr, vn, vn + 0.5),
+            budget_s=budget_s)
+        out[clave] = (b - a) if (ok_a and ok_b and a is not None
+                                 and b is not None) else None
+    return out
+
+
+def _pares(idx: dict) -> list[dict]:
+    """Pares consecutivos del mismo box (paso 1 de la cascada)."""
+    por_box: dict[str, list[dict]] = {}
+    for e in idx["events"]:
+        por_box.setdefault(e["box"], []).append(e)
+    pares: list[dict] = []
+    for box, evs in por_box.items():
+        evs.sort(key=lambda x: float(x["t0_unix"]))
+        for i in range(len(evs) - 1):
+            prev, nxt = evs[i], evs[i + 1]
+            att = prev.get("attempts") or []
+            if not att:
+                continue
+            exit_prev_h = (float(prev["t0_unix"]) / 3600.0
+                           + float(prev.get("obs_end_h") or 0.0))
+            t0_next_h = float(nxt["t0_unix"]) / 3600.0
+            gap = t0_next_h - exit_prev_h
+            desfase = abs(float(prev["t0_unix"]) / 3600.0
+                          + float(att[-1].get("vent_end_h") or 0.0)
+                          - exit_prev_h)
+            pares.append({
+                "box": box, "prev": prev, "next": nxt,
+                "gap_h": round(gap, 4),
+                "censurado": _es_censurado(prev),
+                "vuelve": _starts_ventilated(nxt, RETURN_MIN),
+                "desfase_vent_monitor_h": round(desfase, 4),
+            })
+    return pares
+
+
+def _id_estable(par: dict) -> dict:
+    prev, nxt = par["prev"], par["next"]
+    att = prev.get("attempts") or [{}]
+    f_prev = (prev.get("source_files") or [""])[-1]
+    f_next = (nxt.get("source_files") or [""])[0]
+    return {
+        "box": par["box"],
+        "prev_end_epoch": round(float(prev["t0_unix"]) / 3600.0 * 3600.0
+                                + float(att[-1].get("vent_end_h") or 0.0)
+                                * 3600.0, 1),
+        "next_start_epoch": round(float(nxt["t0_unix"]), 1),
+        "prev_file": f_prev, "prev_file_sha256": _sha_nombre(f_prev),
+        "next_file": f_next, "next_file_sha256": _sha_nombre(f_next),
+    }
+
+
+def main() -> None:
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:  # noqa: BLE001
+        pass
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--cohort", required=True, choices=sorted(SPECS))
+    p.add_argument("--index", default=None)
+    p.add_argument("--medir-faltantes", action="store_true",
+                   help="Mide los deltas de los pares no cubiertos por 2c.1.")
+    p.add_argument("--budget-s", type=float, default=180.0)
+    p.add_argument("--json", default=None)
+    p.add_argument("--md", default=None)
+    p.add_argument("--config", default=str(CONFIG))
+    args = p.parse_args()
+
+    index_path = (Path(args.index) if args.index else
+                  sorted((ROOT / "datasets" / args.cohort).glob(
+                      f"cases_v*/{args.cohort}_cases_index.json"))[-1])
+    idx = json.loads(index_path.read_text(encoding="utf-8"))
+    apag = json.loads((REPORT / "apagado_simultaneo.json")
+                      .read_text(encoding="utf-8")).get(args.cohort) or []
+    medidos = {c["event_id"]: c for c in apag}
+    print(f"Indice: {index_path.relative_to(ROOT)} ({idx['total_events']} eventos)")
+    print(f"Sonda 2c.1: {len(apag)} casos con deltas medidos")
+
+    config = load_config(args.config)
+    boxes = scan_source_files(
+        config_path(config, "paths", f"{args.cohort}_raw_dir"), SPECS[args.cohort])
+    meta_por_box = {b: {sf.path.name: sf for sf in fs} for b, fs in boxes.items()}
+
+    pares = _pares(idx)
+    paso1 = [p for p in pares if p["censurado"] and 0.0 <= p["gap_h"] <= MAX_GAP_H + EPS]
+    paso2 = [p for p in paso1 if p["vuelve"]]
+
+    # Deltas: de la sonda si existen, si no (y se pide) medidos dirigidamente.
+    n_medidos_sonda = n_medidos_directo = n_sin_medir = 0
+    for p in paso2:
+        eid = p["prev"]["event_id"]
+        if eid in medidos:
+            c = medidos[eid]
+            p["deltas"] = {k: c.get(k) for k in
+                           ("d_peep", "d_fio2", "d_tv", "d_rr")}
+            p["origen_deltas"] = "sonda_2c1"
+            n_medidos_sonda += 1
+            continue
+        if args.medir_faltantes:
+            d = _deltas_de_ficheros(p["prev"], p["next"],
+                                    meta_por_box.get(p["box"], {}),
+                                    budget_s=args.budget_s)
+            p["deltas"] = d
+            p["origen_deltas"] = "medido_dirigido"
+            if any(v is not None for v in d.values()):
+                n_medidos_directo += 1
+            else:
+                n_sin_medir += 1
+        else:
+            p["deltas"] = {k: None for k in
+                           ("d_peep", "d_fio2", "d_tv", "d_rr")}
+            p["origen_deltas"] = "sin_medir"
+            n_sin_medir += 1
+
+    paso3 = [p for p in paso2 if p["deltas"].get("d_tv") is not None
+             and p["deltas"].get("d_rr") is not None]
+    paso4 = [p for p in paso3
+             if p["deltas"].get("d_peep") is not None
+             and p["deltas"].get("d_fio2") is not None
+             and abs(p["deltas"]["d_peep"]) <= D_PEEP
+             and abs(p["deltas"]["d_fio2"]) <= D_FIO2
+             and abs(p["deltas"]["d_tv"]) <= D_TV
+             and abs(p["deltas"]["d_rr"]) <= D_RR]
+    # Controles para la adjudicacion: pacientes distintos (hueco > 24 h) del
+    # mismo box, con TV y FR medibles a ambos lados.
+    controles = [p for p in pares
+                 if p["gap_h"] > 24.0
+                 and p.get("deltas", {}).get("d_tv") is not None
+                 and p.get("deltas", {}).get("d_rr") is not None]
+
+    notas = [
+        "Por que estos numeros no coinciden con el 45 -> 21 -> 7 del informe "
+        "de 2c.3 (todas las causas son de BASE o de FILTRO, no de calculo):", "",
+        "- **45** era 'hueco <= 12 h' contado SOLO sobre los pares cuyo primer "
+        "evento analizo la sonda (135 de 181 eventos), y **sin exigir que el "
+        "primero estuviera censurado**. Aqui el paso 1 recorre TODOS los pares "
+        "(168) y exige censura: 62.",
+        "- **21** exigia las cuatro diferencias medidas (cobertura de la sonda). "
+        "Aqui el paso 3 cae a 19 porque quedan 38 pares sin medir: con "
+        "`--medir-faltantes` suben los pasos 3 y 4.",
+        "- **7** (commit 1f048cc) anadia el filtro de **apagado simultaneo <= 15 "
+        "min**. Ese filtro YA NO se aplica: el desfase fin-de-ventilador vs "
+        "fin-de-monitor se informa como columna por pareja.",
+        "- El paso 2 no resta nada porque 'vuelve con ventilacion activa' es "
+        "casi siempre cierto en Clinic (llegan intubados de quirofano).",
+    ]
+
+    tabla = [
+        "| Paso | Pares |", "|---|---|",
+        f"| 0. Pares consecutivos del mismo box | {len(pares)} |",
+        f"| 1. Primero censurado y hueco <= {MAX_GAP_H:.0f} h | {len(paso1)} |",
+        f"| 2. + vuelve con ventilacion activa (indice) | {len(paso2)} |",
+        f"| 3. + deltas de TV y FR medibles | {len(paso3)} |",
+        f"| 4. + VARIANTE d (PEEP, FiO2, TV, FR) | **{len(paso4)}** |",
+    ]
+    print("\n".join(tabla))
+    print(f"deltas: sonda {n_medidos_sonda} · medidos dirigidos {n_medidos_directo}"
+          f" · sin medir {n_sin_medir}")
+    print(f"controles disponibles (hueco > 24 h, con TV y FR): {len(controles)}")
+    if paso4:
+        desf = sorted(p["desfase_vent_monitor_h"] for p in paso4)
+        print(f"desfase vent-monitor en las candidatas: p10 "
+              f"{desf[int(0.1 * (len(desf) - 1))]:.2f} · p50 "
+              f"{desf[len(desf) // 2]:.2f} · p90 {desf[int(0.9 * (len(desf) - 1))]:.2f} h")
+
+    salida = {
+        "cohort": args.cohort, "index": str(index_path.relative_to(ROOT)),
+        "cascada": {"paso0": len(pares), "paso1": len(paso1),
+                    "paso2": len(paso2), "paso3": len(paso3),
+                    "paso4": len(paso4)},
+        "n_deltas_sonda": n_medidos_sonda,
+        "n_deltas_directos": n_medidos_directo,
+        "n_sin_medir": n_sin_medir,
+        "candidatas": [{**_id_estable(p), "gap_h": p["gap_h"],
+                        "desfase_vent_monitor_h": p["desfase_vent_monitor_h"],
+                        "deltas": p["deltas"], "origen_deltas": p["origen_deltas"]}
+                       for p in paso4],
+        "controles_disponibles": [
+            {**_id_estable(p), "gap_h": p["gap_h"],
+             "desfase_vent_monitor_h": p["desfase_vent_monitor_h"]}
+            for p in controles],
+        "notas": notas,
+    }
+    if args.json:
+        Path(args.json).write_text(json.dumps(salida, ensure_ascii=False, indent=2),
+                                   encoding="utf-8")
+        print(f"JSON: {args.json}")
+    if args.md:
+        Path(args.md).write_text(
+            f"# Cascada de candidatas — {args.cohort}\n\n"
+            + "\n".join(tabla) + "\n\n"
+            + "\n".join(notas) + "\n\n"
+            f"- Indice: `{index_path.relative_to(ROOT)}`\n"
+            f"- Deltas: sonda 2c.1 {n_medidos_sonda} · medidos dirigidos "
+            f"{n_medidos_directo} · sin medir {n_sin_medir}\n"
+            f"- Controles disponibles: {len(controles)}\n"
+            "- Identificadores estables: box + epochs + hash del nombre de los "
+            "ficheros de origen (nunca `event_id` posicional).\n",
+            encoding="utf-8")
+        print(f"MD: {args.md}")
+
+
+if __name__ == "__main__":
+    main()

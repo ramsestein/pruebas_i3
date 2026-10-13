@@ -118,6 +118,27 @@ def _dos_primeros(files: list) -> list:
     return sorted(files, key=lambda f: f.dt_unix)[:2]
 
 
+def _desde_cascada(path: Path, idx_por_id: dict) -> dict:
+    """Candidatas y controles desde la cascada, con identificadores ESTABLES.
+
+    La poblacion NO exige apagado simultaneo <= 15 min (la cascada informa del
+    desfase como columna). Se empareja por los times/ficheros estables, no por
+    `event_id` posicional.
+    """
+    data = json.loads(path.read_text(encoding="utf-8"))
+    cands, ctrls = [], []
+    for tipo, clave in (("candidata", "candidatas"),
+                        ("control", "controles_disponibles")):
+        for p in data.get(clave) or []:
+            par = {**p, "tipo": tipo,
+                   "gap_h": p.get("gap_h"),
+                   "desfase_vent_monitor_h": p.get("desfase_vent_monitor_h"),
+                   "deltas": p.get("deltas") or {}}
+            (cands if tipo == "candidata" else ctrls).append(par)
+    return {"candidatas": cands, "controles": ctrls,
+            "cascada": data.get("cascada"), "notas": data.get("notas") or []}
+
+
 def _parejas(apag: list[dict], idx_por_id: dict) -> dict:
     """Candidatas (variante d) y controles a partir de los casos de 2c.1.
 
@@ -230,6 +251,37 @@ def _pintar(pareja: dict, meta: dict, idx_por_id: dict, png: Path,
     return True
 
 
+def _fin_de(e: dict) -> float | None:
+    """Epoch del fin del ultimo tramo ventilado (t0 + vent_end)."""
+    att = e.get("attempts") or []
+    if not att:
+        return None
+    return (float(e["t0_unix"])
+            + float(att[-1].get("vent_end_h") or 0.0) * 3600.0)
+
+
+def _eid_por_tiempo(idx_por_id: dict, par: dict) -> tuple[str, str]:
+    """Localiza los event_id de la pareja por sus TIEMPOS estables (±15 min).
+
+    Los `event_id` son posicionales y cambian entre versiones del indice; los
+    tiempos (fin del primer tramo / inicio del segundo) no. Si alguno no casa
+    devuelve "" y la pareja se reporta como no casada.
+    """
+    tol = 15 * 60.0
+    t_end = par.get("prev_end_epoch")
+    t_ini = par.get("next_start_epoch")
+    prev = None
+    if t_end is not None:
+        prev = next((e["event_id"] for e in idx_por_id.values()
+                     if _fin_de(e) is not None
+                     and abs(_fin_de(e) - float(t_end)) <= tol), None)
+    nxt = None
+    if t_ini is not None:
+        nxt = next((e["event_id"] for e in idx_por_id.values()
+                    if abs(float(e["t0_unix"]) - float(t_ini)) <= tol), None)
+    return (prev or "", nxt or "")
+
+
 def main() -> None:
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -243,6 +295,10 @@ def main() -> None:
     p.add_argument("--out-dir", default=None)
     p.add_argument("--clave", default=r"D:\data\iprove3_work\adjudicacion_clave.json",
                    help="ruta FUERA del repo con la clave codigo -> pareja")
+    p.add_argument("--desde-cascada", default=None,
+                   help="JSON de cascada_candidatas.py (poblacion oficial).")
+    p.add_argument("--excluir-clave", default=None,
+                   help="Clave de una tanda anterior: sus parejas no se repiten.")
     p.add_argument("--solo-lista", action="store_true",
                    help="Solo cuenta candidatas y controles (no pinta PNG).")
     p.add_argument("--max-pares", type=int, default=None)
@@ -261,9 +317,24 @@ def main() -> None:
     meta_por_box = {b: {sf.path.name: sf for sf in fs} for b, fs in boxes.items()}
 
     idx_por_id = {e["event_id"]: e for e in idx["events"]}
-    par = _parejas(json.loads((REPORT / "apagado_simultaneo.json")
-                              .read_text(encoding="utf-8")).get(args.cohort) or [],
-                   idx_por_id)
+    if args.desde_cascada:
+        par = _desde_cascada(Path(args.desde_cascada), idx_por_id)
+    else:
+        par = _parejas(json.loads((REPORT / "apagado_simultaneo.json")
+                                  .read_text(encoding="utf-8"))
+                      .get(args.cohort) or [], idx_por_id)
+    # Segunda tanda: las parejas ya adjudicadas (misma box + tiempos) no repiten.
+    if args.excluir_clave and Path(args.excluir_clave).exists():
+        prev = json.loads(Path(args.excluir_clave).read_text(encoding="utf-8"))
+        usadas = {(v.get("box"), v.get("prev_end_epoch"), v.get("next_start_epoch"))
+                  for v in (prev.get("clave") or {}).values()}
+        par["candidatas"] = [c for c in par["candidatas"]
+                             if (c.get("box"), c.get("prev_end_epoch"),
+                                 c.get("next_start_epoch")) not in usadas]
+        par["controles"] = [c for c in par["controles"]
+                            if (c.get("box"), c.get("prev_end_epoch"),
+                                c.get("next_start_epoch")) not in usadas]
+        print(f"Excluidas {len(usadas)} parejas de la tanda anterior")
     print(f"- Candidatas variante d: {len(par['candidatas'])}")
     print(f"- Controles disponibles (hueco > {GAP_CONTROL_H:.0f} h, con TV y FR): "
           f"{len(par['controles'])}")
@@ -283,18 +354,33 @@ def main() -> None:
     if args.max_pares:
         seleccion = seleccion[: args.max_pares]
     claves: dict[str, dict] = {}
+    sin_casar: list[dict] = []
     out_dir = Path(args.out_dir) if args.out_dir else REPORT / "adjudicacion" / args.cohort
     for n, par_ in enumerate(seleccion, start=1):
         codigo = f"P{n:02d}"
+        eid_prev, eid_next = _eid_por_tiempo(idx_por_id, par_)
+        if not eid_prev or not eid_next:
+            sin_casar.append({**par_, "codigo": codigo,
+                              "prev_casado": eid_prev, "next_casado": eid_next})
+            print(f"  {codigo}: NO CASA por tiempos (se reporta, no se pinta)",
+                  flush=True)
+            continue
         meta = meta_por_box.get(par_["box"], {})
-        _pintar(par_, meta, idx_por_id, out_dir / f"{codigo}.png", codigo)
+        _pintar({**par_, "prev": eid_prev, "next": eid_next},
+                meta, idx_por_id, out_dir / f"{codigo}.png", codigo)
         claves[codigo] = {
             "tipo": par_["tipo"],
-            "box": par_["box"], "prev": par_["prev"], "next": par_["next"],
-            "gap_h": par_["gap_h"], "dPEEP": par_.get("dPEEP"),
-            "dFiO2": par_.get("dFiO2"), "dTV": par_.get("dTV"),
-            "dRR": par_.get("dRR"), "clase_2c1": par_.get("clase_2c1"),
-            "tiene_ficheros": par_.get("tiene_ficheros"),
+            # Identificadores ESTABLES (nunca event_id posicional)
+            "box": par_["box"],
+            "prev_end_epoch": par_.get("prev_end_epoch"),
+            "next_start_epoch": par_.get("next_start_epoch"),
+            "prev_file": par_.get("prev_file"),
+            "prev_file_sha256": par_.get("prev_file_sha256"),
+            "next_file": par_.get("next_file"),
+            "next_file_sha256": par_.get("next_file_sha256"),
+            "gap_h": par_.get("gap_h"),
+            "desfase_vent_monitor_h": par_.get("desfase_vent_monitor_h"),
+            **(par_.get("deltas") or {}),
         }
         print(f"  {codigo}: PNG listo", flush=True)
 
@@ -354,6 +440,8 @@ cambies la columna `codigo`.**
 
     informe = [f"# Paquete de adjudicacion — {args.cohort}", "",
                f"- Indice: `{index_path.relative_to(ROOT)}`",
+               f"- Poblacion: cascada de candidatas (variante d), SIN exigir "
+               f"apagado simultaneo (el desfase se informa por pareja)",
                f"- Candidatas variante d: **{n_cand}** "
                f"(de {len(par['candidatas'])} encontradas)",
                f"- Controles incluidos: **{n_ctrl}** "
@@ -361,8 +449,21 @@ cambies la columna `codigo`.**
                f"- Semilla: `{args.semilla}` · codigos `P01`…`P{n:02d}`",
                f"- Clave (FUERA del repo): `{clave_path}`",
                f"- SHA-256 de la clave: `{sha}`", "",
-               "La clave se fija con ese hash: si cambia, la adjudicacion deja de "
-               "ser valida.", ""]
+               "Identificadores ESTABLES por pareja (nunca `event_id` "
+               "posicional): box + epoch del fin del primer tramo + epoch del "
+               "inicio del segundo + hash del NOMBRE del fichero de origen de "
+               "cada lado. Al aplicar la adjudicacion se empareja por esos "
+               "tiempos (±15 min).", ""]
+    if sin_casar:
+        informe += [f"**{len(sin_casar)} parejas NO casaron por tiempos** y no se "
+                    "pintaron (se listan abajo):", ""]
+        for s in sin_casar:
+            informe.append(f"- {s['codigo']}: {s['box']} "
+                           f"prev_end={s.get('prev_end_epoch')} "
+                           f"next_start={s.get('next_start_epoch')}")
+        informe.append("")
+    if par.get("cascada"):
+        informe += [f"Cascada: {par['cascada']}", ""]
     (out_dir / "informe_adjudicacion.md").write_text("\n".join(informe),
                                                     encoding="utf-8")
     print(f"\nPNG: {out_dir}")

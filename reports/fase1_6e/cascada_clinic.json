@@ -1,0 +1,142 @@
+{
+  "cohort": "clinic",
+  "index": "datasets\\clinic\\cases_v0.5.0_eac1eb35\\clinic_cases_index.json",
+  "cascada": {
+    "paso0": 168,
+    "paso1": 62,
+    "paso2": 62,
+    "paso3": 19,
+    "paso4": 7
+  },
+  "n_deltas_sonda": 24,
+  "n_deltas_directos": 0,
+  "n_sin_medir": 38,
+  "candidatas": [
+    {
+      "box": "box12",
+      "prev_end_epoch": 1753615546.6,
+      "next_start_epoch": 1753632732.4,
+      "prev_file": "kuigebjtu_250727_065647.vital",
+      "prev_file_sha256": "1835055870bc42d585911845c554fb11dcb724359e730aa42d67acc3df2181d4",
+      "next_file": "kuigebjtu_250727_181211.vital",
+      "next_file_sha256": "f23bc2fccde267f50bdac7221d0139ff770d14bdc8bff26c8e11ce6e9b7496dd",
+      "gap_h": 4.7738,
+      "desfase_vent_monitor_h": 0.0,
+      "deltas": {
+        "d_peep": -0.3,
+        "d_fio2": 0.0,
+        "d_tv": 2.0,
+        "d_rr": 0.0
+      },
+      "origen_deltas": "sonda_2c1"
+    },
+    {
+      "box": "box12",
+      "prev_end_epoch": 1753691348.6,
+      "next_start_epoch": 1753710785.3,
+      "prev_file": "kuigebjtu_250727_181211.vital",
+      "prev_file_sha256": "f23bc2fccde267f50bdac7221d0139ff770d14bdc8bff26c8e11ce6e9b7496dd",
+      "next_file": "kuigebjtu_250728_155303.vital",
+      "next_file_sha256": "9958561e85055aabdd4e127f6ff565f60819e64b1eace4ca4c590f7560cd9e78",
+      "gap_h": 5.3991,
+      "desfase_vent_monitor_h": 0.0,
+      "deltas": {
+        "d_peep": -0.1,
+        "d_fio2": 0.0,
+        "d_tv": 1.0,
+        "d_rr": 0.0
+      },
+      "origen_deltas": "sonda_2c1"
+    },
+    {
+      "box": "box14",
+      "prev_end_epoch": 1748245801.6,
+      "next_start_epoch": 1748258896.9,
+      "prev_file": "7gibrwfgp_250525_171619.vital",
+      "prev_file_sha256": "8e27a1c758e2b8c6a36ab9d334bac4c62e6e6e17da5f680aca2814399c8ce498",
+      "next_file": "7gibrwfgp_250526_132818.vital",
+      "next_file_sha256": "6387de005eba3a261cbaeefa7ff98c15bc2104b46421bd9ee680c863c5b68ec1",
+      "gap_h": 3.6376,
+      "desfase_vent_monitor_h": 0.0,
+      "deltas": {
+        "d_peep": 2.1,
+        "d_fio2": 0.0,
+        "d_tv": -2.0,
+        "d_rr": 0.0
+      },
+      "origen_deltas": "sonda_2c1"
+    },
+    {
+      "box": "box14",
+      "prev_end_epoch": 1753961902.1,
+      "next_start_epoch": 1754003532.7,
+      "prev_file": "7gibrwfgp_250731_123858.vital",
+      "prev_file_sha256": "fb2db8aa9b1806d04c9145cff4ef31cd8d0709d08658a7a6954f5dc77f6b28d0",
+      "next_file": "7gibrwfgp_250801_011214.vital",
+      "next_file_sha256": "2b2ec82babe7ede7445d053364409b57b68adebb6e50f54ef9bc71c815f8d83a",
+      "gap_h": 11.564,
+      "desfase_vent_monitor_h": 0.0,
+      "deltas": {
+        "d_peep": 0.0,
+        "d_fio2": 0.0,
+        "d_tv": 38.0,
+        "d_rr": -2.0
+      },
+      "origen_deltas": "sonda_2c1"
+    },
+    {
+      "box": "box3",
+      "prev_end_epoch": 1751402113.8,
+      "next_start_epoch": 1751412136.7,
+      "prev_file": "n5j8vrrsb_250701_155253.vital",
+      "prev_file_sha256": "890cea307aec9b743b39361e94ee63223222c30ee846b7ae15df262d92316cac",
+      "next_file": "n5j8vrrsb_250702_012215.vital",
+      "next_file_sha256": "9064cc06c85f0fe003eaaa8b385e800cd0fa337410fd6e9df179aa0977b73939",
+      "gap_h": 2.7842,
+      "desfase_vent_monitor_h": 0.0,
+      "deltas": {
+        "d_peep": 0.1,
+        "d_fio2": 1.0,
+        "d_tv": 1.0,
+        "d_rr": 0.0
+      },
+      "origen_deltas": "sonda_2c1"
+    },
+    {
+      "box": "box4",
+      "prev_end_epoch": 1761807811.6,
+      "next_start_epoch": 1761819473.9,
+      "prev_file": "nd7wx5v9h_251030_052345.vital",
+      "prev_file_sha256": "d1a7b9c3513f60e60cadfe71c030736086861d99498db02596ffb60454072e07",
+      "next_file": "nd7wx5v9h_251030_111753.vital",
+      "next_file_sha256": "a3ec382e7657596d615adaab8577043a32d22daca5fd8b52990b3911ba08f822",
+      "gap_h": 3.2395,
+      "desfase_vent_monitor_h": 0.0,
+      "deltas": {
+        "d_peep": 0.45,
+        "d_fio2": 6.0,
+        "d_tv": -16.5,
+        "d_rr": 1.25
+      },
+      "origen_deltas": "sonda_2c1"
+    },
+    {
+      "box": "box4",
+      "prev_end_epoch": 1762211761.6,
+      "next_start_epoch": 1762221230.1,
+      "prev_file": "nd7wx5v9h_251103_143846.vital",
+      "prev_file_sha256": "801c89bdc4abdbbcada842581e2c57ba7ccbb32eb8919d486d6ba75d0bcd7f03",
+      "next_file": "nd7wx5v9h_251104_025350.vital",
+      "next_file_sha256": "94a56d4821699fc5217c2e2a612cb9bbd4c5eb6558675e600919fca9ca12aa4c",
+      "gap_h": 2.6301,
+      "desfase_vent_monitor_h": 0.0,
+      "deltas": {
+        "d_peep": 0.1,
+        "d_fio2": 0.0,
+        "d_tv": 5.5,
+        "d_rr": 0.0
+      },
+      "origen_deltas": "sonda_2c1"
+    }
+  ]
+}
