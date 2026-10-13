@@ -114,20 +114,28 @@ def _deltas_de_ficheros(prev: dict, nxt: dict, meta: dict, *,
     (``timeout``, ``sin <pista>``...). Se leen las CUATRO pistas en una sola
     pasada por lado (dos lecturas por pareja, no ocho).
     """
-    def _de_corte(meta: dict, corte_epoch: float) -> list:
-        """Los 2 ficheros del box que probablemente CUBREN el corte.
+    def _de_corte(meta: dict, corte_epoch: float, e: dict) -> list:
+        """Ficheros candidatos a cubrir el corte: union de dos criterios.
 
-        No se usa la lista ``source_files`` del evento: en v0.5.0 puede faltar el
-        ultimo tramo (el fichero que cubre el fin de la ventilacion no estaba
-        incluido, y la ventana se quedaba sin datos). Se eligen por NOMBRE
-        alrededor del corte, con margen de 26 h (grabaciones de 19-48 h) y
-        quedandose con los mas cercanos anteriores.
+        1. los ``source_files`` del evento (como hace la sonda 2c.1, que si
+           encuentra las pistas);
+        2. los del box cuyo NOMBRE cae en las 26 h anteriores al corte (por si
+           la lista del evento omite el ultimo tramo: pasa en v0.5.0, B2).
+
+        La union evita los dos fallos vistos: perder el fichero que cubre el
+        corte y elegir ficheros de otro tramo sin las pistas de ventilador.
         """
         corte_h = corte_epoch / 3600.0
-        cand = [f for f in meta.values()
+        por_nombre = list((meta or {}).values())
+        cand = [f for f in por_nombre
                 if corte_h - 26.0 <= f.dt_unix / 3600.0 <= corte_h + 1.0]
         cand.sort(key=lambda f: f.dt_unix)
-        return cand[-2:]
+        del_evento = [meta[n] for n in (e.get("source_files") or [])
+                      if n in (meta or {})]
+        vistos: dict[str, object] = {}
+        for f in list(del_evento) + cand[-3:]:
+            vistos[str(f.path)] = f
+        return list(vistos.values())[:6]
 
     tracks = [PEEP_T[0], FIO2_T[0], TV_T[0], RR_T[0]]
     att_prev = prev.get("attempts") or []
@@ -137,8 +145,8 @@ def _deltas_de_ficheros(prev: dict, nxt: dict, meta: dict, *,
     t0p, t0n = float(prev["t0_unix"]), float(nxt["t0_unix"])
     vp = float(att_prev[-1].get("vent_end_h") or 0.0)
     vn = float(att_next[0].get("vent_start_h") or 0.0)
-    f_prev = _de_corte(meta, t0p + vp * 3600.0)
-    f_next = _de_corte(meta, t0n + vn * 3600.0)
+    f_prev = _de_corte(meta, t0p + vp * 3600.0, prev)
+    f_next = _de_corte(meta, t0n + vn * 3600.0, nxt)
     if not f_prev or not f_next:
         return ({k: None for k in ("d_peep", "d_fio2", "d_tv", "d_rr")},
                 "sin ficheros del box alrededor del corte")
@@ -156,25 +164,32 @@ def _deltas_de_ficheros(prev: dict, nxt: dict, meta: dict, *,
         ser_a = ser_a or {}
         ser_b = ser_b or {}
 
-    def _med(serie, tr, lo_h, hi_h, *, ultimo_si_vacio: bool = False) -> float | None:
-        """Mediana en la ventana; si esta vacia y se pide, usa el ultimo tramo
-        CON DATOS de 30 min (el fin de ventilacion del indice puede caer mas
-        alla de lo grabado: v0.5.0 no incluye el ultimo fichero, B2)."""
+    def _med(serie, tr, lo_h, hi_h, *, respaldo: str | None = None) -> float | None:
+        """Mediana en la ventana; si esta vacia se usa el tramo CON DATOS mas
+        cercano (``respaldo="antes"``: ultimos 30 min; ``"despues"``: primeros).
+
+        Hace falta porque el fin de ventilacion del indice puede caer mas alla de
+        lo grabado (v0.5.0 no incluye el ultimo fichero, B2) y porque el inicio
+        del tramo siguiente puede caer antes del primer dato del fichero.
+        """
         t, v = (serie or {}).get(tr, (None, None))
         if t is None or len(t) == 0:
             return None
         h = t / 3600.0
         sel = (h >= lo_h) & (h <= hi_h)
-        if not sel.any() and ultimo_si_vacio:
+        if not sel.any() and respaldo == "antes":
             fin = float(h.max())
             sel = (h >= fin - 0.5) & (h <= fin)
+        elif not sel.any() and respaldo == "despues":
+            ini = float(h.min())
+            sel = (h >= ini) & (h <= ini + 0.5)
         return float(np.median(v[sel])) if sel.any() else None
 
     out: dict[str, float | None] = {}
     for clave, tr in (("d_peep", PEEP_T[0]), ("d_fio2", FIO2_T[0]),
                       ("d_tv", TV_T[0]), ("d_rr", RR_T[0])):
-        a = _med(ser_a, tr, vp - 0.5, vp, ultimo_si_vacio=True)
-        b = _med(ser_b, tr, vn, vn + 0.5)
+        a = _med(ser_a, tr, vp - 0.5, vp, respaldo="antes")
+        b = _med(ser_b, tr, vn, vn + 0.5, respaldo="despues")
         if a is None or b is None:
             motivos.append(f"sin {tr.split('/')[-1]} en la ventana")
             out[clave] = None
