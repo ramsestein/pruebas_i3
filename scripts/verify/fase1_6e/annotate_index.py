@@ -85,6 +85,16 @@ def _classify(gap_h: float | None, has_files: bool | None,
     return "D_indeterminado"
 
 
+def _starts_ventilated(e: dict, max_min: float) -> bool:
+    """El evento empieza ventilado (llego ya intubado o la VM arranca en <= max_min)."""
+    if e.get("arrived_ventilated"):
+        return True
+    att = e.get("attempts") or []
+    if not att:
+        return False
+    return float(att[0].get("vent_start_h") or 0.0) <= max_min + EPS
+
+
 def _es_apagado_simultaneo(prev: dict, *, tol_h: float = 0.25) -> bool:
     """Test de 2c.1: |fin de ventilacion ACTIVA - fin de observacion FISIOLOGICA|.
 
@@ -233,14 +243,6 @@ def main() -> None:
 
     def _exit_h(e: dict) -> float:
         return (float(e["t0_unix"]) / 3600.0 + float(e.get("obs_end_h") or 0.0))
-
-    def _starts_ventilated(e: dict, max_min: float) -> bool:
-        if e.get("arrived_ventilated"):
-            return True
-        att = e.get("attempts") or []
-        if not att:
-            return False
-        return float(att[0].get("vent_start_h") or 0.0) <= max_min + EPS
 
     def _files_of(e: dict) -> list:
         por_nombre = {f.path.name: f for f in boxes.get(e["box"], [])}
