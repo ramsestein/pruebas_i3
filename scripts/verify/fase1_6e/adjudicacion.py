@@ -92,15 +92,16 @@ VENT: dict[str, tuple[str, ...]] = {
 }
 
 
-def _recorta(files: list, t0_unix: float, variante: str, lo_h: float,
+def _recorta(serie: dict, variante: tuple[str, ...], lo_h: float,
              hi_h: float) -> tuple[np.ndarray, np.ndarray] | None:
-    """Serie (horas desde t0, valor) recortada a la ventana, para el grafico."""
-    if not files:
-        return None
-    series = read_track_series([str(f.path) for f in files],
-                               list(variante), t0_unix=t0_unix)
+    """Recorte de una serie YA leida (horas desde t0) a la ventana dada.
+
+    ``serie`` son todas las pistas de ese lado leidas en UNA sola pasada: leer
+    D: es caro y abrir los mismos ficheros una vez por variable multiplicaba
+    el tiempo del paquete por ocho.
+    """
     for name in variante:
-        t, v = series.get(name, (None, None))
+        t, v = serie.get(name, (None, None))
         if t is None or len(t) == 0:
             continue
         h = t / 3600.0
@@ -108,6 +109,14 @@ def _recorta(files: list, t0_unix: float, variante: str, lo_h: float,
         if sel.any():
             return h[sel], v[sel]
     return None
+
+
+def _lee_lado(files: list, t0_unix: float, tracks: tuple[str, ...]) -> dict:
+    """Lectura UNICA de un lado del corte con todas las pistas necesarias."""
+    if not files:
+        return {}
+    return read_track_series([str(f.path) for f in files], list(tracks),
+                             t0_unix=t0_unix)
 
 
 def _ficheros_de(e: dict, meta: dict) -> list:
@@ -123,10 +132,46 @@ def _dos_primeros(files: list) -> list:
 
 
 def _ficheros_del_corte(prev: dict, nxt: dict, meta: dict) -> tuple[list, list]:
-    """Ficheros a cada lado del corte: los dos ultimos del 1.o y los dos 1.os del 2.o."""
-    f_prev = _dos_ultimos(_ficheros_de(prev, meta))
-    f_next = _dos_primeros(_ficheros_de(nxt, meta))
-    return f_prev, f_next
+    """Ficheros del box que CUBREN el corte a cada lado (no los del evento a pelo).
+
+    Un evento puede tener `source_files` DESPUES de su fin de ventilacion (cola
+    de monitor con el paciente aun en el box, p. ej. 3 dias en P07) o ANTES de
+    su inicio: quedarse con el ultimo/primero deja la ventana de 6 h fuera de
+    esos ficheros y el panel sale VACIO. Se elige por EPOCH del corte.
+    """
+    def _alrededor(e: dict, corte_epoch: float, lado: str, tope: int = 3) -> list:
+        """Ficheros del box alrededor del corte, tomados por EPOCH del corte.
+
+        NO se filtra por una ventana corta en torno al corte: en Clinic una
+        grabacion dura 19-48 h, asi que el fichero que cubre el corte puede
+        estar NOMBRADO 28 h antes (caso P01: corte 2025-06-22 00:13, fichero
+        `..._250620_201707`). Se acota a +-60 h (mas que la grabacion mas larga)
+        para no leer ficheros de otro ingreso, y se toma el ultimo fichero cuyo
+        nombre empieza antes del corte mas sus vecinos del lado pedido.
+        """
+        cand = sorted((f for f in meta.values()
+                       if corte_epoch - 60.0 * 3600.0 <= f.dt_unix
+                       <= corte_epoch + 60.0 * 3600.0),
+                      key=lambda f: f.dt_unix)
+        if not cand:
+            return []
+        previos = [k for k, f in enumerate(cand)
+                   if f.dt_unix <= corte_epoch + 3600.0]
+        if not previos:
+            return cand[:tope]
+        i = previos[-1]
+        if lado == "antes":
+            return cand[max(0, i - (tope - 1)): i + 1]
+        return cand[i: i + tope]
+
+    att_prev = prev.get("attempts") or [{}]
+    att_next = nxt.get("attempts") or [{}]
+    corte_prev = (float(prev["t0_unix"])
+                  + float(att_prev[-1].get("vent_end_h") or 0.0) * 3600.0)
+    corte_next = (float(nxt["t0_unix"])
+                  + float(att_next[0].get("vent_start_h") or 0.0) * 3600.0)
+    return (_alrededor(prev, corte_prev, "antes"),
+            _alrededor(nxt, corte_next, "despues"))
 
 
 def _desde_cascada(path: Path, idx_por_id: dict) -> dict:
@@ -274,7 +319,8 @@ def _sha_contenido(path: Path, cache: dict, *,
 
 
 def _pintar(pareja: dict, meta: dict, idx_por_id: dict, png: Path,
-            codigo: str, *, con_tabla: bool = True) -> bool:
+            codigo: str, *, con_tabla: bool = True) -> dict:
+    """Pinta la pareja. Devuelve cuantos puntos salieron en cada panel."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -289,21 +335,36 @@ def _pintar(pareja: dict, meta: dict, idx_por_id: dict, png: Path,
     vn = float(att_next[0].get("vent_start_h") or 0.0)
     med: dict[str, tuple[float | None, float | None]] = {}
 
+    # Una sola lectura por lado con TODAS las pistas (monitor + ventilador).
+    todas = tuple(sorted({n for vs in list(MONITOR.values()) + list(VENT.values())
+                          for n in vs}))
+    ser_a = _lee_lado(f_prev, t0_prev, todas)
+    ser_b = _lee_lado(f_next, t0_next, todas)
+
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(13, 8), sharex=True)
     colores = {"FC": "tab:red", "SpO2": "tab:blue", "PAM": "tab:green"}
+    n_mon_a = n_mon_b = n_vent_a = n_vent_b = 0
     for canon, tracks in MONITOR.items():
-        s_a = _recorta(f_prev, t0_prev, tracks, vp - MARGEN_H, vp)
-        s_b = _recorta(f_next, t0_next, tracks, vn, vn + MARGEN_H)
+        s_a = _recorta(ser_a, tracks, vp - MARGEN_H, vp)
+        s_b = _recorta(ser_b, tracks, vn, vn + MARGEN_H)
         med[canon] = (_mediana(s_a), _mediana(s_b))
+        if s_a is not None:
+            n_mon_a += int(s_a[0].size)
+        if s_b is not None:
+            n_mon_b += int(s_b[0].size)
         if s_a is not None:
             ax1.plot(s_a[0] - vp, s_a[1], ".", ms=1, color=colores[canon],
                      label=canon)
         if s_b is not None:
             ax1.plot(s_b[0] - vn, s_b[1], ".", ms=1, color=colores[canon])
     for canon, tracks in VENT.items():
-        s_a = _recorta(f_prev, t0_prev, tracks, vp - MARGEN_H, vp)
-        s_b = _recorta(f_next, t0_next, tracks, vn, vn + MARGEN_H)
+        s_a = _recorta(ser_a, tracks, vp - MARGEN_H, vp)
+        s_b = _recorta(ser_b, tracks, vn, vn + MARGEN_H)
         med[canon] = (_mediana(s_a), _mediana(s_b))
+        if s_a is not None:
+            n_vent_a += int(s_a[0].size)
+        if s_b is not None:
+            n_vent_b += int(s_b[0].size)
         if s_a is not None:
             ax2.plot(s_a[0] - vp, s_a[1], ".", ms=1, label=f"{canon} (antes)")
         if s_b is not None:
@@ -314,8 +375,10 @@ def _pintar(pareja: dict, meta: dict, idx_por_id: dict, png: Path,
         ax.grid(alpha=0.25)
     ax1.set_ylabel("monitor")
     ax2.set_ylabel("ventilador")
-    ax1.legend(loc="upper right", fontsize=7, ncol=3)
-    ax2.legend(loc="upper right", fontsize=7, ncol=4)
+    # Con un panel vacio, legend() avisa de que no hay artistas: se omite.
+    for ax in (ax1, ax2):
+        if ax.get_legend_handles_labels()[0]:
+            ax.legend(loc="upper right", fontsize=7, ncol=4)
     ax1.set_title(f"Pareja {codigo}: 6 h antes y 6 h despues del corte "
                   f"(eje en horas relativas; el corte no esta a escala)")
     ax2.set_xlabel("horas relativas al corte")
@@ -335,7 +398,8 @@ def _pintar(pareja: dict, meta: dict, idx_por_id: dict, png: Path,
     png.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(png, dpi=110)
     plt.close(fig)
-    return True
+    return {"mon_antes": n_mon_a, "mon_despues": n_mon_b,
+            "vent_antes": n_vent_a, "vent_despues": n_vent_b}
 
 
 def _fin_de(e: dict) -> float | None:
@@ -396,9 +460,22 @@ def main() -> None:
     p.add_argument("--config", default=str(CONFIG))
     args = p.parse_args()
 
-    index_path = (Path(args.index) if args.index else
-                  sorted((ROOT / "datasets" / args.cohort).glob(
-                      f"cases_v*/{args.cohort}_cases_index.json"))[-1])
+    # El indice DEBE ser el MISMO con el que se calculo la cascada: los
+    # identificadores estables son epochs y cambian entre versiones del indice
+    # (v0.5.0 sin uniones vs v0.6.0 con uniones), lo que deja parejas "NO CASA".
+    # Por eso, desde una cascada, se toma el indice que ella misma declara.
+    if args.index:
+        index_path = Path(args.index)
+    elif args.desde_cascada:
+        rel = json.loads(Path(args.desde_cascada)
+                         .read_text(encoding="utf-8")).get("index")
+        if not rel:
+            print("[error] el JSON de cascada no declara su indice; pasa --index")
+            sys.exit(1)
+        index_path = ROOT / rel
+    else:
+        index_path = sorted((ROOT / "datasets" / args.cohort).glob(
+            f"cases_v*/{args.cohort}_cases_index.json"))[-1]
     idx = json.loads(index_path.read_text(encoding="utf-8"))
     print(f"Indice: {index_path.relative_to(ROOT)} ({idx['total_events']} eventos)")
 
@@ -446,6 +523,7 @@ def main() -> None:
         seleccion = seleccion[: args.max_pares]
     claves: dict[str, dict] = {}
     sin_casar: list[dict] = []
+    paneles_vacios: dict[str, dict] = {}
     sha_cache = _carga_sha_cache()
     out_dir = Path(args.out_dir) if args.out_dir else REPORT / "adjudicacion" / args.cohort
     for n, par_ in enumerate(seleccion, start=1):
@@ -458,8 +536,13 @@ def main() -> None:
                   flush=True)
             continue
         meta = meta_por_box.get(par_["box"], {})
-        _pintar({**par_, "prev": eid_prev, "next": eid_next},
-                meta, idx_por_id, out_dir / f"{codigo}.png", codigo)
+        puntos = _pintar({**par_, "prev": eid_prev, "next": eid_next},
+                         meta, idx_por_id, out_dir / f"{codigo}.png", codigo)
+        falta = sorted(k for k, v in puntos.items() if v == 0)
+        if falta:
+            paneles_vacios[codigo] = falta
+            print(f"  {codigo}: AVISO panel/es sin datos: {', '.join(falta)}",
+                  flush=True)
         f_prev, f_next = _ficheros_del_corte(
             idx_por_id[eid_prev], idx_por_id[eid_next], meta)
         f_prev = f_prev[-1] if f_prev else None
@@ -514,6 +597,9 @@ def main() -> None:
 
     n_cand = sum(1 for k in claves.values() if k["tipo"] == "candidata")
     n_ctrl = len(claves) - n_cand
+    if paneles_vacios:
+        print(f"\nAVISO: {len(paneles_vacios)} pareja(s) con algun panel sin datos "
+              f"(no son adjudicables): {paneles_vacios}")
     (out_dir / "LEEME.md").write_text(
         f"""# Adjudicacion visual ciega — {args.cohort} ({idx['total_events']} eventos)
 
@@ -566,6 +652,8 @@ cambies la columna `codigo`.**
                f"tramo + epoch del inicio del segundo, y el fichero de origen "
                f"que cubre el corte a cada lado con su **SHA-256 del CONTENIDO** "
                f"(no del nombre) y su tamano. Sin `--sin-sha`.",
+               f"- Paneles sin datos: **{len(paneles_vacios)}** "
+               f"{paneles_vacios if paneles_vacios else ''}", "",
                "",
                "Identificadores ESTABLES por pareja (nunca `event_id` "
                "posicional): box + epoch del fin del primer tramo + epoch del "

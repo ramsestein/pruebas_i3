@@ -1,0 +1,88 @@
+{
+  "cohort": "clinic",
+  "n_boxes": 13,
+  "boxes_ok": 13,
+  "boxes_recuperados": 0,
+  "boxes_pendientes": [],
+  "total_events": 143,
+  "total_excluded_events": 2,
+  "index": "datasets\\clinic\\cases_v0.6.0_cbf8b634\\clinic_cases_index.json",
+  "status": {
+    "box10": {
+      "estado": "reutilizado",
+      "n_events": 10
+    },
+    "box11": {
+      "estado": "reutilizado",
+      "n_events": 2
+    },
+    "box12": {
+      "estado": "reutilizado",
+      "n_events": 14
+    },
+    "box13": {
+      "estado": "reutilizado",
+      "n_events": 4
+    },
+    "box14": {
+      "estado": "reutilizado",
+      "n_events": 25
+    },
+    "box2": {
+      "estado": "reutilizado",
+      "n_events": 10
+    },
+    "box3": {
+      "estado": "reutilizado",
+      "n_events": 10
+    },
+    "box4": {
+      "estado": "ok",
+      "n_events": 23,
+      "intentos": 1,
+      "segundos": 1027.3,
+      "gb": 9.8,
+      "timeout_s": 2348.0
+    },
+    "box5": {
+      "estado": "ok",
+      "n_events": 6,
+      "intentos": 1,
+      "segundos": 575.8,
+      "gb": 6.4,
+      "timeout_s": 1548.0
+    },
+    "box6": {
+      "estado": "ok",
+      "n_events": 16,
+      "intentos": 1,
+      "segundos": 968.0,
+      "gb": 8.7,
+      "timeout_s": 2096.0
+    },
+    "box7": {
+      "estado": "ok",
+      "n_events": 7,
+      "intentos": 1,
+      "segundos": 619.9,
+      "gb": 5.4,
+      "timeout_s": 1292.0
+    },
+    "box8": {
+      "estado": "ok",
+      "n_events": 10,
+      "intentos": 1,
+      "segundos": 859.4,
+      "gb": 3.7,
+      "timeout_s": 1200.0
+    },
+    "box9": {
+      "estado": "ok",
+      "n_events": 6,
+      "intentos": 1,
+      "segundos": 614.6,
+      "gb": 6.2,
+      "timeout_s": 1492.0
+    }
+  }
+}
