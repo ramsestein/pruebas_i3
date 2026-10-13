@@ -6,6 +6,7 @@
     "d13_pct": 98.8,
     "success_48h": 7455,
     "censored_48h": 1638,
+    "censored_return_le12h": null,
     "failure_events": 471,
     "vars_ok_50": 8035,
     "vars_ok_80": 5514,
@@ -73,6 +74,7 @@
     "d13_pct": 95.8,
     "success_48h": 7523,
     "censored_48h": 2230,
+    "censored_return_le12h": null,
     "failure_events": 688,
     "vars_ok_50": 7068,
     "vars_ok_80": 5242,
@@ -149,6 +151,7 @@
     "d13_pct": 95.0,
     "success_48h": 65,
     "censored_48h": 116,
+    "censored_return_le12h": null,
     "failure_events": 7,
     "vars_ok_50": 151,
     "vars_ok_80": 139,
@@ -163,27 +166,27 @@
       "criterio": "test = último 40% del tiempo; train en 2 bloques temporales (ventana creciente: entrenar con el bloque 1, validar con el 2)",
       "test": {
         "n": 72,
-        "success": 58,
-        "censored": 14,
+        "success": 27,
+        "censored": 45,
         "failures": 6
       },
       "train": {
         "n": 109,
-        "success": 82,
-        "censored": 27,
+        "success": 38,
+        "censored": 71,
         "failures": 1
       },
       "bloques_train": [
         {
           "n": 54,
-          "success": 44,
-          "censored": 10,
+          "success": 17,
+          "censored": 37,
           "failures": 0
         },
         {
           "n": 55,
-          "success": 38,
-          "censored": 17,
+          "success": 21,
+          "censored": 34,
           "failures": 1
         }
       ],
@@ -197,6 +200,7 @@
     "d13_pct": 69.8,
     "success_48h": 40,
     "censored_48h": 56,
+    "censored_return_le12h": null,
     "failure_events": 5,
     "vars_ok_50": 22,
     "vars_ok_80": 16,

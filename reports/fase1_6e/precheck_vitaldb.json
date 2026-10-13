@@ -1,0 +1,319 @@
+{
+  "indice": "datasets\\vitaldb\\cases_v0.4.0_aa142f35\\vitaldb_cases_index.json",
+  "total_events": 96,
+  "sin_source_files": [
+    {
+      "event_id": "vitaldb_SICU1_08_event_4",
+      "box": "SICU1_08",
+      "t0": "2025-02-28 15:00",
+      "fin": "2025-02-28 23:59",
+      "duration_h": 8.992,
+      "n_files_box": 634,
+      "n_files_nombre_en_ventana": 0,
+      "desfase_t0_primer_nombre_h": 1407.004
+    },
+    {
+      "event_id": "vitaldb_SICU1_12_event_4",
+      "box": "SICU1_12",
+      "t0": "2025-02-28 15:00",
+      "fin": "2025-02-28 23:59",
+      "duration_h": 8.992,
+      "n_files_box": 643,
+      "n_files_nombre_en_ventana": 0,
+      "desfase_t0_primer_nombre_h": 1407.004
+    },
+    {
+      "event_id": "vitaldb_SICU2_05_event_4",
+      "box": "SICU2_05",
+      "t0": "2025-02-28 15:00",
+      "fin": "2025-02-28 23:59",
+      "duration_h": 8.993,
+      "n_files_box": 656,
+      "n_files_nombre_en_ventana": 0,
+      "desfase_t0_primer_nombre_h": 1407.003
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_15",
+      "box": "SICU2_16",
+      "t0": "2025-02-09 13:12",
+      "fin": "2025-02-09 18:13",
+      "duration_h": 5.008,
+      "n_files_box": 241,
+      "n_files_nombre_en_ventana": 0,
+      "desfase_t0_primer_nombre_h": 944.214
+    }
+  ],
+  "sin_variable_util": [
+    {
+      "event_id": "vitaldb_SICU1_08_event_4",
+      "box": "SICU1_08",
+      "duration_h": 8.992,
+      "coverage": {
+        "HR": 0.0,
+        "SpO2": 0.0,
+        "MAP": 0.0,
+        "RR": 0.0,
+        "FiO2": 0.0,
+        "PEEP": 0.0
+      },
+      "n_files": 0,
+      "level": "A"
+    },
+    {
+      "event_id": "vitaldb_SICU1_12_event_4",
+      "box": "SICU1_12",
+      "duration_h": 8.992,
+      "coverage": {
+        "HR": 0.0,
+        "SpO2": 0.0,
+        "MAP": 0.0,
+        "RR": 0.0,
+        "FiO2": 0.0,
+        "PEEP": 0.0
+      },
+      "n_files": 0,
+      "level": "A"
+    },
+    {
+      "event_id": "vitaldb_SICU2_05_event_4",
+      "box": "SICU2_05",
+      "duration_h": 8.993,
+      "coverage": {
+        "HR": 0.0,
+        "SpO2": 0.0,
+        "MAP": 0.0,
+        "RR": 0.0,
+        "FiO2": 0.0,
+        "PEEP": 0.0
+      },
+      "n_files": 0,
+      "level": "A"
+    },
+    {
+      "event_id": "vitaldb_SICU2_09_event_3",
+      "box": "SICU2_09",
+      "duration_h": 6.056,
+      "coverage": {
+        "HR": 0.0,
+        "SpO2": 0.0,
+        "MAP": 0.0,
+        "RR": 0.0,
+        "FiO2": 0.0,
+        "PEEP": 0.0
+      },
+      "n_files": 7,
+      "level": "A"
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_2",
+      "box": "SICU2_16",
+      "duration_h": 0.006,
+      "coverage": {
+        "HR": 0.0,
+        "SpO2": 0.0,
+        "MAP": 0.0,
+        "RR": 0.0,
+        "FiO2": 0.0,
+        "PEEP": 0.0
+      },
+      "n_files": 3,
+      "level": "A"
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_5",
+      "box": "SICU2_16",
+      "duration_h": 2.311,
+      "coverage": {
+        "HR": 0.0,
+        "SpO2": 0.0,
+        "MAP": 0.0,
+        "RR": 0.0,
+        "FiO2": 0.0,
+        "PEEP": 0.0
+      },
+      "n_files": 5,
+      "level": "A"
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_9",
+      "box": "SICU2_16",
+      "duration_h": 1.41,
+      "coverage": {
+        "HR": 0.0,
+        "SpO2": 0.0,
+        "MAP": 0.0,
+        "RR": 0.0,
+        "FiO2": 0.0,
+        "PEEP": 0.0
+      },
+      "n_files": 3,
+      "level": "A"
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_13",
+      "box": "SICU2_16",
+      "duration_h": 2.984,
+      "coverage": {
+        "HR": 0.0,
+        "SpO2": 0.0,
+        "MAP": 0.0,
+        "RR": 0.0,
+        "FiO2": 0.0,
+        "PEEP": 0.0
+      },
+      "n_files": 3,
+      "level": "A"
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_14",
+      "box": "SICU2_16",
+      "duration_h": 1.697,
+      "coverage": {
+        "HR": 0.0,
+        "SpO2": 0.0,
+        "MAP": 0.0,
+        "RR": 0.0,
+        "FiO2": 0.0,
+        "PEEP": 0.0
+      },
+      "n_files": 1,
+      "level": "A"
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_15",
+      "box": "SICU2_16",
+      "duration_h": 5.008,
+      "coverage": {
+        "HR": 0.0,
+        "SpO2": 0.0,
+        "MAP": 0.0,
+        "RR": 0.0,
+        "FiO2": 0.0,
+        "PEEP": 0.0
+      },
+      "n_files": 0,
+      "level": "A"
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_16",
+      "box": "SICU2_16",
+      "duration_h": 0.807,
+      "coverage": {
+        "HR": 0.0,
+        "SpO2": 0.0,
+        "MAP": 0.0,
+        "RR": 0.0,
+        "FiO2": 0.0,
+        "PEEP": 0.0
+      },
+      "n_files": 1,
+      "level": "A"
+    }
+  ],
+  "sin_variable_util_por_box": {
+    "SICU1_08": 1,
+    "SICU1_12": 1,
+    "SICU2_05": 1,
+    "SICU2_09": 1,
+    "SICU2_16": 7
+  },
+  "sin_ok50": [
+    {
+      "event_id": "vitaldb_SICU1_03_event_7",
+      "box": "SICU1_03",
+      "n_files": 1
+    },
+    {
+      "event_id": "vitaldb_SICU1_04_event_1",
+      "box": "SICU1_04",
+      "n_files": 31
+    },
+    {
+      "event_id": "vitaldb_SICU1_08_event_1",
+      "box": "SICU1_08",
+      "n_files": 69
+    },
+    {
+      "event_id": "vitaldb_SICU1_08_event_4",
+      "box": "SICU1_08",
+      "n_files": 0
+    },
+    {
+      "event_id": "vitaldb_SICU1_09_event_5",
+      "box": "SICU1_09",
+      "n_files": 1
+    },
+    {
+      "event_id": "vitaldb_SICU1_10_event_3",
+      "box": "SICU1_10",
+      "n_files": 1
+    },
+    {
+      "event_id": "vitaldb_SICU1_12_event_4",
+      "box": "SICU1_12",
+      "n_files": 0
+    },
+    {
+      "event_id": "vitaldb_SICU2_02_event_4",
+      "box": "SICU2_02",
+      "n_files": 1
+    },
+    {
+      "event_id": "vitaldb_SICU2_05_event_4",
+      "box": "SICU2_05",
+      "n_files": 0
+    },
+    {
+      "event_id": "vitaldb_SICU2_09_event_3",
+      "box": "SICU2_09",
+      "n_files": 7
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_2",
+      "box": "SICU2_16",
+      "n_files": 3
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_4",
+      "box": "SICU2_16",
+      "n_files": 12
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_5",
+      "box": "SICU2_16",
+      "n_files": 5
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_9",
+      "box": "SICU2_16",
+      "n_files": 3
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_12",
+      "box": "SICU2_16",
+      "n_files": 7
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_13",
+      "box": "SICU2_16",
+      "n_files": 3
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_14",
+      "box": "SICU2_16",
+      "n_files": 1
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_15",
+      "box": "SICU2_16",
+      "n_files": 0
+    },
+    {
+      "event_id": "vitaldb_SICU2_16_event_16",
+      "box": "SICU2_16",
+      "n_files": 1
+    }
+  ],
+  "n_sin_ok50": 19,
+  "vars_ok_50_indice": 22
+}
