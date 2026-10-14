@@ -120,6 +120,25 @@ _PROBE_TRACKS: tuple[str, ...] = tuple(dict.fromkeys(
     VENT_TRACKS + MONITOR_NUM_TRACKS + MONITOR_WAVE_TRACKS + VNI_TRACKS
 ))
 
+# ── Huecos por MUESTRAS (Fase 1.6f, puntos 2 y 3: D-j y D-k) ─────────────────
+# Un «hueco global» es un intervalo sin NINGUNA muestra de NINGUNA pista del
+# fichero (ondas, numéricos, ajustes del ventilador, NIBP, temperatura, alarmas):
+# eso es un apagón del grabador, no una salida del paciente. Se mide con la unión
+# de los minutos con registros de TODAS las pistas del fichero, no con la mera
+# presencia del fichero (en Clínic los ficheros duran 19-48 h y el apagón cae
+# DENTRO del fichero) ni con los extremos de cada pista (una pista lenta puede
+# tener muestras a los dos lados del hueco y cubrirlo con su intervalo).
+GLOBAL_HOLE_MIN_S: float = 600.0     # hueco global mínimo que se registra (10 min)
+# Tracks que pertenecen al VENTILADOR (ajustes y medidas). Si ninguna tiene
+# muestras, la conexión de datos del respirador se cayó (D-k), que NO es una
+# desconexión del paciente.
+VENT_GROUP_TRACKS: tuple[str, ...] = tuple(dict.fromkeys(VENT_TRACKS + (
+    "Intellivue/TV_INSP",
+    "Intellivue/MV_INSP",
+    "Intellivue/VENT_RR_SPONT",
+    "Intellivue/PPLAT_CMH2O",
+    "Intellivue/SET_SIMV",
+)))
 # Pistas para la detección de muerte por señales (Fase 1, ajuste 2).
 # Las de onda se resumen a su amplitud (max-min) por registro.
 _DEATH_TRACKS: dict[str, tuple[str, ...]] = {
@@ -338,9 +357,47 @@ class VitalProbe:
     # si el modo es invasivo (``SET_SIMV``).
     tv_insp_frac: Optional[float] = None
     mode_is_niv: Optional[bool] = None
+    # Fase 1.6f (puntos 2 y 3): bloques de muestras por group de pistas, en
+    # segundos epoch (``[inicio, fin]``).
+    #   ``sample_blocks``   -> alguna pista del fichero tiene muestras.
+    #   ``vent_blocks``     -> alguna pista del VENTILADOR tiene muestras (D-k).
+    #   ``monitor_blocks``  -> alguna pista de MONITOR tiene muestras.
+    # Los huecos (uniones y complementos) se calculan por BOX: el apagón puede
+    # caer justo en el borde entre dos ficheros y entonces ningún fichero lo ve
+    # por separado.
+    sample_blocks: list[tuple[float, float]] = field(default_factory=list)
+    vent_blocks: list[tuple[float, float]] = field(default_factory=list)
+    monitor_blocks: list[tuple[float, float]] = field(default_factory=list)
 
     def has_any(self, names: Iterable[str]) -> bool:
         return any(self.tracks.get(n) for n in names)
+
+
+def _minute_blocks(
+    minute_arrays: Iterable[np.ndarray],
+) -> list[tuple[float, float]]:
+    """Bloques contiguos de minutos con registros, en segundos epoch.
+
+    Cada array contiene el minuto (``floor(dt/60)``) de cada registro de una
+    pista. La unión de todos ellos da los minutos con ALGUNA muestra; los
+    minutos consecutivos se agrupan en bloques ``[inicio, fin)``. Un hueco entre
+    dos muestras separadas por menos de un minuto no aparece (resolución de 1
+    min: sobra para un apagón real y no depende del tamaño del fichero).
+    """
+    arrays = [a for a in minute_arrays if a.size]
+    if not arrays:
+        return []
+    mins = np.unique(np.concatenate(arrays))
+    blocks: list[tuple[float, float]] = []
+    start = prev = int(mins[0])
+    for m in mins[1:].tolist():
+        if m - prev <= 1:
+            prev = m
+            continue
+        blocks.append((start * 60.0, prev * 60.0 + 60.0))
+        start = prev = m
+    blocks.append((start * 60.0, prev * 60.0 + 60.0))
+    return blocks
 
 
 # ── Lectura ──────────────────────────────────────────────────────────────────
@@ -355,6 +412,22 @@ def probe_vital_file(path: str | Path, track_names: Sequence[str] = _PROBE_TRACK
     Usa ``probe_vital_file_detail`` si además se necesita el mensaje de error.
     """
     probe, err = probe_vital_file_detail(path, track_names)
+    if probe is None:
+        logger.warning("[vital_signals] no se pudo leer %s: %s",
+                       Path(path).name, err)
+    return probe
+
+
+def probe_vital_file_wide(path: str | Path) -> Optional[VitalProbe]:
+    """Sondea TODAS las pistas del .vital (Fase 1.6f, puntos 2 y 3).
+
+    Es la sonda que necesitan D-j y D-k: para saber si en un hueco hay muestras
+    de «ninguna pista de ningún dispositivo» hay que leer también las que no son
+    de monitor ni de ventilador (NIBP, CO2, temperatura, alarmas…). Cuesta más
+    I/O que la sonda normal (``_PROBE_TRACKS``), así que solo la usan los
+    builders de señal.
+    """
+    probe, err = probe_vital_file_detail(path, None)
     if probe is None:
         logger.warning("[vital_signals] no se pudo leer %s: %s",
                        Path(path).name, err)
@@ -401,15 +474,19 @@ def _track_series(
 
 def probe_vital_file_detail(
     path: str | Path,
-    track_names: Sequence[str] = _PROBE_TRACKS,
+    track_names: Optional[Sequence[str]] = _PROBE_TRACKS,
 ) -> tuple[Optional[VitalProbe], Optional[str]]:
     """Igual que ``probe_vital_file`` pero devuelve ``(probe, error)``.
 
     ``error`` es ``None`` si el fichero se abrió (aunque no tuviera pistas).
+    ``track_names=None`` lee TODAS las pistas del fichero (Fase 1.6f).
     """
     path = Path(path)
     try:
-        vf = vitaldb.VitalFile(str(path), track_names=list(track_names))
+        vf = vitaldb.VitalFile(
+            str(path),
+            track_names=None if track_names is None else list(track_names),
+        )
     except Exception as exc:  # noqa: BLE001
         return None, f"{type(exc).__name__}: {exc}"
 
@@ -421,6 +498,10 @@ def probe_vital_file_detail(
     activity_raw: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     vni_raw: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     invasive_mode = False
+    # Fase 1.6f: minutos con registros por grupo de pistas (para los huecos).
+    minute_all: list[np.ndarray] = []
+    minute_vent: list[np.ndarray] = []
+    minute_mon: list[np.ndarray] = []
     for name, trk in (getattr(vf, "trks", None) or {}).items():
         recs = getattr(trk, "recs", None)
         if not recs:
@@ -429,6 +510,14 @@ def probe_vital_file_detail(
         if not dts:
             continue
         is_wave = bool(trk.type == 1)
+        minutes = np.floor(
+            np.asarray(dts, dtype=np.float64) / 60.0
+        ).astype(np.int64)
+        minute_all.append(minutes)
+        if name in VENT_GROUP_TRACKS:
+            minute_vent.append(minutes)
+        else:
+            minute_mon.append(minutes)
         if name in ACTIVITY_TRACKS:
             activity_raw[name] = _track_series(
                 recs, float(trk.srate or 0.0), is_wave,
@@ -532,6 +621,12 @@ def probe_vital_file_detail(
     if invasive_mode:
         probe.mode_is_niv = False
 
+    # Fase 1.6f (puntos 2 y 3): bloques de muestras (apagón global, caída del
+    # ventilador, caída del monitor). Los huecos se derivan por box.
+    probe.sample_blocks = _minute_blocks(minute_all)
+    probe.vent_blocks = _minute_blocks(minute_vent)
+    probe.monitor_blocks = _minute_blocks(minute_mon)
+
     return probe, None
 
 
@@ -551,6 +646,9 @@ def probe_to_dict(probe: Optional[VitalProbe]) -> Optional[dict]:
         "standby_minutes": probe.standby_minutes,
         "tv_insp_frac": probe.tv_insp_frac,
         "mode_is_niv": probe.mode_is_niv,
+        "sample_blocks": [list(b) for b in probe.sample_blocks],
+        "vent_blocks": [list(b) for b in probe.vent_blocks],
+        "monitor_blocks": [list(b) for b in probe.monitor_blocks],
         "tracks": {
             name: [t.dt_min, t.dt_max, t.n_recs, t.srate, t.is_wave,
                    t.dt_min_phys, t.dt_max_phys, t.n_phys]
@@ -572,6 +670,12 @@ def probe_from_dict(path: str | Path, data: Optional[dict]) -> Optional[VitalPro
     probe.tv_insp_frac = None if tv_insp_frac is None else float(tv_insp_frac)
     mode = data.get("mode_is_niv")
     probe.mode_is_niv = None if mode is None else bool(mode)
+    probe.sample_blocks = [tuple(float(x) for x in b)
+                           for b in (data.get("sample_blocks") or [])]
+    probe.vent_blocks = [tuple(float(x) for x in b)
+                         for b in (data.get("vent_blocks") or [])]
+    probe.monitor_blocks = [tuple(float(x) for x in b)
+                            for b in (data.get("monitor_blocks") or [])]
     for name, vals in data["tracks"].items():
         dt_min, dt_max, n_recs, srate, is_wave = vals[:5]
         min_phys = vals[5] if len(vals) > 5 else None
@@ -670,6 +774,28 @@ def spo2_span_from_probe(probe: VitalProbe, *, physiological: bool = True) -> Op
     if physiological:
         return _physiological_extent(probe, SPO2_TRACKS)
     return _union_extent(probe, SPO2_TRACKS)
+
+
+def probe_block_union(
+    probes: Iterable[Optional[VitalProbe]],
+    kind: str = "sample",
+) -> list[tuple[float, float]]:
+    """Une los bloques de muestras de varios ficheros (Fase 1.6f).
+
+    ``kind``: ``"sample"`` (alguna pista), ``"vent"`` (alguna pista del
+    ventilador) o ``"monitor"`` (alguna pista de monitor). Devuelve intervalos
+    en segundos epoch, sin fusionar (los fusiona el llamador, que trabaja en
+    horas).
+    """
+    attr = {"sample": "sample_blocks",
+            "vent": "vent_blocks",
+            "monitor": "monitor_blocks"}[kind]
+    out: list[tuple[float, float]] = []
+    for p in probes:
+        if p is None:
+            continue
+        out.extend(getattr(p, attr))
+    return out
 
 
 def read_death_series(

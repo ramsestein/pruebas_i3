@@ -487,6 +487,22 @@ fase1_6e:
     # (b) en el hueco no puede haber ningún fichero: el grabador estaba parado
     min_region_h: 0.5 # D-i: región de registro mínima (integridad, no objetivo)
 
+fase1_6f:
+  reports_dir: "reports/fase1_6f"
+  # Punto 2 (D-j) y punto 3 (D-k): apagones del grabador y caídas de la conexión
+  # de datos del ventilador, medidos por MUESTRAS (ninguna pista del .vital).
+  # Constantes en src/common/vital_signals.py y build_signal_cases.py.
+  # La sensibilidad «sin D-j/D-k» del punto 7 se corre con los dos en `false`.
+  blackout:
+    enabled: true # D-j: apagón <= 2 h con ventilación activa a los dos lados
+    vent_dropout_absorb: true # D-k: caída <= 2 h con monitor presente
+  # Punto 0 (D-m): espejo de solo lectura de los crudos para las reconstrucciones.
+  # Los builders leen de aquí cuando existe; `D:` sigue siendo la fuente de verdad.
+  mirror:
+    root: "${IPROVE3_RAW_MIRROR:-D:/iprove3_raw_mirror}"
+    use: true # los builders leen del espejo si existe; si no, del crudo
+    verify_manifest: true # comprobar existencia y tamaño contra el manifiesto
+
 # ── Reproducibilidad ──────────────────────────────────────────────────────────
 random_seed: 42
 log_level: "INFO" # DEBUG | INFO | WARNING | ERROR

@@ -68,8 +68,10 @@ from src.common.labels import (
 )
 from src.common.signal_death import DeathDecision, Series, detect_signal_death
 from src.common.paths import config_path, repo_root, resolve_path
+from src.common.raw_mirror import resolve_raw_dir, verify_manifest_sizes
 from src.common.vital_signals import (
     COVERAGE_TRACKS,
+    GLOBAL_HOLE_MIN_S,
     MERGE_TRACK_NAMES,
     VitalProbe,
     active_vent_span_from_probe,
@@ -77,7 +79,9 @@ from src.common.vital_signals import (
     hr_span_from_probe,
     merge_event_files,
     monitor_span_from_probe,
+    probe_block_union,
     probe_vital_file,
+    probe_vital_file_wide,
     read_coverage_series,
     read_death_series,
     spo2_span_from_probe,
@@ -146,6 +150,27 @@ UNION_ENABLED: bool = False
 UNION_GAP_MAX_H: float = 2.0    # (a) hueco maximo del apagado que se une
 UNION_RETURN_MIN: float = 15.0  # (c) vuelve ventilado en <= 15 min de monitor
 MIN_REGION_H: float = 0.5       # (D-i) region de registro minima (30 min)
+
+# Fase 1.6f (punto 2, D-j): apagon del GRABADOR detectado por MUESTRAS (ninguna
+# pista del .vital tiene muestras en el hueco). Un apagon de <= 2 h con
+# ventilacion ACTIVA en los 15 min previos y posteriores es la MISMA region: las
+# horas del hueco son "blackout" (missing en todas las variables), no
+# desconexion, ni extubacion, ni observacion sin ventilador. Un apagon de mas de
+# 2 h corta como hasta ahora pero se marca en el indice.
+BLACKOUT_MAX_H: float = 2.0
+BLACKOUT_VENT_MARGIN_MIN: float = 15.0
+GAP_TYPE_BLACKOUT_LONG = "blackout_long"
+# Fase 1.6f (punto 3, D-k): caida de la conexion de datos del VENTILADOR (ninguna
+# pista del respirador tiene muestras, ni ajustes) con el monitor presente. Una
+# caida de <= 2 h es dato ausente (no corta el intento); las de mas de 2 h no
+# cambian la regla: se informan por evento.
+VENT_FEED_MAX_H: float = 2.0
+# Tolerancia de fusion para juntar huecos de ficheros contiguos (1 min).
+_HOLE_MERGE_H: float = 1.0 / 60.0
+# Interruptores (config ``fase1_6f.blackout``): la sensibilidad «sin D-j/D-k»
+# del punto 7 se corre con los dos en ``false``.
+BLACKOUT_ENABLED: bool = True
+ABSORB_VENT_DROPOUTS: bool = True
 
 
 # ── Escaneo de ficheros de origen ────────────────────────────────────────────
@@ -258,6 +283,14 @@ class BoxSegmentation:
     unverifiable_spans: list[Span] = field(default_factory=list)
     # Fase 1.6e (punto 2c, D-f): registro de las uniones de cursos aplicadas.
     unions: list[dict] = field(default_factory=list)
+    # Fase 1.6f (punto 2, D-j): apagones del grabador detectados por muestras.
+    # Cada uno: ``{"start_h", "end_h", "duration_h", "type", "benign"}`` con
+    # ``type`` en ``{"short", "long"}`` y ``benign`` (solo en los cortos) = hay
+    # ventilación activa en los 15 min previos y posteriores.
+    blackouts: list[dict] = field(default_factory=list)
+    # Fase 1.6f (punto 3, D-k): caídas de la conexión de datos del ventilador
+    # (ninguna pista del respirador con muestras) con el monitor presente.
+    vent_drops: list[dict] = field(default_factory=list)
 
 
 # Fase 1.6e (punto 3): al separar la ventilación en tramos para poder ver un
@@ -360,15 +393,118 @@ def _to_hours(span: Optional[Span]) -> Optional[Span]:
     return Span(span.start_h / _SECONDS_PER_HOUR, span.end_h / _SECONDS_PER_HOUR)
 
 
+def _subtract_spans(
+    spans: Sequence[Span], holes: Sequence[Span],
+) -> list[Span]:
+    """``spans`` menos ``holes`` (diferencia de intervalos, en horas)."""
+    out: list[Span] = []
+    cut = merge_spans(holes, 0.0)
+    for s in merge_spans(spans, 0.0):
+        pieces: list[Span] = [s]
+        for h in cut:
+            nxt: list[Span] = []
+            for p in pieces:
+                if h.end_h <= p.start_h or h.start_h >= p.end_h:
+                    nxt.append(p)
+                    continue
+                if h.start_h > p.start_h:
+                    nxt.append(Span(p.start_h, h.start_h))
+                if h.end_h < p.end_h:
+                    nxt.append(Span(h.end_h, p.end_h))
+            pieces = nxt
+        out.extend(pieces)
+    return out
+
+
+def _overlaps_any(spans: Sequence[Span], lo_h: float, hi_h: float) -> bool:
+    """¿Algún intervalo solapa ``[lo_h, hi_h]``?"""
+    return any(s.start_h < hi_h and s.end_h > lo_h for s in spans)
+
+
+def blackout_spans(
+    probes: dict[str, Optional[VitalProbe]],
+    *,
+    kind: str = "sample",
+) -> list[Span]:
+    """Huecos sin muestras de un box, en horas (Fase 1.6f, puntos 2 y 3).
+
+    ``kind``: ``"sample"`` (ninguna pista del box), ``"vent"`` (ninguna pista del
+    ventilador) o ``"monitor"`` (ninguna pista de monitor). Se calcula como el
+    complemento de la UNIÓN de los bloques de muestras de todos los ficheros del
+    box, así que un apagón que cae justo en el borde entre dos ficheros también
+    sale (ningún fichero lo vería por separado). Los extremos inicial y final no
+    son huecos: solo el interior entre dos bloques.
+    """
+    raw = probe_block_union(probes.values(), kind)
+    blocks = merge_spans(
+        [Span(s / _SECONDS_PER_HOUR, e / _SECONDS_PER_HOUR) for s, e in raw],
+        _HOLE_MERGE_H,
+    )
+    min_h = GLOBAL_HOLE_MIN_S / _SECONDS_PER_HOUR
+    holes: list[Span] = []
+    for a, b in zip(blocks, blocks[1:]):
+        if b.start_h - a.end_h >= min_h:
+            holes.append(Span(a.end_h, b.start_h))
+    return holes
+
+
+def _classify_blackouts(
+    holes: Sequence[Span],
+    vent_active: Sequence[Span],
+    *,
+    max_h: float = BLACKOUT_MAX_H,
+    margin_min: float = BLACKOUT_VENT_MARGIN_MIN,
+) -> list[dict]:
+    """Clasifica los apagones (D-j) y devuelve las fichas por hueco."""
+    out: list[dict] = []
+    margin_h = margin_min / 60.0
+    for h in holes:
+        dur = h.duration_h
+        if dur > max_h + _EPS:
+            out.append({
+                "start_h": round(h.start_h, 4), "end_h": round(h.end_h, 4),
+                "duration_h": round(dur, 4), "type": "long", "benign": False,
+            })
+            continue
+        before = _overlaps_any(vent_active, h.start_h - margin_h, h.start_h)
+        after = _overlaps_any(vent_active, h.end_h, h.end_h + margin_h)
+        out.append({
+            "start_h": round(h.start_h, 4), "end_h": round(h.end_h, 4),
+            "duration_h": round(dur, 4), "type": "short",
+            "benign": bool(before and after),
+        })
+    return out
+
+
+def _classify_vent_drops(
+    drops: Sequence[Span],
+    *,
+    max_h: float = VENT_FEED_MAX_H,
+) -> list[dict]:
+    """Clasifica las caídas de la conexión del ventilador (D-k)."""
+    out: list[dict] = []
+    for d in drops:
+        dur = d.duration_h
+        out.append({
+            "start_h": round(d.start_h, 4), "end_h": round(d.end_h, 4),
+            "duration_h": round(dur, 4),
+            "type": "short" if dur <= max_h + _EPS else "long",
+            "benign": bool(dur <= max_h + _EPS),
+        })
+    return out
+
+
 def segment_box(
     box: str,
     files: Sequence[SourceFile],
-    probe_fn: Callable[[Path], Optional[VitalProbe]] = probe_vital_file,
+    probe_fn: Callable[[Path], Optional[VitalProbe]] = probe_vital_file_wide,
     *,
     disconnect_gap_h: float = 2.0,
     patient_gap_h: float = 1.0,
     no_patient_fraction: float = 0.8,
     unir_cursos: bool = UNION_ENABLED,
+    detect_blackout: bool = BLACKOUT_ENABLED,
+    absorb_vent_dropouts: bool = ABSORB_VENT_DROPOUTS,
 ) -> BoxSegmentation:
     """Segmenta un box en episodios aplicando D1/D2/D4 sobre las señales."""
     vent_spans: list[Span] = []
@@ -404,6 +540,32 @@ def segment_box(
         if s is not None:
             spo2_spans.append(s)
 
+    # Fase 1.6f (puntos 2 y 3, D-j/D-k): apagones del grabador y caídas de la
+    # conexión de datos del ventilador, medidos por MUESTRAS dentro de los
+    # ficheros. NO se usan los huecos sin ningún fichero: ese es el caso de la
+    # unión de cursos (D-f/opción a, desactivada).
+    holes = blackout_spans(probes, kind="sample") if detect_blackout else []
+    vent_holes = blackout_spans(probes, kind="vent") if absorb_vent_dropouts else []
+    monitor_holes = (
+        blackout_spans(probes, kind="monitor")
+        if (detect_blackout or absorb_vent_dropouts) else []
+    )
+    vent_active = merge_spans(
+        [sp for sp in (_to_hours(active_vent_span_from_probe(p))
+                       for p in probes.values() if p is not None)
+         if sp is not None], _HOLE_MERGE_H)
+    blackouts = _classify_blackouts(holes, vent_active) if detect_blackout else []
+    # D-k: la conexión del ventilador se cayó si NINGUNA pista del respirador
+    # tiene muestras y el monitor SÍ está presente. Un respirador en espera deja
+    # los ajustes registrados (TV ≈ 0), así que conserva muestras y NO es una
+    # caída de la conexión: se distingue por la presencia, no por el valor.
+    vent_drops = (_classify_vent_drops(_subtract_spans(vent_holes, monitor_holes))
+                  if absorb_vent_dropouts else [])
+    benign_blackouts = [Span(b["start_h"], b["end_h"])
+                        for b in blackouts if b["benign"]]
+    benign_drops = [Span(d["start_h"], d["end_h"])
+                    for d in vent_drops if d["benign"]]
+
     # Ficheros ilegibles (B2 residual): su intervalo REAL se desconoce y la hora
     # del nombre no es fiable en Clínic (grabaciones de 19-48 h cuyo nombre va
     # 1-2 h por detrás del contenido), así que "nombre + 1 h" puede quedarse
@@ -433,28 +595,42 @@ def segment_box(
         hi = guess.end_h if next_start is None else max(next_start, guess.end_h)
         missing_spans.append(Span(lo, hi))
 
-    # Puentear los huecos causados por ficheros ilegibles antes de segmentar:
-    # un fin de ventilación solo es real si el hueco NO está cubierto por
-    # ficheros "sin dato".
+    # Horas "sin dato" de la segmentación. D-j (apagón del grabador) afecta a
+    # TODAS las señales: el box no grababa nada, así que el hueco no puede crear
+    # ni un fin de ventilación (D1) ni un corte de paciente (D2). D-k (caída de
+    # la conexión de datos del ventilador) afecta SOLO a la ventilación: el
+    # monitor sigue grabando y la identidad del paciente no está en duda.
+    absent_general = [*missing_spans, *benign_blackouts]
+    absent_vent = [*absent_general, *benign_drops]
+
+    # Puentear los huecos causados por ficheros ilegibles y por los apagones/
+    # caídas benignos (Fase 1.6f) antes de segmentar: un fin de ventilación solo
+    # es real si el hueco NO está cubierto por horas "sin dato".
     # Fase 1.6e (punto 3): antes de formar intentos se separan los tramos de VNI
     # post-extubación (D-b): una VNI con mascarilla es estar EXTUBADO, así que su
     # tramo no cuenta como ventilación invasiva ni como fallo, y dejar de
     # eliminarlo es lo que permite detectar la reintubación posterior.
+    # Fase 1.6f (D-k): la absorción de caídas de la conexión del ventilador se
+    # aplica a la formación de INTENTOS (D1), no a la separación por interfaz
+    # (D-b): allí un hueco de datos del respirador con monitor presente es
+    # justamente la evidencia de la desconexión que se quiere clasificar.
     vent_span_all = merge_spans_ignoring_missing(
         vent_spans, missing_spans, VNI_SEGMENT_GAP_H
     )
     monitor_span_all = merge_spans_ignoring_missing(
-        monitor_spans, missing_spans, patient_gap_h
+        monitor_spans, absent_general, patient_gap_h
     )
     vent_spans, vni_spans, unver_spans = _split_vni_segments(
         list(vent_span_all), list(monitor_span_all), files, probes
     )
     vent_spans = merge_spans_ignoring_missing(
-        vent_spans, missing_spans, disconnect_gap_h
+        vent_spans, absent_vent, disconnect_gap_h
     )
     monitor_spans = monitor_span_all
-    hr_spans = merge_spans_ignoring_missing(hr_spans, missing_spans, patient_gap_h)
-    spo2_spans = merge_spans_ignoring_missing(spo2_spans, missing_spans, patient_gap_h)
+    hr_spans = merge_spans_ignoring_missing(
+        hr_spans, absent_general, patient_gap_h)
+    spo2_spans = merge_spans_ignoring_missing(
+        spo2_spans, absent_general, patient_gap_h)
 
     episodes = build_episodes(
         vent_spans,
@@ -489,6 +665,7 @@ def segment_box(
         box=box, files=list(files), episodes=kept, excluded_episodes=excluded,
         probes=probes, missing_spans=merge_spans(missing_spans, 0.0),
         vni_spans=vni_spans, unverifiable_spans=unver_spans, unions=uniones,
+        blackouts=blackouts, vent_drops=vent_drops,
     )
 
 
@@ -886,6 +1063,8 @@ def build_event_record(
     missing_spans: Sequence[Span] = (),
     vni_spans: Sequence[Span] = (),
     unverifiable_spans: Sequence[Span] = (),
+    blackouts: Sequence[dict] = (),
+    vent_drops: Sequence[dict] = (),
 ) -> dict:
     """Ficha de un evento lista para el índice JSON (D12)."""
     attempts = [
@@ -968,6 +1147,14 @@ def build_event_record(
         vni_end = round(max(s.end_h for s in vni_post)
                         - episode.start_h, 4)
 
+    # Fase 1.6f (puntos 2 y 3): apagones del grabador (D-j) y caídas de la
+    # conexión de datos del ventilador (D-k) que tocan la región del evento.
+    reg_lo, reg_hi = float(episode.region_start_h), region_end_h
+    ev_blackouts = [b for b in blackouts
+                    if b["start_h"] < reg_hi and b["end_h"] > reg_lo]
+    ev_drops = [d for d in vent_drops
+                if d["start_h"] < reg_hi and d["end_h"] > reg_lo]
+
     return {
         "event_id": "",  # se rellena en el orquestador
         "cohort": cohort,
@@ -1023,6 +1210,30 @@ def build_event_record(
         ],
         "has_missing_files": bool(missing_hours),
         "missing_hours": missing_hours,
+        # Fase 1.6f (punto 2, D-j): horas de apagón del grabador dentro de la
+        # región del evento (relative a t0) y su tipo.
+        "blackout_gaps": [
+            [round(b["start_h"] - episode.start_h, 4),
+             round(b["end_h"] - episode.start_h, 4)]
+            for b in ev_blackouts
+        ],
+        "blackout_details": ev_blackouts,
+        "n_blackout_h": round(
+            sum(b["duration_h"] for b in ev_blackouts), 4),
+        "gap_type": (GAP_TYPE_BLACKOUT_LONG
+                     if any(b["type"] == "long" for b in ev_blackouts)
+                     else None),
+        # Fase 1.6f (punto 3, D-k): caídas de la conexión de datos del
+        # ventilador (ninguna pista del respirador con muestras, monitor
+        # presente). Las de <= 2 h ya no cortan el intento.
+        "vent_feed_drops": [
+            [round(d["start_h"] - episode.start_h, 4),
+             round(d["end_h"] - episode.start_h, 4)]
+            for d in ev_drops
+        ],
+        "vent_feed_drop_details": ev_drops,
+        "n_vent_feed_dropout_h": round(
+            sum(d["duration_h"] for d in ev_drops), 4),
         "level": level,
         "ventilated_hours": round(episode.ventilated_hours, 4),
         "labels": labels_dict,   # Fase 1.6 (D3) + D5       # Fase 1.6 (D3)
@@ -1105,6 +1316,8 @@ def build_cohort_index(
                 missing_spans=seg.missing_spans,
                 vni_spans=seg.vni_spans,
                 unverifiable_spans=seg.unverifiable_spans,
+                blackouts=seg.blackouts,
+                vent_drops=seg.vent_drops,
             )
             rec["event_id"] = f"{cohort}_{box}_event_{i + 1}"
             levels[rec["level"]] = levels.get(rec["level"], 0) + 1
@@ -1172,6 +1385,28 @@ def build_cohort_index(
         ),
         "n_vni_unverifiable_segments": n_unver_segments,
         "n_unions": n_unions,
+        # Fase 1.6f (puntos 2 y 3): apagones del grabador (D-j) y caídas de la
+        # conexión de datos del ventilador (D-k).
+        "n_blackouts": sum(len(s.blackouts) for _b, s in results),
+        "n_blackouts_benign": sum(
+            1 for _b, s in results for x in s.blackouts if x["benign"]
+        ),
+        "n_blackouts_long": sum(
+            1 for _b, s in results for x in s.blackouts if x["type"] == "long"
+        ),
+        "n_blackout_h": round(
+            sum(x["duration_h"] for _b, s in results for x in s.blackouts), 4),
+        "n_events_with_blackout": sum(1 for e in events if e["blackout_gaps"]),
+        "n_events_gap_type_blackout_long": sum(
+            1 for e in events if e["gap_type"] == GAP_TYPE_BLACKOUT_LONG),
+        "n_vent_feed_drops": sum(len(s.vent_drops) for _b, s in results),
+        "n_vent_feed_drops_benign": sum(
+            1 for _b, s in results for x in s.vent_drops if x["benign"]
+        ),
+        "n_vent_feed_dropout_h": round(
+            sum(x["duration_h"] for _b, s in results for x in s.vent_drops), 4),
+        "n_events_with_vent_feed_drop": sum(
+            1 for e in events if e["vent_feed_drops"]),
         "n_fragmentos_registro": sum(
             1 for e in excluded_events
             if e.get("exclusion_reason") == "fragmento_registro"
@@ -1205,8 +1440,17 @@ def _segment_box_task(
     args: tuple[str, list[SourceFile], bool],
 ) -> tuple[str, BoxSegmentation]:
     """Trabajo por box para el pool de procesos (debe ser de nivel de módulo)."""
-    box, files, unir = args
-    return box, segment_box(box, files, unir_cursos=unir)
+    box, files, unir, blackout, drops = args
+    return box, segment_box(box, files, unir_cursos=unir,
+                            detect_blackout=blackout,
+                            absorb_vent_dropouts=drops)
+
+
+def _segment_box_flags(config: dict) -> tuple[bool, bool]:
+    """Interruptores de D-j/D-k desde ``fase1_6f.blackout`` (Fase 1.6f)."""
+    node = ((config.get("fase1_6f") or {}).get("blackout") or {})
+    return (bool(node.get("enabled", BLACKOUT_ENABLED)),
+            bool(node.get("vent_dropout_absorb", ABSORB_VENT_DROPOUTS)))
 
 
 def filter_boxes(
@@ -1239,6 +1483,10 @@ def merge_partial_indices(parts: Sequence[tuple[str, dict]], *, cohort: str) -> 
     levels: dict[str, int] = {}
     vars_ok_50 = vars_ok_80 = 0
     n_covered = n_signal_loss = n_shutdown = n_deaths = 0
+    n_blackouts = n_blackouts_benign = n_blackouts_long = 0
+    n_blackout_h = 0.0
+    n_drops = n_drops_benign = 0
+    n_drop_h = 0.0
     for _box, idx in parts:
         events += list(idx.get("events", []))
         excluded += list(idx.get("excluded_events", []))
@@ -1251,6 +1499,13 @@ def merge_partial_indices(parts: Sequence[tuple[str, dict]], *, cohort: str) -> 
         n_signal_loss += int(idx.get("n_signal_loss_at_end") or 0)
         n_shutdown += int(idx.get("n_simultaneous_shutdown") or 0)
         n_deaths += int(idx.get("n_death_signal") or 0)
+        n_blackouts += int(idx.get("n_blackouts") or 0)
+        n_blackouts_benign += int(idx.get("n_blackouts_benign") or 0)
+        n_blackouts_long += int(idx.get("n_blackouts_long") or 0)
+        n_blackout_h += float(idx.get("n_blackout_h") or 0.0)
+        n_drops += int(idx.get("n_vent_feed_drops") or 0)
+        n_drops_benign += int(idx.get("n_vent_feed_drops_benign") or 0)
+        n_drop_h += float(idx.get("n_vent_feed_dropout_h") or 0.0)
     events.sort(key=lambda e: e.get("event_id", ""))
     excluded.sort(key=lambda e: e.get("event_id", ""))
     return {
@@ -1275,6 +1530,19 @@ def merge_partial_indices(parts: Sequence[tuple[str, dict]], *, cohort: str) -> 
         "n_signal_loss_at_end": n_signal_loss,
         "n_simultaneous_shutdown": n_shutdown,
         "n_death_signal": n_deaths,
+        "n_blackouts": n_blackouts,
+        "n_blackouts_benign": n_blackouts_benign,
+        "n_blackouts_long": n_blackouts_long,
+        "n_blackout_h": round(n_blackout_h, 4),
+        "n_events_with_blackout": sum(
+            1 for e in events if e.get("blackout_gaps")),
+        "n_events_gap_type_blackout_long": sum(
+            1 for e in events if e.get("gap_type") == GAP_TYPE_BLACKOUT_LONG),
+        "n_vent_feed_drops": n_drops,
+        "n_vent_feed_drops_benign": n_drops_benign,
+        "n_vent_feed_dropout_h": round(n_drop_h, 4),
+        "n_events_with_vent_feed_drop": sum(
+            1 for e in events if e.get("vent_feed_drops")),
         "events": events,
         "excluded_events": excluded,
     }
@@ -1294,7 +1562,22 @@ def run_cohort(
 ) -> dict:
     """Ejecuta el pipeline completo de una cohorte con señal."""
     spec = SPECS[cohort]
-    raw_dir = config_path(config, "paths", f"{cohort}_raw_dir")
+    # Fase 1.6f (D-m): si existe el espejo de solo lectura, se lee de ahí.
+    raw_dir, is_mirror = resolve_raw_dir(config, cohort)
+    if is_mirror:
+        info = verify_manifest_sizes(raw_dir)
+        if info["n_missing"] or info["n_bad_size"]:
+            raise RuntimeError(
+                f"El espejo {raw_dir} no cuadra con su manifiesto: "
+                f"{info['n_missing']} ficheros que faltan, "
+                f"{info['n_bad_size']} con tamaño distinto. "
+                f"Reparar con make_mirror.py antes de reconstruir."
+            )
+        logger.info("[%s] espejo=%s (%d ficheros verificados por tamaño)",
+                    cohort, raw_dir, info["n_ok"])
+    else:
+        logger.warning("[%s] espejo no disponible; se lee el CRUDO %s",
+                       cohort, raw_dir)
     out_dir, version = output_root(config, cohort)
     if out_dir_override is not None:
         out_dir = Path(out_dir_override)
@@ -1315,20 +1598,30 @@ def run_cohort(
     )
     logger.info("[%s] union de cursos: %s", cohort,
                 "ACTIVADA" if unir else "desactivada (decision 13/10)")
+    blackout_on, drops_on = _segment_box_flags(config)
+    logger.info("[%s] D-j apagones: %s | D-k caidas del ventilador: %s",
+                cohort, "ON" if blackout_on else "OFF",
+                "ON" if drops_on else "OFF")
     if probe_fn is not None:
         # Reutiliza una caché de sondas (escaneo previo): no se re-parsea nada.
         for box, files in boxes.items():
-            results.append((box, segment_box(box, files, probe_fn=probe_fn,
-                                             unir_cursos=unir)))
+            results.append((box, segment_box(
+                box, files, probe_fn=probe_fn, unir_cursos=unir,
+                detect_blackout=blackout_on,
+                absorb_vent_dropouts=drops_on)))
     elif workers and workers > 1:
         from concurrent.futures import ProcessPoolExecutor
-        tareas = [(box, files, unir) for box, files in boxes.items()]
+        tareas = [(box, files, unir, blackout_on, drops_on)
+                  for box, files in boxes.items()]
         with ProcessPoolExecutor(max_workers=workers) as ex:
             for box, seg in ex.map(_segment_box_task, tareas):
                 results.append((box, seg))
     else:
         for box, files in boxes.items():
-            results.append((box, segment_box(box, files, unir_cursos=unir)))
+            results.append((box, segment_box(
+                box, files, unir_cursos=unir,
+                detect_blackout=blackout_on,
+                absorb_vent_dropouts=drops_on)))
 
     if do_merge and out_dir.exists():
         raise FileExistsError(

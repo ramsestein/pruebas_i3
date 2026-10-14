@@ -67,3 +67,9 @@ reports/fase1_6e/sha_contenido_cache.json
 reports/fase1_6e/_*.json
 reports/fase1_6e/_*.log
 
+# ── Fase 1.6f: logs y caches de trabajo (se regeneran) ────────────────────────
+# Los informes (.md), las hojas (.csv) y las figuras (.png) SI se versionan.
+reports/fase1_6f/_*.log
+reports/fase1_6f/_*.json
+reports/fase1_6f/*_parts/
+

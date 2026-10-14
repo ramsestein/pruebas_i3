@@ -68,9 +68,18 @@ def _name(hours: float) -> str:
     return f"tok1_{dt.strftime('%y%m%d_%H%M%S')}.vital"
 
 
-def _seg(tmp_path: Path, box: str = "box2", *, unir: bool = True):
+def _seg(tmp_path: Path, box: str = "box2", *, unir: bool = True,
+         blackout: bool = False):
+    """Segmenta el box de prueba.
+
+    ``blackout=False`` (D-j/D-k desactivados) es lo que necesitan estas pruebas
+    de D-f: D-j absorbe por sí solo el hueco «sin ficheros con ventilación activa
+    a los dos lados», que es justo el caso que D-f unía. Las pruebas de D-j/D-k
+    viven en ``test_apagon_vent.py``.
+    """
     boxes = scan_source_files(tmp_path, CLINIC_SPEC)
-    return segment_box(box, boxes[box], unir_cursos=unir)
+    return segment_box(box, boxes[box], unir_cursos=unir,
+                       detect_blackout=blackout, absorb_vent_dropouts=blackout)
 
 
 class TestUnionDeCursos:
