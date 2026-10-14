@@ -116,6 +116,37 @@ def caidas_md(cohort: str, meta: dict, all_drops: list, cands: list) -> list[str
     return md
 
 
+_HEADER_CACHE: dict[tuple[str, str], dict[str, tuple[float, float]]] = {}
+
+
+def _header_spans_h(box_files, cache_key: tuple[str, str] | None = None
+                    ) -> dict[str, tuple[float, float]]:
+    """Intervalo declarado (cabecera) de cada fichero del box, en horas.
+
+    Se lee solo la cabecera (rápido): sirve para elegir qué ficheros hay que
+    sondear de verdad. Si la cabecera no cuadra se cae a la hora del nombre + 1 h.
+    """
+    import vitaldb
+
+    if cache_key is not None and cache_key in _HEADER_CACHE:
+        return _HEADER_CACHE[cache_key]
+    out: dict[str, tuple[float, float]] = {}
+    for sf in box_files:
+        a = b = None
+        try:
+            vf = vitaldb.VitalFile(str(sf.path), header_only=True)
+            a, b = float(vf.dtstart) / 3600.0, float(vf.dtend) / 3600.0
+        except Exception:  # noqa: BLE001
+            a = b = None
+        if a is None or not (b > a):
+            a = sf.dt_unix / 3600.0
+            b = a + 1.0
+        out[str(sf.path)] = (a, b)
+    if cache_key is not None:
+        _HEADER_CACHE[cache_key] = out
+    return out
+
+
 def probe_window(config, cohort: str, box: str, lo_h: float, hi_h: float,
                  margin_h: float = 3.0) -> dict:
     """Sondea (todas las pistas) los ficheros de ``box`` que tocan la ventana.
@@ -123,17 +154,24 @@ def probe_window(config, cohort: str, box: str, lo_h: float, hi_h: float,
     Se sondea SOLO la ventana: los boxes de Clínic pesan 1-28 GB y leerlos
     enteros con todas las pistas costaría horas; para juzgar un corte basta con
     lo que hay alrededor (y la ventana da los bloques de muestras a los dos
-    lados, que es lo que define el hueco).
+    lados, que es lo que define el hueco). La selección de ficheros se hace con
+    la CABECERA declarada (barata) y no con la hora del nombre, que en Clínic va
+    1-2 h por detrás del contenido.
     """
     raw_dir, is_mirror = resolve_raw_dir(config, cohort)
     all_boxes = scan_source_files(raw_dir, SPECS[cohort])
     sfs = all_boxes.get(box) or []
+    spans = _header_spans_h(sfs, (str(raw_dir), box))
     sel = [sf for sf in sfs
-           if lo_h - margin_h <= sf.dt_unix / 3600.0 <= hi_h + margin_h]
+           if spans[str(sf.path)][0] <= hi_h + margin_h
+           and spans[str(sf.path)][1] >= lo_h - margin_h]
+    if not sel:
+        sel = [sf for sf in sfs
+               if lo_h - margin_h <= sf.dt_unix / 3600.0 <= hi_h + margin_h]
     probes = {str(sf.path): probe_vital_file_wide(sf.path) for sf in sel}
     return {"probes": probes, "raw_dir": str(raw_dir),
             "is_mirror": bool(is_mirror), "n_files": len(sel),
-            "n_files_box": len(sfs)}
+            "n_files_box": len(sfs), "spans_h": spans}
 
 
 def window_analysis(probes: dict) -> dict:

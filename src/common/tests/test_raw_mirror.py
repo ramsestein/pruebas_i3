@@ -51,15 +51,26 @@ class TestResolveRawDir:
         assert not is_mirror
         assert str(raw).replace("\\", "/").endswith("clinic_vitals")
 
-    def test_con_espejo_usa_el_espejo(self, tmp_path: Path):
+    def test_con_espejo_completo_usa_el_espejo(self, tmp_path: Path):
         mirror = tmp_path / "mirror" / "clinic_vitals"
         mirror.mkdir(parents=True)
+        (mirror / "_mirror_summary.json").write_text("{}", encoding="utf-8")
         raw, is_mirror = resolve_raw_dir(_config(tmp_path / "mirror"), "clinic")
         assert is_mirror
         assert raw == mirror
 
+    def test_espejo_a_medias_no_se_usa(self, tmp_path: Path):
+        """Sin la marca de copia completa se lee el crudo (nunca medio espejo)."""
+        mirror = tmp_path / "mirror" / "clinic_vitals"
+        mirror.mkdir(parents=True)
+        (mirror / "_manifest.jsonl").write_text("", encoding="utf-8")
+        raw, is_mirror = resolve_raw_dir(_config(tmp_path / "mirror"), "clinic")
+        assert not is_mirror
+
     def test_use_false_ignora_el_espejo(self, tmp_path: Path):
-        (tmp_path / "mirror" / "clinic_vitals").mkdir(parents=True)
+        mirror = tmp_path / "mirror" / "clinic_vitals"
+        mirror.mkdir(parents=True)
+        (mirror / "_mirror_summary.json").write_text("{}", encoding="utf-8")
         raw, is_mirror = resolve_raw_dir(
             _config(tmp_path / "mirror", use=False), "clinic")
         assert not is_mirror

@@ -213,6 +213,14 @@ def make_mirror(
         summary.parent.mkdir(parents=True, exist_ok=True)
         with open(summary, "w", encoding="utf-8") as fh:
             json.dump(summary_doc, fh, ensure_ascii=False, indent=2)
+    # Marca de "espejo COMPLETO" dentro del propio espejo: los builders solo lo
+    # usan si existe (si no, leerían un espejo a medias).
+    stamp = dest / "_mirror_summary.json"
+    if stamp.exists():
+        os.chmod(stamp, stat.S_IWRITE | stat.S_IREAD)
+    with open(stamp, "w", encoding="utf-8") as fh:
+        json.dump(summary_doc, fh, ensure_ascii=False, indent=2)
+    _set_readonly(stamp)
     return summary_doc
 
 

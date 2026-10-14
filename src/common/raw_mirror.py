@@ -32,6 +32,10 @@ MIRROR_SUBDIR: dict[str, str] = {
 }
 
 MANIFEST_NAME = "_manifest.jsonl"
+# Marca que deja ``make_mirror.py`` al terminar una copia completa. Los builders
+# solo usan el espejo si existe: sin ella podrían leer un espejo a medias (el
+# manifiesto solo lista lo que YA se copió, así que no basta con él).
+SUMMARY_NAME = "_mirror_summary.json"
 
 
 def mirror_root(config: dict) -> Path | None:
@@ -54,11 +58,27 @@ def mirror_dir(config: dict, cohort: str) -> Path | None:
     return root / MIRROR_SUBDIR.get(cohort, cohort)
 
 
+def is_complete(mirror: Path) -> bool:
+    """¿El espejo terminó de copiarse? (marca ``_mirror_summary.json``)."""
+    return (mirror / SUMMARY_NAME).is_file()
+
+
+def read_summary(mirror: Path) -> dict:
+    """Resumen agregado del espejo (``{}`` si no hay marca de copia completa)."""
+    path = mirror / SUMMARY_NAME
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
 def resolve_raw_dir(config: dict, cohort: str) -> tuple[Path, bool]:
     """Origen de los ``.vital`` de una cohorte: ``(ruta, es_espejo)``.
 
-    Fase 1.6f (D-m): si el espejo existe se usa el espejo; si no, el crudo de
-    ``D:``. El crudo nunca se modifica, así que caer al crudo es seguro.
+    Fase 1.6f (D-m): si el espejo está COMPLETO se usa el espejo; si no, el crudo
+    de ``D:``. El crudo nunca se modifica, así que caer al crudo es seguro.
     """
     raw = config_path(config, "paths", f"{cohort}_raw_dir")
     node = ((config.get("fase1_6f") or {}).get("mirror") or {})
@@ -66,7 +86,12 @@ def resolve_raw_dir(config: dict, cohort: str) -> tuple[Path, bool]:
         return raw, False
     mirror = mirror_dir(config, cohort)
     if mirror is not None and mirror.is_dir():
-        return mirror, True
+        if is_complete(mirror):
+            return mirror, True
+        logger.warning(
+            "[raw_mirror] el espejo %s existe pero NO está marcado como completo "
+            "(falta %s); se lee el crudo %s",
+            mirror, SUMMARY_NAME, raw)
     return raw, False
 
 

@@ -38,15 +38,8 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
 from src.common.paths import config_path  # noqa: E402
-from src.common.raw_mirror import resolve_raw_dir  # noqa: E402
-from src.common.vital_signals import (  # noqa: E402
-    probe_vital_file_wide,
-    probe_block_union,
-)
-from src.create_dataset.build_signal_cases import (  # noqa: E402
-    SPECS,
-    scan_source_files,
-)
+from src.common.vital_signals import probe_block_union  # noqa: E402
+from src.create_dataset.build_signal_cases import SPECS  # noqa: E402
 from src.stage0.io.versioning import load_config  # noqa: E402
 
 CONFIG = "src/stage0/config/harmonize.yaml"
@@ -62,25 +55,35 @@ def _covered(blocks, lo_h, hi_h) -> bool:
 
 
 def classify_event(
-    ev: dict, *, files_by_name: dict, next_t0_h: float | None,
+    ev: dict, *, config, cohort: str, meta: dict,
 ) -> dict:
-    """Motivo de ``obs_end_h == vent_end_h`` de un evento (por muestras)."""
+    """Motivo de ``obs_end_h == vent_end_h`` de un evento (por muestras).
+
+    Se sondea SOLO la ventana alrededor del fin de la ventilación (±3 h): el
+    evento puede tener decenas de ficheros y sondearlos todos con todas las
+    pistas costaría horas.
+    """
+    from apagones_report import probe_window  # import tardío (sys.path del script)
+
     t0_h = float(ev["t0_unix"]) / 3600.0
     vent_end_h = float(ev["attempts"][-1]["vent_end_h"])
     v_end_abs = t0_h + vent_end_h
-    t0_abs = [f for f in ev.get("source_files") or [] if f in files_by_name]
-    probes = [probe_vital_file_wide(files_by_name[f]) for f in t0_abs]
-    any_blocks = _blocks_h(probe_block_union(probes, "sample"))
-    mon_blocks = _blocks_h(probe_block_union(probes, "monitor"))
+    win = probe_window(config, cohort, ev["box"], v_end_abs - 1.0,
+                       v_end_abs + 4.0, margin_h=1.0)
+    probes = win["probes"]
+    any_blocks = _blocks_h(probe_block_union(probes.values(), "sample"))
+    mon_blocks = _blocks_h(probe_block_union(probes.values(), "monitor"))
     # Ventana de 2 h tras el fin de la ventilación (lo que dura un apagón corto).
     win_lo, win_hi = v_end_abs, v_end_abs + 2.0
     has_any = _covered(any_blocks, win_lo, win_hi)
     has_mon = _covered(mon_blocks, win_lo, win_hi)
+    meta["raw_dir"] = win["raw_dir"]
+    meta["is_mirror"] = win["is_mirror"]
     if has_mon:
         reason = "otro"
     elif has_any:
         reason = "grabacion_sin_fisiologia"
-    elif next_t0_h is not None and next_t0_h > v_end_abs:
+    elif win["n_files"] and ev.get("_has_next"):
         reason = "apagon_del_grabador"
     else:
         reason = "fin_de_registro"
@@ -88,6 +91,7 @@ def classify_event(
         "reason": reason,
         "has_any_sample_2h": has_any,
         "has_monitor_2h": has_mon,
+        "n_files_window": win["n_files"],
     }
 
 
@@ -198,35 +202,32 @@ def main() -> int:
 
     if args.probe:
         cfg = load_config(args.config)
-        raw_dir, is_mirror = resolve_raw_dir(cfg, args.cohort)
-        doc["source_dir"] = str(raw_dir)
-        doc["source_is_mirror"] = bool(is_mirror)
-        boxes = scan_source_files(raw_dir, SPECS[args.cohort])
-        files_by_name: dict[str, str] = {}
-        for _box, sfs in boxes.items():
-            for sf in sfs:
-                files_by_name.setdefault(sf.path.name, str(sf.path))
         # Siguiente evento del mismo box (para distinguir el apagón del fin).
         by_box: dict[str, list[dict]] = {}
         for e in events:
             by_box.setdefault(e["box"], []).append(e)
         for evs in by_box.values():
             evs.sort(key=lambda x: float(x["t0_unix"]))
-        next_t0: dict[str, float] = {}
-        for box, evs in by_box.items():
-            for a, b in zip(evs, evs[1:]):
-                next_t0[a["event_id"]] = float(b["t0_unix"]) / 3600.0
+        has_next: set[str] = set()
+        for evs in by_box.values():
+            for a in evs[:-1]:
+                has_next.add(a["event_id"])
 
         reasons: Counter = Counter()
         detail = []
-        for e, ve in eq:
-            info = classify_event(
-                e, files_by_name=files_by_name,
-                next_t0_h=next_t0.get(e["event_id"]),
-            )
+        meta: dict = {}
+        for i, (e, ve) in enumerate(eq, start=1):
+            ev = dict(e)
+            ev["_has_next"] = e["event_id"] in has_next
+            info = classify_event(ev, config=cfg, cohort=args.cohort,
+                                  meta=meta)
             reasons[info["reason"]] += 1
             detail.append({"event_id": e["event_id"], "box": e["box"],
                            "vent_end_h": ve, **info})
+            if i % 10 == 0:
+                print(f"[probe] {i}/{len(eq)}…", flush=True)
+        doc["source_dir"] = meta.get("raw_dir")
+        doc["source_is_mirror"] = meta.get("is_mirror")
         doc["motivos"] = dict(reasons)
         doc["detalle"] = detail
 
