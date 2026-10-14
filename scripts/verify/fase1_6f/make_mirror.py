@@ -63,19 +63,35 @@ def _sha256_file(path: Path, chunk: int = _CHUNK) -> str:
     return h.hexdigest()
 
 
-def _copy_and_hash(src: Path, dst: Path) -> tuple[str, int]:
-    """Copia ``src`` -> ``dst`` calculando el SHA-256 del contenido copiado."""
-    h = hashlib.sha256()
-    total = 0
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    tmp = dst.with_suffix(dst.suffix + ".part")
-    with open(src, "rb") as fin, open(tmp, "wb") as fout:
-        for block in iter(lambda: fin.read(_CHUNK), b""):
-            h.update(block)
-            fout.write(block)
-            total += len(block)
-    os.replace(tmp, dst)
-    return h.hexdigest(), total
+def _copy_and_hash(src: Path, dst: Path, *, intentos: int = 3) -> tuple[str, int]:
+    """Copia ``src`` -> ``dst`` calculando el SHA-256 del contenido copiado.
+
+    Reintenta unas pocas veces: en ``D:`` se han visto fallos de lectura
+    transitorios (``OSError [Errno 22]``) que mataban una copia de 40 minutos.
+    """
+    last: Exception | None = None
+    for i in range(intentos):
+        h = hashlib.sha256()
+        total = 0
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dst.with_suffix(dst.suffix + ".part")
+        try:
+            with open(src, "rb") as fin, open(tmp, "wb") as fout:
+                for block in iter(lambda: fin.read(_CHUNK), b""):
+                    h.update(block)
+                    fout.write(block)
+                    total += len(block)
+            os.replace(tmp, dst)
+            return h.hexdigest(), total
+        except OSError as exc:  # lectura/escritura transitoria
+            last = exc
+            time.sleep(1.5 * (i + 1))
+            try:
+                if tmp.exists():
+                    tmp.unlink()
+            except OSError:
+                pass
+    raise OSError(f"{src}: {last}")
 
 
 def _iter_source(
@@ -84,6 +100,7 @@ def _iter_source(
     exclude: tuple[str, ...],
     pattern: str | None,
     only_top: tuple[str, ...],
+    prefix: str = "",
 ):
     """Itera ``(src, rel)`` del origen, respetando exclusiones y filtros."""
     for top in sorted(p for p in source.iterdir()):
@@ -94,12 +111,16 @@ def _iter_source(
         if top.is_file():
             if pattern and not top.match(pattern):
                 continue
+            if prefix and not top.name.startswith(prefix):
+                continue
             yield top, Path(top.name)
             continue
         for path in sorted(top.rglob("*")):
             if not path.is_file():
                 continue
             if pattern and not path.match(pattern):
+                continue
+            if prefix and not path.name.startswith(prefix):
                 continue
             yield path, path.relative_to(source)
 
@@ -136,8 +157,10 @@ def make_mirror(
     exclude: tuple[str, ...] = (),
     pattern: str | None = None,
     only_top: tuple[str, ...] = (),
+    prefix: str = "",
     summary: Path | None = None,
     log_every: int = 200,
+    write_stamp: bool = True,
 ) -> dict:
     if not source.is_dir():
         raise FileNotFoundError(f"Origen no encontrado: {source}")
@@ -150,12 +173,14 @@ def make_mirror(
         os.chmod(manifest_path, stat.S_IWRITE | stat.S_IREAD)
 
     t_start = time.time()
-    n_copied = n_skipped = n_mismatch = 0
+    n_copied = n_skipped = n_mismatch = n_failed = 0
+    failed: list[str] = []
     total_bytes = 0
     t0 = time.time()
     with open(manifest_path, "a", encoding="utf-8") as mfh:
         for src, rel in _iter_source(
-            source, exclude=exclude, pattern=pattern, only_top=only_top
+            source, exclude=exclude, pattern=pattern, only_top=only_top,
+            prefix=prefix
         ):
             rel_s = rel.as_posix()
             dst = dest / rel
@@ -170,10 +195,18 @@ def make_mirror(
             if dst.exists():
                 # El destino difiere del manifiesto: se recomputa desde el origen.
                 n_mismatch += 1
-            sha, written = _copy_and_hash(src, dst)
-            verify = _sha256_file(dst)
-            if verify != sha:
-                raise IOError(f"Verificación SHA-256 fallida en {rel_s}")
+            try:
+                sha, written = _copy_and_hash(src, dst)
+                verify = _sha256_file(dst)
+                if verify != sha:
+                    raise IOError(f"Verificación SHA-256 fallida en {rel_s}")
+            except OSError as exc:
+                # Un fichero ilegible no debe matar la copia entera: se apunta y
+                # se sigue (el espejo NO se marcará como completo).
+                n_failed += 1
+                failed.append(rel_s)
+                print(f"[mirror] FALLO {rel_s}: {exc}", flush=True)
+                continue
             _set_readonly(dst)
             entry = Entry(rel_s, written, sha, src.stat().st_mtime)
             entries[rel_s] = entry
@@ -206,6 +239,8 @@ def make_mirror(
         "n_copied_this_run": n_copied,
         "n_skipped_this_run": n_skipped,
         "n_rewritten_mismatch": n_mismatch,
+        "n_failed_this_run": n_failed,
+        "failed": failed[:50],
         "elapsed_s": round(time.time() - t_start, 1),
         "manifest": str(manifest_path),
     }
@@ -214,13 +249,19 @@ def make_mirror(
         with open(summary, "w", encoding="utf-8") as fh:
             json.dump(summary_doc, fh, ensure_ascii=False, indent=2)
     # Marca de "espejo COMPLETO" dentro del propio espejo: los builders solo lo
-    # usan si existe (si no, leerían un espejo a medias).
+    # usan si existe (si no, leerían un espejo a medias). NO se deja si quedó
+    # algún fichero sin copiar.
     stamp = dest / "_mirror_summary.json"
-    if stamp.exists():
-        os.chmod(stamp, stat.S_IWRITE | stat.S_IREAD)
-    with open(stamp, "w", encoding="utf-8") as fh:
-        json.dump(summary_doc, fh, ensure_ascii=False, indent=2)
-    _set_readonly(stamp)
+    if n_failed == 0 and write_stamp:
+        if stamp.exists():
+            os.chmod(stamp, stat.S_IWRITE | stat.S_IREAD)
+        with open(stamp, "w", encoding="utf-8") as fh:
+            json.dump(summary_doc, fh, ensure_ascii=False, indent=2)
+        _set_readonly(stamp)
+    else:
+        print(f"[mirror] {n_failed} ficheros SIN copiar: el espejo NO se marca "
+              f"como completo. Repetir la orden para reintentarlos.",
+              flush=True)
     return summary_doc
 
 
@@ -253,6 +294,9 @@ def main() -> int:
     p.add_argument("--dest", required=True)
     p.add_argument("--exclude", default="", help="Carpetas top a excluir (coma)")
     p.add_argument("--only-top", default="", help="Solo estas carpetas top (coma)")
+    p.add_argument("--prefix", default="", help="Solo ficheros con este prefijo")
+    p.add_argument("--no-stamp", action="store_true",
+                   help="No dejar la marca de espejo completo (uso por box)")
     p.add_argument("--pattern", default=None, help="Glob de ficheros (p.ej. *.vital)")
     p.add_argument("--summary", default=None, help="JSON de resumen (en el repo)")
     p.add_argument("--verify-only", action="store_true",
@@ -272,7 +316,9 @@ def main() -> int:
         exclude=tuple(x for x in args.exclude.split(",") if x),
         only_top=tuple(x for x in args.only_top.split(",") if x),
         pattern=args.pattern,
+        prefix=args.prefix,
         summary=Path(args.summary) if args.summary else None,
+        write_stamp=not args.no_stamp,
     )
     print(json.dumps(doc, ensure_ascii=False, indent=2))
     return 0

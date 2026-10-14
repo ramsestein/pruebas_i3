@@ -37,7 +37,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
-from src.common.paths import config_path  # noqa: E402
 from src.common.vital_signals import probe_block_union  # noqa: E402
 from src.create_dataset.build_signal_cases import SPECS  # noqa: E402
 from src.stage0.io.versioning import load_config  # noqa: E402
@@ -144,17 +143,22 @@ def write_md(doc: dict, path: Path) -> None:
         md.append("")
         md.append(f"- Origen: `{doc.get('source_dir')}` "
                   f"(espejo: {'sí' if doc.get('source_is_mirror') else 'NO'})")
+        md.append(f"- Eventos sondeados: **{doc.get('n_probed')}** de "
+                  f"{doc['n_obs_end_eq_vent_end']} (submuestra)")
+        md.append(f"- Motivo por índice (todos los iguales): "
+                  f"{doc.get('motivo_indice')}")
         md.append("")
-        md.append("| Motivo | Eventos |")
+        md.append("| Motivo (muestras) | Eventos |")
         md.append("|---|---|")
         for k, v in sorted(doc["motivos"].items(), key=lambda x: -x[1]):
             md.append(f"| {k} | {v} |")
         md.append("")
         md.append("Definiciones: `apagon_del_grabador` = no hay ninguna muestra de")
-        md.append("ninguna pista hasta el siguiente evento del mismo box;")
-        md.append("`fin_de_registro` = no hay muestras y no hay más eventos en el box;")
-        md.append("`grabacion_sin_fisiologia` = el box sigue grabando pero sin FC/SpO2")
-        md.append("fisiológica; `otro` = no encaja en lo anterior.")
+        md.append("ninguna pista en las 2 h siguientes al fin de la ventilación y hay")
+        md.append("otro evento después en el box; `fin_de_registro` = no hay muestras y")
+        md.append("no hay más eventos en el box; `grabacion_sin_fisiologia` = el box")
+        md.append("sigue grabando pero sin FC/SpO2 fisiológica; `otro` = hay monitor")
+        md.append("fisiológico (no debería contar como igualdad: revisar).")
         md.append("")
         md.append("| Evento | Box | fin vent. (h) | motivo |")
         md.append("|---|---|---|---|")
@@ -171,6 +175,8 @@ def main() -> int:
     ap.add_argument("--index", required=True)
     ap.add_argument("--probe", action="store_true",
                     help="Clasifica el motivo leyendo las muestras del origen")
+    ap.add_argument("--probe-limit", type=int, default=25,
+                    help="Nº de eventos a sondear (0 o negativo = todos)")
     ap.add_argument("--out", default=None, help="JSON de salida")
     ap.add_argument("--md", default=None, help="Informe Markdown de salida")
     ap.add_argument("--config", default=CONFIG)
@@ -216,7 +222,8 @@ def main() -> int:
         reasons: Counter = Counter()
         detail = []
         meta: dict = {}
-        for i, (e, ve) in enumerate(eq, start=1):
+        sel = eq if args.probe_limit in (None, 0) else eq[:args.probe_limit]
+        for i, (e, ve) in enumerate(sel, start=1):
             ev = dict(e)
             ev["_has_next"] = e["event_id"] in has_next
             info = classify_event(ev, config=cfg, cohort=args.cohort,
@@ -225,7 +232,15 @@ def main() -> int:
             detail.append({"event_id": e["event_id"], "box": e["box"],
                            "vent_end_h": ve, **info})
             if i % 10 == 0:
-                print(f"[probe] {i}/{len(eq)}…", flush=True)
+                print(f"[probe] {i}/{len(sel)}…", flush=True)
+        # Motivo por índice para TODOS los iguales (barato) y motivo por muestras
+        # solo para la submuestra sondeada.
+        for e, _ve in eq:
+            doc.setdefault("motivo_indice", Counter())[
+                "corte_D2_entre_regiones" if e["event_id"] in has_next
+                else "fin_de_registro_del_box"] += 1
+        doc["motivo_indice"] = dict(doc["motivo_indice"])
+        doc["n_probed"] = len(sel)
         doc["source_dir"] = meta.get("raw_dir")
         doc["source_is_mirror"] = meta.get("is_mirror")
         doc["motivos"] = dict(reasons)
