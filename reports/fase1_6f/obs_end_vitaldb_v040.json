@@ -1,0 +1,15 @@
+{
+  "cohort": "vitaldb",
+  "index": "datasets/vitaldb/cases_v0.4.0_aa142f35/vitaldb_cases_index.json",
+  "n_events": 96,
+  "n_obs_end_eq_vent_end": 58,
+  "n_monitor_tail_zero": 58,
+  "end_reason": {
+    "extubation_observed": 36,
+    "end_of_record": 60
+  },
+  "end_reason_eq": {
+    "end_of_record": 58
+  },
+  "equality_implies_zero_tail": true
+}

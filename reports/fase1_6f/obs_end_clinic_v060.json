@@ -1,0 +1,16 @@
+{
+  "cohort": "clinic",
+  "index": "datasets/clinic/cases_v0.6.0_cbf8b634/clinic_cases_index.json",
+  "n_events": 143,
+  "n_obs_end_eq_vent_end": 74,
+  "n_monitor_tail_zero": 74,
+  "end_reason": {
+    "extubation_observed": 60,
+    "end_of_record": 82,
+    "death_at_vent": 1
+  },
+  "end_reason_eq": {
+    "end_of_record": 74
+  },
+  "equality_implies_zero_tail": true
+}

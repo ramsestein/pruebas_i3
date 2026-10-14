@@ -91,6 +91,76 @@ def classify_event(
     }
 
 
+def write_md(doc: dict, path: Path) -> None:
+    md: list[str] = []
+    md.append(f"# Fase 1.6f, punto 1 — de dónde sale `obs_end_h` ({doc['cohort']})")
+    md.append("")
+    md.append("## Qué es y de dónde sale")
+    md.append("")
+    md.append("`obs_end_h` es el fin de la **observación fisiológica** (FC/SpO2 con")
+    md.append("valores fisiológicos, unidas con 1 h de tolerancia) posterior al fin de")
+    md.append("la ventilación, recortado a la región de paciente (D2). Lo calcula")
+    md.append("`episodes.build_episodes`:")
+    md.append("")
+    md.append("```python")
+    md.append("tail = clip_spans(physiological, attempts[-1].end_h, region_end_h)")
+    md.append("observation_end_h = tail[-1].end_h if tail else attempts[-1].end_h")
+    md.append("```")
+    md.append("")
+    md.append("La rama `else` es un **suelo**, no un tope: solo se toma cuando NO hay")
+    md.append("ninguna muestra fisiológica después del fin de la ventilación, y entonces")
+    md.append("vale exactamente lo mismo que `vent_end_h` (el evento queda censurado).")
+    md.append("`observation_end_h` **nunca** puede ser menor que el fin de la ventilación")
+    md.append("(el recorte es `[vent_end, region_end]` y el fallback es `vent_end`), así")
+    md.append("que no hay ningún camino en el código que recorte una observación larga.")
+    md.append("El respaldo `_region_end_h → episode.end_h` de `build_signal_cases` no es")
+    md.append("alcanzable: `build_episodes` siempre deja `region_end_h` finito.")
+    md.append("")
+    md.append("Prueba con test: `src/create_dataset/tests/test_obs_end.py`")
+    md.append("(cola larga → se extiende; sin cola → igual a `vent_end_h` y censurado;")
+    md.append("ondas sin fisiología → no alargan la observación).")
+    md.append("")
+    md.append("## Auditoría del índice")
+    md.append("")
+    md.append(f"- Índice: `{doc['index']}`")
+    md.append(f"- Eventos: **{doc['n_events']}**")
+    md.append(f"- Con `obs_end_h == vent_end_h`: **{doc['n_obs_end_eq_vent_end']}**")
+    md.append(f"- Con `monitor_tail_h == 0`: **{doc['n_monitor_tail_zero']}**")
+    md.append(f"- ¿Toda igualdad implica cola cero? "
+              f"**{'sí' if doc['equality_implies_zero_tail'] else 'NO'}**")
+    md.append("")
+    md.append("| `end_reason` | eventos | de los que igualan |")
+    md.append("|---|---|---|")
+    for k in sorted(set(doc["end_reason"]) | set(doc["end_reason_eq"])):
+        md.append(f"| {k} | {doc['end_reason'].get(k, 0)} | "
+                  f"{doc['end_reason_eq'].get(k, 0)} |")
+    md.append("")
+    if "motivos" in doc:
+        md.append("## Por qué coinciden (medido por muestras)")
+        md.append("")
+        md.append(f"- Origen: `{doc.get('source_dir')}` "
+                  f"(espejo: {'sí' if doc.get('source_is_mirror') else 'NO'})")
+        md.append("")
+        md.append("| Motivo | Eventos |")
+        md.append("|---|---|")
+        for k, v in sorted(doc["motivos"].items(), key=lambda x: -x[1]):
+            md.append(f"| {k} | {v} |")
+        md.append("")
+        md.append("Definiciones: `apagon_del_grabador` = no hay ninguna muestra de")
+        md.append("ninguna pista hasta el siguiente evento del mismo box;")
+        md.append("`fin_de_registro` = no hay muestras y no hay más eventos en el box;")
+        md.append("`grabacion_sin_fisiologia` = el box sigue grabando pero sin FC/SpO2")
+        md.append("fisiológica; `otro` = no encaja en lo anterior.")
+        md.append("")
+        md.append("| Evento | Box | fin vent. (h) | motivo |")
+        md.append("|---|---|---|---|")
+        for d in doc.get("detalle", []):
+            md.append(f"| {d['event_id']} | {d['box']} | {d['vent_end_h']:.2f} | "
+                      f"{d['reason']} |")
+        md.append("")
+    path.write_text("\n".join(md) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--cohort", choices=sorted(SPECS), required=True)
@@ -98,6 +168,7 @@ def main() -> int:
     ap.add_argument("--probe", action="store_true",
                     help="Clasifica el motivo leyendo las muestras del origen")
     ap.add_argument("--out", default=None, help="JSON de salida")
+    ap.add_argument("--md", default=None, help="Informe Markdown de salida")
     ap.add_argument("--config", default=CONFIG)
     args = ap.parse_args()
 
@@ -163,6 +234,9 @@ def main() -> int:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         Path(args.out).write_text(json.dumps(doc, ensure_ascii=False, indent=2),
                                   encoding="utf-8")
+    if args.md:
+        Path(args.md).parent.mkdir(parents=True, exist_ok=True)
+        write_md(doc, Path(args.md))
     print(json.dumps({k: v for k, v in doc.items() if k != "detalle"},
                      ensure_ascii=False, indent=2))
     return 0
